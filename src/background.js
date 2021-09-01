@@ -45,7 +45,7 @@ const connectionHandler = (sendResponse) => {
  * The transaction handler.
  * @param message the message of the transaction
  */
-const transactionHandler = (message) => {
+const transactionHandler = (message, sendResponse) => {
 
     browser.storage.local.get('transactionMap').then(result => {
         if (result && result.transactionMap) {
@@ -59,6 +59,10 @@ const transactionHandler = (message) => {
                         "app/popup.html#/transaction:" + message.hotmoka.transaction.uuid
                     )
                 })
+            })
+        } else {
+            sendResponse({
+                error: "cannot begin transaction"
             })
         }
     })
@@ -96,7 +100,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             const uuid = uuidv4()
             message.hotmoka.transaction.uuid = uuid
             transactionMap.set(uuid, {sendResponse: sendResponse})
-            transactionHandler(message)
+            transactionHandler(message, sendResponse)
 
         } else if (message.hotmoka.type === 'transactionResult') {
             const uuid = message.hotmoka.transactionResult.uuid

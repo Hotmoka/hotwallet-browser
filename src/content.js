@@ -11,10 +11,16 @@ const initCommunicationChannel = () => {
     channel = new Channel('hotwallet-content-script', 'hotwallet-web-page', location.origin)
     channel.onData = data => {
 
-        if (data.eventName === 'onHotwalletTransaction') {
-            transactionHandler(data)
-        } else if (data.eventName === 'onHotwalletConnect') {
-            connectionHandler(data)
+        if (data.eventName === 'HotwalletTransaction') {
+            dispatchToBackground({
+                type: 'transaction',
+                transaction: data.transaction
+            }, data)
+
+        } else if (data.eventName === 'HotwalletConnect') {
+            dispatchToBackground({
+                type: 'connect'
+            }, data)
         }
     }
 }
@@ -35,39 +41,17 @@ const injectHotwalletApi = () => {
 }
 
 /**
- * The handler of a wallet transaction.
+ * It dispatches messages to the background script.
+ * @param message the message to be dispatched to the background script
+ * @param data the event data
  */
-const transactionHandler = data => {
-    const taskId = data.taskId
-
+const dispatchToBackground = (message, data) => {
     browser.runtime.sendMessage({
-        hotmoka: {
-            type: 'transaction',
-            transaction: data.transaction
-        }
+        hotmoka: message
     }).then(result => {
         channel.sendMessage({
-            eventName: 'onHotwalletTransactionResult',
-            taskId: taskId,
-            result: {...result}
-        })
-    })
-}
-
-/**
- * The handler of the connection towards Hotwallet.
- */
-const connectionHandler = data => {
-    const taskId = data.taskId
-
-    browser.runtime.sendMessage({
-        hotmoka: {
-            type: 'connect'
-        }
-    }).then(result => {
-        channel.sendMessage({
-            eventName: 'onHotwalletConnected',
-            taskId: taskId,
+            eventName: data.eventName,
+            taskId: data.taskId,
             result: {...result}
         })
     })
