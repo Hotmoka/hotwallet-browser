@@ -14,6 +14,7 @@ const config = {
 	entry: {
 		'content': "./content.js",
 		'background': "./background.js",
+		'globals': "./globals",
 		"app/main": "./app/main.js"
 	},
 	output: {

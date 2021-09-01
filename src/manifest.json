@@ -22,12 +22,14 @@
       ],
       "js": [
         "content.js"
-      ]
+      ],
+      "run_at": "document_end"
     }
   ],
   "background": {
     "scripts": ["background.js"]
   },
+  "web_accessible_resources": ["globals.js"],
   "permissions": [
     "tabs",
     "storage"

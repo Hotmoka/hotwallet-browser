@@ -12,8 +12,10 @@
     "bootstrap": "^4.5.2",
     "bootstrap-vue": "^2.16.0",
     "core-js": "^3.6.5",
+    "hotwallet-api": "file:hotwallet-api-1.0.0.tgz",
     "hotweb3": "^1.0.4",
     "portal-vue": "^2.1.7",
+    "uuid": "^8.3.2",
     "vue": "^2.6.11",
     "vue-router": "^3.5.2",
     "webextension-polyfill": "^0.4.0"
