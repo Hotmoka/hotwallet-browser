@@ -88,6 +88,7 @@ $theme-colors: (
 }
 
 .content {
+  height: 100vh;
   overflow-y: auto;
   padding: 1rem
 }
@@ -98,10 +99,11 @@ $theme-colors: (
 
 @media only screen and (max-width: 768px) {
   .content {
-    height: 488px !important;
+    max-height: 488px;
   }
 
   .container {
+    height: 100vh;
     width: 100% !important;
     padding: 0
   }

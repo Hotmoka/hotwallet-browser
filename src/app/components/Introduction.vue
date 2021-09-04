@@ -1,10 +1,13 @@
 <template>
-  <div class="text-center">
-    <h6 class="mt-4 mb-4">Sei nuovo su Hotwallet ?</h6>
+  <div class="content text-center">
+    <div class="center">
+      <h6 class="title">Are you new to Hotwallet ?</h6>
 
-    <b-button @click="onNewWalletClick" variant="outline-primary mt-3">Crea wallet</b-button>
-    <p class="mt-3">oppure</p>
-    <b-button @click="onImportWalletClick" variant="outline-primary">Importa wallet</b-button>
+      <b-button @click="onNewAccountClick" variant="outline-primary mt-3">Create account</b-button>
+      <p class="mt-3">oppure</p>
+      <b-button @click="onImportAccountClick" variant="outline-primary">Import account</b-button>
+    </div>
+
   </div>
 </template>
 
@@ -13,10 +16,10 @@
 export default {
   name: "Introduction",
   methods: {
-    onNewWalletClick() {
+    onNewAccountClick() {
       this.$router.push('/new-wallet')
     },
-    onImportWalletClick() {
+    onImportAccountClick() {
       this.$router.push('/import-wallet')
     }
   }
@@ -24,5 +27,17 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.center {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  -ms-transform: translateX(-50%) translateY(-50%);
+  -webkit-transform: translate(-50%,-50%);
+  transform: translate(-50%,-50%);
+}
 
+.title {
+  margin-top: 4rem;
+  margin-bottom: 4rem;
+}
 </style>
