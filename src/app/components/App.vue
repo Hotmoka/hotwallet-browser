@@ -84,7 +84,7 @@ $theme-colors: (
 }
 
 .card {
-  margin-top: 3rem;
+  height: 100%;
 }
 
 .form-container, .form-container button {
@@ -101,6 +101,9 @@ $theme-colors: (
 @media only screen and (min-width: 769px) {
   .container {
     width: 600px !important;
+    height: 100vh;
+    padding-bottom: 2.5rem;
+    padding-top: 2.5rem;
   }
 }
 
