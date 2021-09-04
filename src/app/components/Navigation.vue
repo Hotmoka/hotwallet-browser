@@ -1,6 +1,6 @@
 <template>
-  <div class="navigation">
-    <b-link class="float-left text-primary" v-if="canShowNavigation" @click="onBackClick">
+  <div class="navigation" v-if="showNavigationContainer">
+    <b-link class="float-left text-primary" v-if="showNavigation" @click="onBackClick">
       <b-icon width="18" icon="arrow-left" variant="primary"></b-icon>
       Back
     </b-link>
@@ -19,22 +19,19 @@ export default {
   },
   data() {
     return {
-      showNavigation: false
+      showNavigation: false,
+      showNavigationContainer: true
     }
   },
   watch: {
     $route(to, from) {
       this.showNavigation = to && this.isPathForNavigation(to.path)
-    }
-  },
-  computed: {
-    canShowNavigation() {
-      return this.showNavigation
+      this.showNavigationContainer = to && to.path !== '/' && this.showNavigation
     }
   },
   methods: {
     isPathForNavigation(path) {
-      return path && path !== '/' && path !== '/login' && path !== '/home' && path !== '/transaction'
+      return path && path !== '/login' && path !== '/home' && path !== '/transaction'
     },
     onExpandAppClick() {
       this.$browser.tabs.create({
@@ -45,6 +42,9 @@ export default {
       this.$router.go(-1)
     }
   },
+  created() {
+    this.showNavigationContainer = this.$route.path !== '/'
+  }
 }
 </script>
 
