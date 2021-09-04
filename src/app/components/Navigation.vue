@@ -1,13 +1,15 @@
 <template>
-  <div class="navigation" v-if="showNavigationContainer">
-    <b-link class="float-left text-primary" v-if="showNavigation" @click="onBackClick">
-      <b-icon width="18" icon="arrow-left" variant="primary"></b-icon>
-      Back
-    </b-link>
+  <div class="navigation-container" v-if="showNavigationContainer">
+    <div class="navigation">
+      <b-link class="float-left text-primary" v-if="showNavigation" @click="onBackClick">
+        <b-icon width="18" icon="arrow-left" variant="primary"></b-icon>
+        Back
+      </b-link>
 
-    <b-link class="float-right" v-if="isPopup" @click="onExpandAppClick">
-      <b-icon width="18" icon="arrows-angle-expand" variant="primary"></b-icon>
-    </b-link>
+      <b-link class="float-right" v-if="isPopup" @click="onExpandAppClick">
+        <b-icon width="18" icon="arrows-angle-expand" variant="primary"></b-icon>
+      </b-link>
+    </div>
   </div>
 </template>
 
@@ -25,13 +27,18 @@ export default {
   },
   watch: {
     $route(to, from) {
-      this.showNavigation = to && this.isPathForNavigation(to.path)
-      this.showNavigationContainer = to && to.path !== '/' && this.showNavigation
+      if (to) {
+        this.setNavigationVisibility(to.path)
+      }
     }
   },
   methods: {
+    setNavigationVisibility(path) {
+      this.showNavigation = this.isPathForNavigation(path)
+      this.showNavigationContainer = path !== '/' && this.showNavigation
+    },
     isPathForNavigation(path) {
-      return path && path !== '/login' && path !== '/home' && path !== '/transaction'
+      return path !== '/login' && path !== '/home' && path !== '/transaction'
     },
     onExpandAppClick() {
       this.$browser.tabs.create({
@@ -43,12 +50,17 @@ export default {
     }
   },
   created() {
-    this.showNavigationContainer = this.$route.path !== '/'
+    this.setNavigationVisibility(this.$route.path)
   }
 }
 </script>
 
 <style scoped>
+
+.navigation-container {
+  width: 100%;
+  border-bottom: 1px solid rgba(186, 239, 233, 0.4);
+}
 
 .navigation {
   width: 100%;

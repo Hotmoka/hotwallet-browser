@@ -87,11 +87,20 @@ $theme-colors: (
   height: 100%;
 }
 
+.content {
+  overflow-y: auto;
+  padding: 1rem
+}
+
 .form-container, .form-container button {
   width: 100% !important;
 }
 
 @media only screen and (max-width: 768px) {
+  .content {
+    height: 488px !important;
+  }
+
   .container {
     width: 100% !important;
     padding: 0

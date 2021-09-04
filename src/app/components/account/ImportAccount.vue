@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <h6 class="mt-4 mb-4 text-center">Importa account</h6>
+  <div class="content">
+    <h6 class="mt-4 mb-4 text-center">Import account</h6>
 
     <div class="d-flex justify-content-center">
       <div class="text-left form-container">
@@ -43,7 +43,7 @@
 
 <script>
 import {AccountHelper, Algorithm, RemoteNode} from "hotweb3";
-import {EventBus, getSessionPeriod} from "../internal/utils";
+import {EventBus, getSessionPeriod} from "../../internal/utils";
 
 export default {
   name: "ImportWallet",

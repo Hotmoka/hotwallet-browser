@@ -5,10 +5,10 @@ import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 import VueRouter from 'vue-router'
 import App from './components/App'
-import Login from "./components/Login";
+import Login from "./components/account/Login";
 import Introduction from "./components/Introduction";
-import ImportWallet from "./components/ImportWallet";
-import NewWallet from "./components/NewWallet";
+import ImportWallet from "./components/account/ImportAccount";
+import NewWallet from "./components/account/NewAccount";
 import Home from "./components/Home";
 import Transaction from "./components/Transaction";
 import {decorateBrowserObject} from "../internal/utils";

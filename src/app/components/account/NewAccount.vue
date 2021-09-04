@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <h6 class="mt-4 mb-4 text-center">Nuovo account</h6>
+  <div class="content">
+    <h6 class="mt-4 mb-4 text-center">New account</h6>
 
     <div class="d-flex justify-content-center">
       <div class="text-left form-container">
@@ -51,7 +51,7 @@
 
 <script>
 import {RemoteNode, AccountHelper, Algorithm} from "hotweb3"
-import {getSessionPeriod, EventBus} from "../internal/utils";
+import {getSessionPeriod, EventBus} from "../../internal/utils";
 
 export default {
   name: "NewWallet",

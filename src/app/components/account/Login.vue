@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="content">
       <h6 class="mt-4 mb-4">Login</h6>
 
       <div class="d-flex justify-content-center">
@@ -22,7 +22,7 @@
 
 <script>
 import {AccountHelper} from "hotweb3";
-import {getSessionPeriod} from "../internal/utils";
+import {getSessionPeriod} from "../../internal/utils";
 
 export default {
   name: "Login",

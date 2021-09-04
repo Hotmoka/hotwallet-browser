@@ -54,6 +54,7 @@ export default {
 <style scoped>
 
 .header {
+  height: 62px;
   display: flex;
   align-items: center;
   background-color: rgba(186, 239, 233, 0.2);
