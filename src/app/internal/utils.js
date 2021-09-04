@@ -7,3 +7,12 @@ export const getSessionPeriod = () => {
 }
 
 export const EventBus = new Vue()
+
+export const showInfoToast = (vue, title, message) => {
+	vue.$bvToast.toast(message, {
+		title: title,
+		variant: 'info',
+		solid: true,
+		toaster: 'b-toaster-top-center'
+	})
+}

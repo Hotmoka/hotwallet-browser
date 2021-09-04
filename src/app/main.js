@@ -11,6 +11,7 @@ import ImportWallet from "./components/ImportWallet";
 import NewWallet from "./components/NewWallet";
 import Home from "./components/Home";
 import Transaction from "./components/Transaction";
+import {decorateBrowserObject} from "../internal/utils";
 
 Vue.use(VueRouter)
 Vue.use(BootstrapVue)
@@ -20,6 +21,7 @@ Vue.config.productionTip = false
 
 global.browser = require('webextension-polyfill')
 Vue.prototype.$browser = global.browser
+decorateBrowserObject(Vue.prototype.$browser)
 
 Vue.prototype.$blockchainConfig = {
   remoteNodeUrl: process.env.VUE_APP_BLOCKCHAIN_REMOTE_NODE_URL
@@ -47,3 +49,5 @@ new Vue({
     }
   })
 })
+
+

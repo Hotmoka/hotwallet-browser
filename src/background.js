@@ -1,6 +1,8 @@
 const browser = require("webextension-polyfill")
+const {decorateBrowserObject} = require('./internal/utils')
 const { v4: uuidv4 } = require('uuid')
 
+decorateBrowserObject(browser)
 
 /**
  * The connection handler for Hotwallet.
