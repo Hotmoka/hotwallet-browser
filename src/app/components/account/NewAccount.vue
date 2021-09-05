@@ -4,6 +4,7 @@
 
     <div class="d-flex justify-content-center">
       <div class="text-left form-container">
+
         <b-form-group
             id="i-name"
             label="Name"
@@ -11,7 +12,7 @@
             :invalid-feedback="invalidFeedbackName"
             :state="stateName"
         >
-          <b-form-input type="text" id="i-name" v-model="name" :state="stateName" trim></b-form-input>
+          <b-form-input type="text" id="i-name" v-model="newAccount.name" :state="stateName" trim></b-form-input>
         </b-form-group>
 
         <b-form-group
@@ -21,7 +22,7 @@
             :invalid-feedback="invalidFeedbackPassword"
             :state="statePassword"
         >
-          <b-form-input type="password" id="i-pwd" v-model="password" :state="statePassword" trim></b-form-input>
+          <b-form-input type="password" id="i-pwd" v-model="newAccount.password" :state="statePassword" trim></b-form-input>
         </b-form-group>
 
         <b-form-group
@@ -31,110 +32,189 @@
             :invalid-feedback="invalidFeedbackConfirmPassword"
             :state="stateConfirmPassword"
         >
-          <b-form-input type="password" id="i-c-pwd" v-model="confirmPassword" :state="stateConfirmPassword" trim></b-form-input>
+          <b-form-input type="password" id="i-c-pwd" v-model="newAccount.confirmPassword" :state="stateConfirmPassword" trim></b-form-input>
         </b-form-group>
 
         <b-form-group
-            id="i-words"
+            v-if="faucet.allowsUnsignedFaucet"
+            id="i-faucet"
         >
-          <label>Words<span class="copy-container"><b-icon width="18" variant="primary" icon="clipboard"
-                                                             @click="onCopyContentClick"></b-icon></span></label>
-
-          <div class="row">
-            <div class="col-3" v-for="word in accountCreation.words" :key="word">
-              <b-badge variant="success">{{ word }}</b-badge>
-            </div>
-          </div>
+          <b-form-checkbox
+              id="checkbox-faucet"
+              v-model="faucet.fromFaucet"
+              name="checkbox-1"
+              :value="true"
+              :unchecked-value="false"
+          >
+            Use faucet as payer
+          </b-form-checkbox>
         </b-form-group>
 
-        <b-button @click="onCreateAccountClick" variant="primary" :disabled="!statePassword || !stateConfirmPassword || !stateName">Create</b-button>
+        <b-form-group
+            v-if="!faucet.fromFaucet"
+            id="i-payer"
+            label="Payer"
+            label-for="i-payer"
+            :invalid-feedback="invalidFeedbackPayer"
+            :state="statePayer"
+        >
+          <b-form-input type="text" id="i-payer" v-model="payer.hashOfStorageReference" :state="statePayer" trim></b-form-input>
+        </b-form-group>
+
+        <b-form-group
+            v-if="!faucet.fromFaucet"
+            id="i-payer"
+            label="Password of Payer"
+            label-for="i-payer"
+            :invalid-feedback="invalidFeedbackPayerPassword"
+            :state="statePayerPassword"
+        >
+          <b-form-input type="text" id="i-payer" v-model="payer.password" :state="statePayerPassword" trim></b-form-input>
+        </b-form-group>
+
+        <b-button @click="onCreateAccountClick" variant="primary" :disabled="stateForm">Create</b-button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import {RemoteNode, AccountHelper, Algorithm} from "hotweb3"
-import {getSessionPeriod, EventBus, showInfoToast, showErrorToast} from "../../internal/utils";
+import {RemoteNode, AccountHelper, Algorithm, Bip39Dictionary} from "hotweb3"
+import {EventBus, showErrorToast, showInfoToast} from "../../internal/utils";
 
 export default {
   name: "NewWallet",
   data() {
     return {
-      name: null,
-      confirmPassword: null,
-      password: null,
-      accountCreation: {
-        words: ["marine", "one", "doctor", "sponsor", "ecology", "about", "concert", "canoe",
-          "dinosaur", "embody", "flight", "cheap", "little", "lizard", "space", "north", "nothing", "where", "tomorrow",
-          "dress", "pupil", "axis", "spoil", "clap", "coral", "napkin", "style", "nasty", "warm", "ball", "viable", "science",
-          "vivid", "arrive", "pony", "hire"]
+      faucet: {
+        allowsUnsignedFaucet: false,
+        fromFaucet: false
+      },
+      payer: {
+        hashOfStorageReference: null,
+        password: null
+      },
+      newAccount: {
+        name: null,
+        confirmPassword: null,
+        password: null
       }
     }
   },
   computed: {
     stateName() {
-      return this.name === null ? null : this.name.length > 0
+      return this.newAccount.name === null ? null : this.newAccount.name.length > 0
     },
     statePassword() {
-      return this.password === null ? null : this.password.length >= 8
+      return this.newAccount.password === null ? null : this.newAccount.password.length >= 8
+    },
+    statePayerPassword() {
+      if (this.faucet.fromFaucet) {
+        return true
+      }
+      return this.payer.password === null ? null : this.payer.password.length >= 8
     },
     stateConfirmPassword() {
-      return this.confirmPassword === null ? null : (this.confirmPassword.length >= 8 && this.confirmPassword === this.password)
+      return this.newAccount.confirmPassword === null ? null : (this.newAccount.confirmPassword.length >= 8 && this.newAccount.confirmPassword === this.newAccount.password)
+    },
+    statePayer() {
+      if (this.faucet.fromFaucet) {
+        return true
+      }
+      return this.payer.hashOfStorageReference === null ? null : this.payer.hashOfStorageReference.length === 64
+    },
+    stateForm() {
+      return !this.statePassword || !this.stateConfirmPassword || !this.stateName || !this.statePayer || !this.statePayerPassword
     },
     invalidFeedbackPassword() {
-      if (this.password === null) {
+      if (this.newAccount.password === null) {
         return null
       }
-      if (this.password.length > 0) {
+      if (this.newAccount.password.length > 0) {
+        return 'Please enter at least 8 characters'
+      }
+      return 'Please enter a password'
+    },
+    invalidFeedbackPayerPassword() {
+      if (this.payer.password === null) {
+        return null
+      }
+      if (this.payer.password.length > 0) {
         return 'Please enter at least 8 characters'
       }
       return 'Please enter a password'
     },
     invalidFeedbackConfirmPassword() {
-      if (this.confirmPassword === null) {
+      if (this.newAccount.confirmPassword === null) {
         return null
       }
       return 'The passwords don\'t match'
     },
     invalidFeedbackName() {
-      if (this.name === null) {
+      if (this.newAccount.name === null) {
         return null
       }
       return 'Please enter the account\'s name'
+    },
+    invalidFeedbackPayer() {
+      if (this.newAccount.name === null) {
+        return null
+      }
+      return 'Please enter a valid address of 64 characters'
     }
   },
   methods: {
-    onCreateAccountClick() {
+    createAccountFromFaucet() {
+      const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.newAccount.password, Bip39Dictionary.ENGLISH)
       const accountHelper = new AccountHelper(new RemoteNode(this.$blockchainConfig.remoteNodeUrl))
-      const keyPair = AccountHelper.generateEd25519KeyPair(this.token, this.password)
 
       EventBus.$emit('showSpinner', true)
-      accountHelper.createAccountFromFaucet(Algorithm.ED25519, keyPair.publicKey, "10000000000", "0").then(res => {
+      accountHelper.createAccountFromFaucet(Algorithm.ED25519, keyPair, "10000000000", "0").then(res => {
         EventBus.$emit('showSpinner', false)
 
-        this.$browser.storage.local.set({
+        this.$browser.setToStorage({
           account: {
-            name: this.name,
+            name: this.newAccount.name,
             address: res.reference,
-            entropy: this.token,
-            keyPair: keyPair,
-            sessionPeriod: getSessionPeriod()
+            entropy: keyPair.entropy,
+            publicKey: keyPair.publicKey,
           }
-        }).then(() => {
-          this.$router.replace('/home')
+        }, committed => {
+          if (committed) {
+            this.$router.replace('/account')
+          } else {
+            showErrorToast(this, 'New account', 'Cannot save account to Hotwallet')
+          }
         })
 
       }).catch(err => {
+        console.error('account creation', err)
         EventBus.$emit('showSpinner', false)
         showErrorToast(this, 'New account', 'Error during account creation')
       })
     },
-    onCopyContentClick() {
-      navigator.clipboard.writeText(this.token).then(() => {
-        showInfoToast(this, 'Info', 'Words copied to clipboard')
-      })
+    createAccountFromAnotherAccount() {
+      // TODO
+    },
+    onCreateAccountClick() {
+      if (this.faucet.fromFaucet) {
+        this.createAccountFromFaucet()
+      } else {
+        this.createAccountFromAnotherAccount()
+      }
+    },
+    isFaucetAllowed() {
+      EventBus.$emit('showSpinner', true)
+      new RemoteNode(this.$blockchainConfig.remoteNodeUrl).allowsUnsignedFaucet()
+          .then(allowsUnsignedFaucet => {
+            EventBus.$emit('showSpinner', false)
+            this.faucet.allowsUnsignedFaucet = allowsUnsignedFaucet
+          })
+          .catch(() => EventBus.$emit('showSpinner', false))
     }
+  },
+  created() {
+    this.isFaucetAllowed()
   }
 }
 </script>

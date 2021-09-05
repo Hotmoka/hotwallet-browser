@@ -97,8 +97,8 @@ export default {
       }
 
       // TODO import account
-      const remoteNode = new RemoteNode(this.$blockchainConfig.remoteNodeUrl)
-      const accountHelper = new AccountHelper(remoteNode)
+      /*const remoteNode = new RemoteNode(this.$blockchainConfig.remoteNodeUrl)
+      const accountHelper = new AccountHelper(remoteNode)*/
     }
   },
   created() {

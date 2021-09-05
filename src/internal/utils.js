@@ -3,7 +3,7 @@ export const decorateBrowserObject = (browser) => {
     /**
      * Decorator to safely access of local storage.
      * @param key the key of the object
-     * @param resultCallback the result callback that will be invoked after the promise finishes.
+     * @param resultCallback the callback that will be invoked with the result after the promise finishes.
      * @return void
      */
     browser.getFromStorage = (key, resultCallback) => {
@@ -22,7 +22,7 @@ export const decorateBrowserObject = (browser) => {
     /**
      * Decorator to safely publish object to local storage.
      * @param obj the object
-     * @param resultCallback the optional result callback that will be invoked after the promise finishes.
+     * @param resultCallback the optional callback that will be invoked with the result of the commit operation (true/false) after the promise finishes.
      * @return void
      */
     browser.setToStorage = (obj, resultCallback) => {
