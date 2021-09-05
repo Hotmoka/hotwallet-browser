@@ -14,7 +14,7 @@
           <b-form-input type="text" id="i-name" v-model="account.name" :state="stateName" trim></b-form-input>
         </b-form-group>
 
-        <p> {{account.storageReference.transaction.hash}}</p>
+        <p> {{account.address.transaction.hash}}</p>
 
         <div v-if="account.words">
           <label>Words<span class="copy-container"><b-icon width="18" variant="primary" icon="clipboard"
@@ -71,6 +71,7 @@ export default {
   },
   created() {
     this.$browser.getFromStorage('account', account => {
+      console.log(account)
       if (!account) {
         showErrorToast(this, 'Account', 'Cannot retrieve account')
       } else {

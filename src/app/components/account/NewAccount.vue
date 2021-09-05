@@ -186,7 +186,7 @@ export default {
 
         EventBus.$emit('showSpinner', true)
         const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.newAccount.password, Bip39Dictionary.ENGLISH)
-        const account = new AccountHelper(remoteNode).createAccountFromFaucet(Algorithm.ED25519, keyPair, balance.toString(), "0")
+        const account = await new AccountHelper(remoteNode).createAccountFromFaucet(Algorithm.ED25519, keyPair, balance.toString(), "0")
         EventBus.$emit('showSpinner', false)
 
         this.$browser.setToStorage({
