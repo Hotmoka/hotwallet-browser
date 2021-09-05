@@ -17,10 +17,10 @@ export default {
   name: "Introduction",
   methods: {
     onNewAccountClick() {
-      this.$router.push('/new-wallet')
+      this.$router.push('/new-account')
     },
     onImportAccountClick() {
-      this.$router.push('/import-wallet')
+      this.$router.push('/import-account')
     }
   }
 };

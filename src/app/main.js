@@ -32,8 +32,8 @@ const router = new VueRouter({
     { path: '/', component: Introduction },
     { path: '/home', component: Home },
     { path: '/login', component: Login },
-    { path: '/import-wallet', component: ImportWallet },
-    { path: '/new-wallet', component: NewWallet },
+    { path: '/import-account', component: ImportWallet },
+    { path: '/new-account', component: NewWallet },
     { path: '/transaction', name: 'transaction', component: Transaction, props: true },
     { path: '*', redirect: '/' }
   ]
