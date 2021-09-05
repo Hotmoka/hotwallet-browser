@@ -12,6 +12,7 @@ import NewWallet from "./components/account/NewAccount";
 import Home from "./components/Home";
 import Transaction from "./components/Transaction";
 import {decorateBrowserObject} from "../internal/utils";
+import Account from "./components/account/Account";
 
 Vue.use(VueRouter)
 Vue.use(BootstrapVue)
@@ -34,6 +35,7 @@ const router = new VueRouter({
     { path: '/login', component: Login },
     { path: '/import-account', component: ImportWallet },
     { path: '/new-account', component: NewWallet },
+    { path: '/account', component: Account },
     { path: '/transaction', name: 'transaction', component: Transaction, props: true },
     { path: '*', redirect: '/' }
   ]
