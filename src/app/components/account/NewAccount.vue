@@ -36,6 +36,14 @@
         </b-form-group>
 
         <b-form-group
+            id="i-balance"
+            label="Balance"
+            label-for="i-balance"
+        >
+          <b-form-input type="number" id="i-balance" v-model="newAccount.balance" trim></b-form-input>
+        </b-form-group>
+
+        <b-form-group
             v-if="faucet.allowsUnsignedFaucet"
             id="i-faucet"
         >
@@ -63,13 +71,13 @@
 
         <b-form-group
             v-if="!faucet.fromFaucet"
-            id="i-payer"
+            id="i-payer-pwd"
             label="Password of Payer"
-            label-for="i-payer"
+            label-for="i-payer-pwd"
             :invalid-feedback="invalidFeedbackPayerPassword"
             :state="statePayerPassword"
         >
-          <b-form-input type="text" id="i-payer" v-model="payer.password" :state="statePayerPassword" trim></b-form-input>
+          <b-form-input type="text" id="i-payer-pwd" v-model="payer.password" :state="statePayerPassword" trim></b-form-input>
         </b-form-group>
 
         <b-button @click="onCreateAccountClick" variant="primary" :disabled="stateForm">Create</b-button>
@@ -79,8 +87,8 @@
 </template>
 
 <script>
-import {RemoteNode, AccountHelper, Algorithm, Bip39Dictionary} from "hotweb3"
-import {EventBus, showErrorToast, showInfoToast} from "../../internal/utils";
+import {RemoteNode, AccountHelper, Algorithm, Bip39Dictionary, StorageReferenceModel} from "hotweb3"
+import {EventBus, showErrorToast} from "../../internal/utils";
 
 export default {
   name: "NewWallet",
@@ -97,7 +105,8 @@ export default {
       newAccount: {
         name: null,
         confirmPassword: null,
-        password: null
+        password: null,
+        balance: null
       }
     }
   },
@@ -164,18 +173,26 @@ export default {
     }
   },
   methods: {
-    createAccountFromFaucet() {
-      const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.newAccount.password, Bip39Dictionary.ENGLISH)
-      const accountHelper = new AccountHelper(new RemoteNode(this.$blockchainConfig.remoteNodeUrl))
+    createAccountFromFaucet: async function(balance) {
+      try {
+        const remoteNode = new RemoteNode(this.$blockchainConfig.remoteNodeUrl)
+        const gamete = await remoteNode.getGamete()
+        const balanceOfFaucet = await this.getBalanceOfAccount(gamete.transaction.hash)
 
-      EventBus.$emit('showSpinner', true)
-      accountHelper.createAccountFromFaucet(Algorithm.ED25519, keyPair, "10000000000", "0").then(res => {
+        if ((balance - balanceOfFaucet) > 0) {
+          showErrorToast(this, 'New account', 'Cannot transfer more than ' + balanceOfFaucet + ' from faucet')
+          return
+        }
+
+        EventBus.$emit('showSpinner', true)
+        const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.newAccount.password, Bip39Dictionary.ENGLISH)
+        const account = new AccountHelper(remoteNode).createAccountFromFaucet(Algorithm.ED25519, keyPair, balance.toString(), "0")
         EventBus.$emit('showSpinner', false)
 
         this.$browser.setToStorage({
           account: {
             name: this.newAccount.name,
-            address: res.reference,
+            address: account.reference,
             entropy: keyPair.entropy,
             publicKey: keyPair.publicKey,
           }
@@ -187,21 +204,31 @@ export default {
           }
         })
 
-      }).catch(err => {
+      } catch (err) {
         console.error('account creation', err)
         EventBus.$emit('showSpinner', false)
         showErrorToast(this, 'New account', 'Error during account creation')
-      })
+      }
     },
-    createAccountFromAnotherAccount() {
+    createAccountFromAnotherAccount(balance) {
       // TODO
     },
     onCreateAccountClick() {
-      if (this.faucet.fromFaucet) {
-        this.createAccountFromFaucet()
-      } else {
-        this.createAccountFromAnotherAccount()
+      if (isNaN(this.newAccount.balance)) {
+        showErrorToast(this, 'New account', 'Illegal balance. Please insert a valid number of coins')
+        return
       }
+
+      const balance = Math.round(Number(this.newAccount.balance))
+      if (this.faucet.fromFaucet) {
+        this.createAccountFromFaucet(balance)
+      } else {
+        this.createAccountFromAnotherAccount(balance)
+      }
+    },
+    getBalanceOfAccount: async function (hashOfStorageReference) {
+      const balance = await new AccountHelper(new RemoteNode(this.$blockchainConfig.remoteNodeUrl)).getBalance(StorageReferenceModel.newStorageReference(hashOfStorageReference))
+      return Number(balance)
     },
     isFaucetAllowed() {
       EventBus.$emit('showSpinner', true)
