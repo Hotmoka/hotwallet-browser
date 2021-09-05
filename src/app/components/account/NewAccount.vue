@@ -6,7 +6,7 @@
       <div class="text-left form-container">
         <b-form-group
             id="i-name"
-            label="Nome"
+            label="Name"
             label-for="i-name"
             :invalid-feedback="invalidFeedbackName"
             :state="stateName"
@@ -18,15 +18,15 @@
             id="i-pwd"
             label="Password"
             label-for="i-pwd"
-            :invalid-feedback="invalidFeedback"
-            :state="state"
+            :invalid-feedback="invalidFeedbackPassword"
+            :state="statePassword"
         >
-          <b-form-input type="password" id="i-pwd" v-model="password" :state="state" trim></b-form-input>
+          <b-form-input type="password" id="i-pwd" v-model="password" :state="statePassword" trim></b-form-input>
         </b-form-group>
 
         <b-form-group
             id="i-c-pwd"
-            label="Conferma password"
+            label="Confirm password"
             label-for="i-c-pwd"
             :invalid-feedback="invalidFeedbackConfirmPassword"
             :state="stateConfirmPassword"
@@ -35,15 +35,19 @@
         </b-form-group>
 
         <b-form-group
-            id="i-token"
-            label="Token"
-            label-for="i-token"
+            id="i-words"
         >
-          <span class="copy-container"><b-icon width="18" variant="primary" icon="clipboard" @click="onCopyContentClick"></b-icon></span>
-          <b-form-textarea no-auto-shrink no-resize style="padding-right: 28px" disabled type="text" id="i-token" v-model="token" trim></b-form-textarea>
+          <label>Words<span class="copy-container"><b-icon width="18" variant="primary" icon="clipboard"
+                                                             @click="onCopyContentClick"></b-icon></span></label>
+
+          <div class="row">
+            <div class="col-3" v-for="word in accountCreation.words" :key="word">
+              <b-badge variant="success">{{ word }}</b-badge>
+            </div>
+          </div>
         </b-form-group>
 
-        <b-button @click="onCreateAccountClick" variant="primary" :disabled="!state || !stateConfirmPassword || !stateName">Crea</b-button>
+        <b-button @click="onCreateAccountClick" variant="primary" :disabled="!statePassword || !stateConfirmPassword || !stateName">Create</b-button>
       </div>
     </div>
   </div>
@@ -51,7 +55,7 @@
 
 <script>
 import {RemoteNode, AccountHelper, Algorithm} from "hotweb3"
-import {getSessionPeriod, EventBus} from "../../internal/utils";
+import {getSessionPeriod, EventBus, showInfoToast, showErrorToast} from "../../internal/utils";
 
 export default {
   name: "NewWallet",
@@ -60,39 +64,44 @@ export default {
       name: null,
       confirmPassword: null,
       password: null,
-      token: null
+      accountCreation: {
+        words: ["marine", "one", "doctor", "sponsor", "ecology", "about", "concert", "canoe",
+          "dinosaur", "embody", "flight", "cheap", "little", "lizard", "space", "north", "nothing", "where", "tomorrow",
+          "dress", "pupil", "axis", "spoil", "clap", "coral", "napkin", "style", "nasty", "warm", "ball", "viable", "science",
+          "vivid", "arrive", "pony", "hire"]
+      }
     }
   },
   computed: {
     stateName() {
       return this.name === null ? null : this.name.length > 0
     },
-    state() {
+    statePassword() {
       return this.password === null ? null : this.password.length >= 8
     },
     stateConfirmPassword() {
       return this.confirmPassword === null ? null : (this.confirmPassword.length >= 8 && this.confirmPassword === this.password)
     },
-    invalidFeedback() {
+    invalidFeedbackPassword() {
       if (this.password === null) {
         return null
       }
       if (this.password.length > 0) {
-        return 'Si prega di inserire almeno 8 caratteri'
+        return 'Please enter at least 8 characters'
       }
-      return 'Si prega di inserire una password'
+      return 'Please enter a password'
     },
     invalidFeedbackConfirmPassword() {
       if (this.confirmPassword === null) {
         return null
       }
-      return 'Le password non corrispondono'
+      return 'The passwords don\'t match'
     },
     invalidFeedbackName() {
       if (this.name === null) {
         return null
       }
-      return "Si prega di inserire il nome dell'account"
+      return 'Please enter the account\'s name'
     }
   },
   methods: {
@@ -118,40 +127,21 @@ export default {
 
       }).catch(err => {
         EventBus.$emit('showSpinner', false)
-        this.$bvToast.toast("Errore durante la creazione dell'account", {
-          title: 'Nuovo Account',
-          autoHideDelay: 5000,
-          variant: 'danger',
-          solid: true
-        })
+        showErrorToast(this, 'New account', 'Error during account creation')
       })
     },
     onCopyContentClick() {
       navigator.clipboard.writeText(this.token).then(() => {
-        this.$bvToast.toast("Token copiato", {
-          title: 'Token',
-          autoHideDelay: 1500,
-          variant: 'info',
-          solid: true
-        })
+        showInfoToast(this, 'Info', 'Words copied to clipboard')
       })
     }
-  },
-  created() {
-    this.token = AccountHelper.generateEntropy()
   }
 }
 </script>
 
 <style lang="scss" scoped>
 .copy-container {
-  position: absolute;
-  right: 0;
-  margin-right: 25px;
-  margin-top: 20px;
-}
-
-textarea {
-  overflow: hidden;
+  margin-left: 8px;
+  cursor: pointer;
 }
 </style>

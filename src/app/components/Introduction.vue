@@ -4,7 +4,7 @@
       <h6 class="title">Are you new to Hotwallet ?</h6>
 
       <b-button @click="onNewAccountClick" variant="outline-primary mt-3">Create account</b-button>
-      <p class="mt-3">oppure</p>
+      <p class="mt-3">or</p>
       <b-button @click="onImportAccountClick" variant="outline-primary">Import account</b-button>
     </div>
 
