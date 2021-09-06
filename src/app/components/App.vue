@@ -59,8 +59,10 @@ export default {
     // check if logged
     this.$browser.getFromStorage('account', account => {
       if (account) {
-        if (account.sessionPeriod && new Date() > new Date(account.sessionPeriod) && this.$route.path !== '/login') {
-          this.$router.replace('/login')
+        if (account.sessionPeriod && new Date() > new Date(account.sessionPeriod)) {
+          if (this.$route.path !== '/login') {
+            this.$router.replace('/login')
+          }
         } else if (this.$route.path !== '/home') {
           this.$router.replace('/home')
         }

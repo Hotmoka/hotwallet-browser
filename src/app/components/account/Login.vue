@@ -1,6 +1,6 @@
 <template>
-    <div class="content">
-      <h6 class="mt-4 mb-4">Login</h6>
+    <div class="content text-center">
+      <h6 class="title">Login</h6>
 
       <div class="d-flex justify-content-center">
         <div class="text-left form-container">
@@ -14,29 +14,25 @@
             <b-form-input type="password" id="i-pwd" v-model="password" :state="state" trim></b-form-input>
           </b-form-group>
 
-          <b-button @click="onLoginClick" variant="primary" :disabled="!btnDisabled">Login</b-button>
+          <b-button @click="onLoginClick" variant="primary" :disabled="!state">Login</b-button>
         </div>
       </div>
     </div>
 </template>
 
 <script>
-import {AccountHelper} from "hotweb3";
-import {getSessionPeriod} from "../../internal/utils";
+import {AccountHelper, Bip39Dictionary} from "hotweb3";
+import {getSessionPeriod, showErrorToast} from "../../internal/utils";
 
 export default {
   name: "Login",
   data() {
     return {
-      errorMessage: null,
       password: null
     }
   },
   computed: {
     state() {
-      return this.password === null ? null : (this.password.length >= 8 && this.errorMessage === null)
-    },
-    btnDisabled() {
       return this.password === null ? null : this.password.length >= 8
     },
     invalidFeedback() {
@@ -44,36 +40,32 @@ export default {
         return null
       }
 
-      if (this.errorMessage) {
-        return this.errorMessage
-      }
-
       if (this.password.length > 0) {
-        return 'Si prega di inserire almeno 8 caratteri'
+        return 'Please enter at least 8 characters'
       }
 
-      return 'Si prega di inserire la password'
+      return 'Please enter a password'
     },
   },
   methods: {
     onLoginClick() {
-      this.errorMessage = null
-      this.$browser.storage.local.get('account').then(result => {
+      this.$browser.getFromStorage('account', account => {
+        if (account) {
+          const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.password, Bip39Dictionary.ENGLISH, account.entropy)
 
-        if (result && result.account) {
-          const {entropy, keyPair} = result.account
-
-          if (!AccountHelper.checkPassword(entropy, this.password, keyPair.publicKey, keyPair.privateKey)) {
-            this.errorMessage = 'Password non corretta'
+          if (keyPair.publicKey === account.publicKey) {
+            account.sessionPeriod = getSessionPeriod()
+            this.$browser.setToStorage({
+              account: {
+                ...account
+              }
+            }, () => this.$router.replace("/home"))
           } else {
-
-            result.account.sessionPeriod = getSessionPeriod()
-            this.$browser.storage.local.set({...result}).then(() => {
-              this.$router.replace("/home")
-            })
+            showErrorToast(this, 'Login', 'Wrong password')
           }
+        } else {
+          showErrorToast(this, 'Login', 'Cannot retrieve account')
         }
-
       })
     }
   }
@@ -81,5 +73,8 @@ export default {
 </script>
 
 <style scoped>
-
+.title {
+  margin-top: 4rem;
+  margin-bottom: 2rem;
+}
 </style>

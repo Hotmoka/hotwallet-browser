@@ -14,7 +14,12 @@
 
       <hr/>
 
-      <b-button variant="outline-danger" @click="onLogoutClick">Logout</b-button>
+      <div class="btn-logout">
+        <div class="d-flex justify-content-center">
+          <b-button variant="outline-danger" @click="onLogoutClick">Logout</b-button>
+        </div>
+      </div>
+
     </div>
   </div>
 </template>
@@ -44,7 +49,6 @@ export default {
         updates.forEach(update => {
           if (update.field && update.field.name) {
             if (this.account.hasOwnProperty(update.field.name)) {
-              console.log('updating', update.field.name)
               this.account[update.field.name] = update.value.value
             }
           }
@@ -57,31 +61,24 @@ export default {
             balanceRed: this.account.balanceRed
           }
         })
-
-        console.log('setting to storage')
       }).catch(err => {
         EventBus.$emit('showSpinner', false)
         showErrorToast(this, 'Account', 'Cannot retrieve account details')
       })
     },
     onLogoutClick() {
-      this.$browser.storage.local.get('account').then(result => {
-        if (result && result.account) {
-          result.account.sessionPeriod = new Date().getTime()
-          this.$browser.storage.local.set({
-            ...result
-          }).then(() => {
-            this.$router.replace("/login")
-          })
+      this.account.sessionPeriod = new Date().getTime()
+      this.$browser.setToStorage({
+        account: {
+          ...this.account
         }
-      })
+      }, () => this.$router.replace("/login"))
     }
   },
   created() {
     this.$browser.getFromStorage('account', account => {
       if (account) {
         this.account = {...this.account, ...account}
-        console.log('this,', this.account)
         this.getAccountInfo(this.account.reference)
       }
     })
@@ -90,4 +87,10 @@ export default {
 </script>
 
 <style scoped>
+.btn-logout {
+  width: 100%;
+  position: absolute;
+  bottom: 2rem;
+  right: 1px;
+}
 </style>
