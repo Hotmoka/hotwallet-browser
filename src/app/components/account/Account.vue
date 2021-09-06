@@ -14,7 +14,14 @@
           <b-form-input type="text" id="i-name" v-model="account.name" :state="stateName" trim></b-form-input>
         </b-form-group>
 
-        <p> {{account.address.transaction.hash}}</p>
+        <b-form-group
+            v-if="account.reference"
+            id="i-address"
+        >
+          <label>Address</label>
+          <p class="address"> {{account.reference.transaction.hash}}#{{ parseInt(account.reference.progressive).toString(16) }}</p>
+        </b-form-group>
+
 
         <div v-if="account.words">
           <label>Words<span class="copy-container"><b-icon width="18" variant="primary" icon="clipboard"
@@ -28,8 +35,17 @@
 
         </div>
 
-        <b-button @click="onSaveAccountClick" variant="primary"
+        <b-button v-if="editAccount"
+                  @click="onSaveAccountClick"
+                  variant="primary"
+                  style="margin-top: 1.5rem;"
                   :disabled="!stateName">Save edits
+        </b-button>
+
+        <b-button v-if="!editAccount"
+                  @click="onContinueClick"
+                  variant="primary"
+                  style="margin-top: 1.5rem;">Continue
         </b-button>
 
       </div>
@@ -43,6 +59,9 @@ import {AccountHelper, Bip39Dictionary} from "hotweb3";
 
 export default {
   name: "Account",
+  props: {
+    editAccount: Boolean
+  },
   data() {
     return {
       account: null
@@ -60,23 +79,26 @@ export default {
     }
   },
   methods: {
+    onContinueClick() {
+      this.$router.replace('/home')
+    },
     onSaveAccountClick() {
       // TODO
     },
     onCopyContentClick() {
-      navigator.clipboard.writeText(this.token).then(() => {
+      const words = this.account.words.join(' ')
+      navigator.clipboard.writeText(words).then(() => {
         showInfoToast(this, 'Info', 'Words copied to clipboard')
       })
     }
   },
   created() {
     this.$browser.getFromStorage('account', account => {
-      console.log(account)
       if (!account) {
         showErrorToast(this, 'Account', 'Cannot retrieve account')
       } else {
         this.account = account
-        this.account.words = AccountHelper.generateMnemonicWordsFrom(account.entropy, account.storageReference.transaction.hash, Bip39Dictionary.ENGLISH)
+        this.account.words = AccountHelper.generateMnemonicWordsFrom(account.entropy, account.reference.transaction.hash, Bip39Dictionary.ENGLISH)
       }
     })
   }

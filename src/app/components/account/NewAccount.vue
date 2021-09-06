@@ -88,7 +88,7 @@
 
 <script>
 import {RemoteNode, AccountHelper, Algorithm, Bip39Dictionary, StorageReferenceModel} from "hotweb3"
-import {EventBus, showErrorToast} from "../../internal/utils";
+import {EventBus, getSessionPeriod, showErrorToast} from "../../internal/utils";
 
 export default {
   name: "NewWallet",
@@ -191,8 +191,9 @@ export default {
 
         this.$browser.setToStorage({
           account: {
+            sessionPeriod: getSessionPeriod(),
             name: this.newAccount.name,
-            address: account.reference,
+            reference: account.reference,
             entropy: keyPair.entropy,
             publicKey: keyPair.publicKey,
           }
