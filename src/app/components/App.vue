@@ -57,26 +57,20 @@ export default {
     }
 
     // check if logged
-    this.$browser.storage.local.get('account').then(result => {
-      if (result && result.account) {
-        if (result.account.sessionPeriod && new Date() > new Date(result.account.sessionPeriod)) {
+    this.$browser.getFromStorage('account', account => {
+      if (account) {
+        if (account.sessionPeriod && new Date() > new Date(account.sessionPeriod) && this.$route.path !== '/login') {
           this.$router.replace('/login')
-        } else {
+        } else if (this.$route.path !== '/home') {
           this.$router.replace('/home')
         }
-      } else {
-        console.error('No account found')
       }
-    }).catch(err => console.error(err))
+    })
   }
 };
 </script>
 <style lang="scss">
-$theme-colors: (
-    "primary": #00BEBA
-);
-@import "~bootstrap/scss/bootstrap.scss";
-@import '~bootstrap-vue/dist/bootstrap-vue.css';
+@import '../assets/scss/variables';
 
 #app-content {
   height: 100%;
@@ -95,6 +89,12 @@ $theme-colors: (
 
 .form-container, .form-container button {
   width: 100% !important;
+}
+
+.address {
+  color: theme-color('secondary');
+  margin-bottom: 0;
+  word-break: break-all;
 }
 
 @media only screen and (max-width: 768px) {
