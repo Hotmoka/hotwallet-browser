@@ -10,6 +10,7 @@
             label-for="i-name"
             :invalid-feedback="invalidFeedbackName"
             :state="stateName"
+            :disabled="!editAccount"
         >
           <b-form-input type="text" id="i-name" v-model="account.name" :state="stateName" trim></b-form-input>
         </b-form-group>
@@ -23,12 +24,12 @@
         </b-form-group>
 
 
-        <div v-if="account.words">
+        <div v-if="words">
           <label>Words<span class="copy-container"><b-icon width="18" variant="primary" icon="clipboard"
                                                            @click="onCopyContentClick"></b-icon></span></label>
 
           <div class="row">
-            <div class="col-3" v-for="word in account.words" :key="word">
+            <div class="col-3" v-for="(word,index) in words" :key="'word' + index">
               <b-badge variant="success">{{ word }}</b-badge>
             </div>
           </div>
@@ -56,6 +57,7 @@
 <script>
 import {showErrorToast, showInfoToast} from "../../internal/utils";
 import {AccountHelper, Bip39Dictionary} from "hotweb3";
+import {replaceRoute} from "../../internal/router";
 
 export default {
   name: "Account",
@@ -64,7 +66,8 @@ export default {
   },
   data() {
     return {
-      account: null
+      account: null,
+      words: []
     }
   },
   computed: {
@@ -83,10 +86,14 @@ export default {
       this.$router.replace('/home')
     },
     onSaveAccountClick() {
-      // TODO
+      this.$browser.setToStorage({
+        account: {
+          ...this.account
+        }
+      }, () => replaceRoute("/home"))
     },
     onCopyContentClick() {
-      const words = this.account.words.join(' ')
+      const words = this.words.join(' ')
       navigator.clipboard.writeText(words).then(() => {
         showInfoToast(this, 'Info', 'Words copied to clipboard')
       })
@@ -98,7 +105,7 @@ export default {
         showErrorToast(this, 'Account', 'Cannot retrieve account')
       } else {
         this.account = account
-        this.account.words = AccountHelper.generateMnemonicWordsFrom(account.entropy, account.reference.transaction.hash, Bip39Dictionary.ENGLISH)
+        this.words = AccountHelper.generateMnemonicWordsFrom(account.entropy, account.reference.transaction.hash, Bip39Dictionary.ENGLISH)
       }
     })
   }

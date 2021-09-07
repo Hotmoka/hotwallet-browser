@@ -13,14 +13,16 @@
 
 <script>
 
+import {pushRoute} from "../internal/router";
+
 export default {
-  name: "Introduction",
+  name: "Welcome",
   methods: {
     onNewAccountClick() {
-      this.$router.push('/new-account')
+      pushRoute('/new-account')
     },
     onImportAccountClick() {
-      this.$router.push('/import-account')
+      pushRoute('/import-account')
     }
   }
 };

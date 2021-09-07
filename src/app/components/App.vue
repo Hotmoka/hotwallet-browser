@@ -53,21 +53,7 @@ export default {
     if (this.$route.redirectedFrom && this.$route.redirectedFrom.indexOf('/transaction') !== -1) {
       const uuid = this.$route.redirectedFrom.split(":")[1]
       this.$router.replace({ name: 'transaction', params: { uuid: uuid }})
-      return
     }
-
-    // check if logged
-    this.$browser.getFromStorage('account', account => {
-      if (account) {
-        if (account.sessionPeriod && new Date() > new Date(account.sessionPeriod)) {
-          if (this.$route.path !== '/login') {
-            this.$router.replace('/login')
-          }
-        } else if (this.$route.path !== '/home') {
-          this.$router.replace('/home')
-        }
-      }
-    })
   }
 };
 </script>

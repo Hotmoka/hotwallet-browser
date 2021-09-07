@@ -88,7 +88,8 @@
 
 <script>
 import {RemoteNode, AccountHelper, Algorithm, Bip39Dictionary, StorageReferenceModel} from "hotweb3"
-import {EventBus, getSessionPeriod, showErrorToast} from "../../internal/utils";
+import {EventBus, getSessionPeriod, showErrorToast, WrapNetworkPromiseTask} from "../../internal/utils";
+import {replaceRoute} from "../../internal/router";
 
 export default {
   name: "NewWallet",
@@ -175,16 +176,17 @@ export default {
   methods: {
     createAccountFromFaucet: async function(balance) {
       try {
+        EventBus.$emit('showSpinner', true)
         const remoteNode = new RemoteNode(this.$blockchainConfig.remoteNodeUrl)
         const gamete = await remoteNode.getGamete()
         const balanceOfFaucet = await this.getBalanceOfAccount(gamete.transaction.hash)
 
         if ((balance - balanceOfFaucet) > 0) {
+          EventBus.$emit('showSpinner', false)
           showErrorToast(this, 'New account', 'Cannot transfer more than ' + balanceOfFaucet + ' from faucet')
           return
         }
 
-        EventBus.$emit('showSpinner', true)
         const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.newAccount.password, Bip39Dictionary.ENGLISH)
         const account = await new AccountHelper(remoteNode).createAccountFromFaucet(Algorithm.ED25519, keyPair, balance.toString(), "0")
         EventBus.$emit('showSpinner', false)
@@ -199,7 +201,7 @@ export default {
           }
         }, committed => {
           if (committed) {
-            this.$router.replace('/account')
+            replaceRoute('/account')
           } else {
             showErrorToast(this, 'New account', 'Cannot save account to Hotwallet')
           }
@@ -228,17 +230,15 @@ export default {
       }
     },
     getBalanceOfAccount: async function (hashOfStorageReference) {
-      const balance = await new AccountHelper(new RemoteNode(this.$blockchainConfig.remoteNodeUrl)).getBalance(StorageReferenceModel.newStorageReference(hashOfStorageReference))
+      const balance = await new AccountHelper(new RemoteNode(this.$blockchainConfig.remoteNodeUrl))
+          .getBalance(StorageReferenceModel.newStorageReference(hashOfStorageReference))
       return Number(balance)
     },
     isFaucetAllowed() {
-      EventBus.$emit('showSpinner', true)
-      new RemoteNode(this.$blockchainConfig.remoteNodeUrl).allowsUnsignedFaucet()
-          .then(allowsUnsignedFaucet => {
-            EventBus.$emit('showSpinner', false)
-            this.faucet.allowsUnsignedFaucet = allowsUnsignedFaucet
-          })
-          .catch(() => EventBus.$emit('showSpinner', false))
+      const promiseTask = new RemoteNode(this.$blockchainConfig.remoteNodeUrl).allowsUnsignedFaucet()
+      WrapNetworkPromiseTask(promiseTask, (allowsUnsignedFaucet, error) => {
+        this.faucet.allowsUnsignedFaucet = !error && allowsUnsignedFaucet
+      })
     }
   },
   created() {

@@ -13,6 +13,7 @@
       </div>
 
       <hr/>
+      <b-button variant="outline-primary" @click="onEditAccountClick">Edit account</b-button>
 
       <div class="btn-logout">
         <div class="d-flex justify-content-center">
@@ -26,7 +27,8 @@
 
 <script>
 import {RemoteNode, StorageReferenceModel} from "hotweb3";
-import {EventBus, showErrorToast} from "../internal/utils";
+import {WrapNetworkPromiseTask, showErrorToast} from "../internal/utils";
+import {pushRoute, replaceRoute} from "../internal/router";
 
 export default {
   name: "Home",
@@ -41,29 +43,31 @@ export default {
   },
   methods: {
     getAccountInfo(accountReference) {
-      EventBus.$emit('showSpinner', true)
-      new RemoteNode(this.$blockchainConfig.remoteNodeUrl).getState(StorageReferenceModel.newStorageReference(accountReference.transaction.hash)).then(result => {
-        EventBus.$emit('showSpinner', false)
 
-        const updates = result.updates
-        updates.forEach(update => {
-          if (update.field && update.field.name) {
-            if (this.account.hasOwnProperty(update.field.name)) {
-              this.account[update.field.name] = update.value.value
+      const promiseTask = new RemoteNode(this.$blockchainConfig.remoteNodeUrl)
+          .getState(StorageReferenceModel.newStorageReference(accountReference.transaction.hash))
+
+      WrapNetworkPromiseTask(promiseTask, (result, error) => {
+        if (error) {
+          showErrorToast(this, 'Account', error.message ? error.message : 'Cannot retrieve account details')
+        } else {
+          const updates = result.updates
+          updates.forEach(update => {
+            if (update.field && update.field.name) {
+              if (this.account.hasOwnProperty(update.field.name)) {
+                this.account[update.field.name] = update.value.value
+              }
             }
-          }
-        })
+          })
 
-        this.$browser.setToStorage({
-          account: {
-            ...this.account,
-            balance: this.account.balance,
-            balanceRed: this.account.balanceRed
-          }
-        })
-      }).catch(err => {
-        EventBus.$emit('showSpinner', false)
-        showErrorToast(this, 'Account', 'Cannot retrieve account details')
+          this.$browser.setToStorage({
+            account: {
+              ...this.account,
+              balance: this.account.balance,
+              balanceRed: this.account.balanceRed
+            }
+          })
+        }
       })
     },
     onLogoutClick() {
@@ -72,7 +76,10 @@ export default {
         account: {
           ...this.account
         }
-      }, () => this.$router.replace("/login"))
+      }, () => replaceRoute('/login'))
+    },
+    onEditAccountClick() {
+      pushRoute('/edit-account')
     }
   },
   created() {

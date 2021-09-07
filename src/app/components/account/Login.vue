@@ -23,6 +23,7 @@
 <script>
 import {AccountHelper, Bip39Dictionary} from "hotweb3";
 import {getSessionPeriod, showErrorToast} from "../../internal/utils";
+import {replaceRoute} from "../../internal/router";
 
 export default {
   name: "Login",
@@ -59,7 +60,7 @@ export default {
               account: {
                 ...account
               }
-            }, () => this.$router.replace("/home"))
+            }, () => replaceRoute("/home"))
           } else {
             showErrorToast(this, 'Login', 'Wrong password')
           }

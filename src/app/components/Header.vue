@@ -1,6 +1,6 @@
 <template>
   <div class="header">
-      <img src="../assets/img/hotmoka_logo.png" height="32" width="32" alt="hotmoka">
+      <img src="../assets/img/hotmoka_logo.png" height="32" width="32" alt="hotmoka" @click="onHeaderImageClick">
       <h6 class="hotwallet-title text-secondary">Hotwallet</h6>
       <b-form-select
           v-model="selectedNetwork"
@@ -13,6 +13,7 @@
 
 <script>
 import {showInfoToast} from "../internal/utils";
+import {replaceRoute} from "../internal/router";
 
 export default {
   name: "Header",
@@ -43,6 +44,9 @@ export default {
         showInfoToast(this,'Network', 'Feature')
         this.selectedNetwork = this.networks[0].value
       }
+    },
+    onHeaderImageClick() {
+      replaceRoute('/home')
     }
   },
   created() {
@@ -63,6 +67,7 @@ export default {
 
 .header img {
   margin-right: 12px;
+  cursor: pointer;
 }
 
 .h-network {

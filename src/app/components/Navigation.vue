@@ -35,7 +35,7 @@ export default {
   methods: {
     setNavigationVisibility(path) {
       this.showNavigation = this.isPathForNavigation(path)
-      this.showNavigationContainer = path !== '/' && this.showNavigation
+      this.showNavigationContainer = path !== '/welcome' && this.showNavigation
     },
     isPathForNavigation(path) {
       return !['/login', '/home', '/account', '/transaction'].includes(path)
