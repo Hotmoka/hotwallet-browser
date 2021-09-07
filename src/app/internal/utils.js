@@ -27,3 +27,46 @@ export const showErrorToast = (vue, title, message) => {
 		toaster: 'b-toaster-top-center'
 	})
 }
+
+export const getAuthentication = vue => {
+	return new Promise(resolve => {
+		vue.$browser.getFromStorage('account', account => {
+			const result = {
+				authenticated: false,
+				hasAccount: false
+			}
+
+			if (account) {
+				result.hasAccount = true
+
+				if (account.sessionPeriod && new Date() <= new Date(account.sessionPeriod)) {
+					result.authenticated = true
+				}
+			}
+
+			resolve(result)
+		})
+	})
+}
+
+export const WrapTask = taskFunc => {
+
+	try {
+		EventBus.$emit('showSpinner', true)
+		taskFunc()
+	} catch (e) {
+		EventBus.$emit('showSpinner', false)
+	}
+}
+
+export const WrapNetworkPromiseTask = (promiseTask, resultFunc) => {
+
+	EventBus.$emit('showSpinner', true)
+	promiseTask.then(result => {
+		EventBus.$emit('showSpinner', false)
+		resultFunc(result, null)
+	}).catch(err => {
+		EventBus.$emit('showSpinner', false)
+		resultFunc(null, err)
+	})
+}
