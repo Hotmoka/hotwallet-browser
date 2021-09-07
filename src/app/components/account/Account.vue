@@ -20,7 +20,7 @@
             id="i-address"
         >
           <label>Address</label>
-          <p class="txt-secondary"> {{account.reference.transaction.hash}}#{{ parseInt(account.reference.progressive).toString(16) }}</p>
+          <p class="txt-secondary"> {{account.reference}}#{{ parseInt(account.nonce).toString(16) }}</p>
         </b-form-group>
 
 
@@ -84,11 +84,7 @@ export default {
       replaceRoute('/home')
     },
     onSaveAccountClick() {
-      this.$browser.setToStorage({
-        account: {
-          ...this.account
-        }
-      }).then(() => replaceRoute("/home"))
+      this.$browser.setToStorage({account: this.account}).then(() => replaceRoute("/home"))
     },
     onCopyContentClick() {
       const words = this.words.join(' ')
@@ -103,7 +99,7 @@ export default {
         showErrorToast(this, 'Account', 'Cannot retrieve account')
       } else {
         this.account = account
-        this.words = AccountHelper.generateMnemonicWordsFrom(account.entropy, account.reference.transaction.hash, Bip39Dictionary.ENGLISH)
+        this.words = AccountHelper.generateMnemonicWordsFrom(account.entropy, account.reference, Bip39Dictionary.ENGLISH)
       }
     })
   }

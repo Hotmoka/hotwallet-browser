@@ -50,9 +50,7 @@ export default {
           if (keyPair.publicKey === account.publicKey) {
             account.sessionPeriod = getSessionPeriod()
             this.$browser.setToStorage({
-              account: {
-                ...account
-              }
+              account: account
             }).then(() => replaceRoute("/home"))
           } else {
             showErrorToast(this, 'Login', 'Wrong password')

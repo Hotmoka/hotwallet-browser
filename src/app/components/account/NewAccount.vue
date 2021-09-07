@@ -176,17 +176,16 @@ export default {
           account: {
             sessionPeriod: getSessionPeriod(),
             name: this.newAccount.name,
-            reference: account.reference,
+            reference: account.reference.transaction.hash,
+            nonce: account.reference.progressive,
             entropy: keyPair.entropy,
             publicKey: keyPair.publicKey,
           }
         })
 
-        console.log('committed', committed)
         return Promise.resolve({committed: committed})
 
       }).then(result => {
-        console.log('result', result)
         if (result.error) {
           showErrorToast(this, 'New account', result.error)
         } else if (result.committed) {

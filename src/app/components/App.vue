@@ -12,7 +12,7 @@
     </template>
 
     <div class="container">
-      <div :class="isPopup ? '' : 'card'">
+      <div :class="isPopup ? 'popup' : 'card'">
         <Header/>
         <Navigation :isPopup="isPopup"/>
         <router-view></router-view>
@@ -69,6 +69,10 @@ export default {
   height: 100%;
 }
 
+.popup {
+  height: 100%;
+}
+
 .content {
   height: 100vh;
   overflow-y: auto;
@@ -85,10 +89,19 @@ export default {
   word-break: break-all;
 }
 
+.b-popover .popover-body {
+  padding: 0 !important;
+}
+
+.b-popover {
+  width: 200px;
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+}
 
 @media only screen and (max-width: 768px) {
   .content {
-    max-height: 488px;
+    max-height: 540px;
+    padding-bottom: 76px;
   }
 
   .container {
