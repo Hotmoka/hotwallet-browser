@@ -36,7 +36,6 @@ export const showErrorToast = (vue, title, message) => {
 export const getAuthentication = vue => {
 	return new Promise(resolve => {
 		vue.$browser.getFromStorage('account').then(account => {
-
 			const result = {
 				authenticated: false,
 				hasAccount: false
@@ -48,8 +47,6 @@ export const getAuthentication = vue => {
 					result.authenticated = true
 				}
 			}
-
-			console.log('aut', result)
 			resolve(result)
 		})
 	}).catch(err => console.error(err))

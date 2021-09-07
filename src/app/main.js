@@ -23,6 +23,8 @@ Vue.prototype.$blockchainConfig = {
 }
 
 const root = document.getElementById('app')
+Vue.prototype.$isPopup = root.attributes['app-type'].value === 'popup'
+
 new Vue({
   router,
   el: '#app',
