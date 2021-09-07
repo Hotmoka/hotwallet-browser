@@ -1,21 +1,22 @@
 <template>
-  <div>
-    <h6 class="mt-4 mb-4">Transazione</h6>
+  <div class="content">
+    <h6 class="mt-4 mb-4">Transaction</h6>
 
-    <h5>Confermi la transazione <span v-if="transaction.name">{{transaction.name}} </span> ?</h5>
-    <p>Amount: <span v-if="transaction.amount">{{transaction.amount}} Mokas </span> </p>
-    <b-button variant="success" @click="onYesClick">Si</b-button>
-    <b-button variant="danger"  @click="onNoClick">No</b-button>
+    <h5>Confirm transaction <span v-if="transaction.name">{{ transaction.name }} </span> ?</h5>
+    <p>Amount: <span v-if="transaction.amount">{{ transaction.amount }} Mokas </span></p>
+    <b-button variant="success" @click="onYesClick">Yes</b-button>
+    <b-button variant="danger" @click="onNoClick">No</b-button>
 
     <div id="overlay" v-if="showOverlay">
-      <b-icon icon="check-circle-fill" variant="success" style="width: 86px; height: 86px; margin-top: 14rem"></b-icon> <br/>
-      <h6 class="text-center" style="font-weight: bold; color: green; margin-top: 2rem;">Transazione eseguita correttamente</h6>
+      <b-icon icon="check-circle-fill" variant="success" style="width: 86px; height: 86px; margin-top: 14rem"></b-icon>
+      <br/>
+      <h6 class="text-center" style="font-weight: bold; color: green; margin-top: 2rem;">Transaction successful</h6>
     </div>
   </div>
 </template>
 
 <script>
-import {EventBus} from "../internal/utils";
+import {showErrorToast, WrapPromiseTask} from "../internal/utils";
 
 import {
   Algorithm,
@@ -49,21 +50,20 @@ export default {
   },
   methods: {
     onYesClick() {
-        EventBus.$emit('showSpinner', true)
-      this.addTransaction(this).then(result => {
-        EventBus.$emit('showSpinner', false)
+
+      WrapPromiseTask(async () => {
+        return this.addTransaction()
+      }).then(result => {
         this.showOverlay = true
 
         this.sendTransactionResponse({
           status: true,
           storageValue: result
         }, 3000)
-      }).catch(e => {
-        EventBus.$emit('showSpinner', false)
-
-        console.error(e)
+      }).catch(err => {
+        console.error(err)
         this.sendTransactionResponse({
-          error: e.message
+          error: err.message
         })
       })
     },
@@ -92,55 +92,53 @@ export default {
       }, timeout)
     },
     getTransactionDetails() {
-      EventBus.$emit('showSpinner', true)
-      this.$browser.storage.local.get('transactionMap').then(result => {
-        EventBus.$emit('showSpinner', false)
-
+      this.$browser.getFromStorage('transactionMap').then(result => {
         if (result && result.transactionMap && result.transactionMap.hasOwnProperty(this.uuid)) {
-            const transaction = result.transactionMap[this.uuid]
-            this.transaction = {...transaction}
+          const transaction = result.transactionMap[this.uuid]
+          this.transaction = {...transaction}
+        } else {
+          showErrorToast(this, 'Transaction', 'Cannot begin transaction')
+          this.sendTransactionResponse({
+            error: 'Cannot begin transaction'
+          })
         }
       })
     },
-    getPrivateKey: async (self) => {
-      const result = await self.$browser.storage.local.get('account')
-      if (result && result.account) {
-        return result.account.keyPair.privateKey.trim()
-      }
-
+    generatePrivateKey: async function() {
+      // TODO
       return null
     },
-    addTransaction: async (self) => {
-      const privateKey = await self.getPrivateKey(self)
-      const remoteNode = new RemoteNode(self.$blockchainConfig.remoteNodeUrl, new Signer(Algorithm.ED25519, privateKey));
+    addTransaction: async function() {
+      const privateKey = await this.generatePrivateKey()
+      const remoteNode = new RemoteNode(this.$blockchainConfig.remoteNodeUrl, new Signer(Algorithm.ED25519, privateKey));
 
-      const receiver = new StorageReferenceModel(new TransactionReferenceModel('local', self.transaction.receiver), '0')
-      const eoaCaller = new StorageReferenceModel(new TransactionReferenceModel('local', self.transaction.caller), '0')
+      const receiver = new StorageReferenceModel(new TransactionReferenceModel('local', this.transaction.receiver), '0')
+      const eoaCaller = new StorageReferenceModel(new TransactionReferenceModel('local', this.transaction.caller), '0')
       const nonceOfEoa = await remoteNode.getNonceOf(eoaCaller)
       const gasPrice = await remoteNode.getGasPrice()
       const chainId = await remoteNode.getChainId()
 
-      const method = self.transaction.methodSignature.voidMethod ?
-          new VoidMethodSignatureModel(self.transaction.methodSignature.definingClass, self.transaction.methodSignature.methodName, self.transaction.methodSignature.formals) :
-          new NonVoidMethodSignatureModel(self.transaction.methodSignature.definingClass, self.transaction.methodSignature.methodName, self.transaction.methodSignature.returnType, self.transaction.methodSignature.formals)
+      const method = this.transaction.methodSignature.voidMethod ?
+          new VoidMethodSignatureModel(this.transaction.methodSignature.definingClass, this.transaction.methodSignature.methodName, this.transaction.methodSignature.formals) :
+          new NonVoidMethodSignatureModel(this.transaction.methodSignature.definingClass, this.transaction.methodSignature.methodName, this.transaction.methodSignature.returnType, this.transaction.methodSignature.formals)
 
       return await remoteNode.addInstanceMethodCallTransaction(new InstanceMethodCallTransactionRequestModel(
-          eoaCaller,
-          nonceOfEoa,
-          chainId,
-          '30000',
-          gasPrice,
-          new TransactionReferenceModel('local', self.transaction.smartContractAddress),
-          method,
-          receiver,
-          self.transaction.actuals,
-          remoteNode.signer
+              eoaCaller,
+              nonceOfEoa,
+              chainId,
+              '30000',
+              gasPrice,
+              new TransactionReferenceModel('local', this.transaction.smartContractAddress),
+              method,
+              receiver,
+              this.transaction.actuals,
+              remoteNode.signer
           )
       );
     }
   },
   created() {
-      this.getTransactionDetails()
+    this.getTransactionDetails()
   }
 }
 </script>
