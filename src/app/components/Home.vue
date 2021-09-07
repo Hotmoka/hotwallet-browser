@@ -2,7 +2,7 @@
   <div class="content text-center">
     <div v-if="account">
       <h6 class="mt-4 mb-4">{{ account.name }}</h6>
-      <p class="address" v-if="account.reference">
+      <p class="txt-secondary" v-if="account.reference">
         {{ account.reference.transaction.hash }}#{{ parseInt(account.reference.progressive).toString(16) }}</p>
       <hr/>
 
@@ -27,7 +27,7 @@
 
 <script>
 import {RemoteNode, StorageReferenceModel} from "hotweb3";
-import {WrapNetworkPromiseTask, showErrorToast} from "../internal/utils";
+import {WrapPromiseTask, showErrorToast} from "../internal/utils";
 import {pushRoute, replaceRoute} from "../internal/router";
 
 export default {
@@ -43,31 +43,29 @@ export default {
   },
   methods: {
     getAccountInfo(accountReference) {
-
-      const promiseTask = new RemoteNode(this.$blockchainConfig.remoteNodeUrl)
-          .getState(StorageReferenceModel.newStorageReference(accountReference.transaction.hash))
-
-      WrapNetworkPromiseTask(promiseTask, (result, error) => {
-        if (error) {
-          showErrorToast(this, 'Account', error.message ? error.message : 'Cannot retrieve account details')
-        } else {
-          const updates = result.updates
-          updates.forEach(update => {
-            if (update.field && update.field.name) {
-              if (this.account.hasOwnProperty(update.field.name)) {
-                this.account[update.field.name] = update.value.value
-              }
+      WrapPromiseTask(async () => {
+          return new RemoteNode(this.$blockchainConfig.remoteNodeUrl)
+              .getState(StorageReferenceModel.newStorageReference(accountReference.transaction.hash))
+      }).then(result => {
+        const updates = result.updates
+        updates.forEach(update => {
+          if (update.field && update.field.name) {
+            if (this.account.hasOwnProperty(update.field.name)) {
+              this.account[update.field.name] = update.value.value
             }
-          })
+          }
+        })
 
-          this.$browser.setToStorage({
-            account: {
-              ...this.account,
-              balance: this.account.balance,
-              balanceRed: this.account.balanceRed
-            }
-          })
-        }
+        this.$browser.setToStorage({
+          account: {
+            ...this.account,
+            balance: this.account.balance,
+            balanceRed: this.account.balanceRed
+          }
+        })
+
+      }).catch(error => {
+        showErrorToast(this, 'Account', error.message ? error.message : 'Cannot retrieve account details')
       })
     },
     onLogoutClick() {
@@ -76,14 +74,14 @@ export default {
         account: {
           ...this.account
         }
-      }, () => replaceRoute('/login'))
+      }).then(() => replaceRoute('/login'))
     },
     onEditAccountClick() {
       pushRoute('/edit-account')
     }
   },
   created() {
-    this.$browser.getFromStorage('account', account => {
+    this.$browser.getFromStorage('account').then(account => {
       if (account) {
         this.account = {...this.account, ...account}
         this.getAccountInfo(this.account.reference)

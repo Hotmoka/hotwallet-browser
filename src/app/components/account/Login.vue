@@ -24,6 +24,7 @@
 import {AccountHelper, Bip39Dictionary} from "hotweb3";
 import {getSessionPeriod, showErrorToast} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
+import {statePassword, invalidPasswordFeedback} from "../../internal/validators";
 
 export default {
   name: "Login",
@@ -34,23 +35,15 @@ export default {
   },
   computed: {
     state() {
-      return this.password === null ? null : this.password.length >= 8
+      return statePassword(this.password)
     },
     invalidFeedback() {
-      if (this.password === null) {
-        return null
-      }
-
-      if (this.password.length > 0) {
-        return 'Please enter at least 8 characters'
-      }
-
-      return 'Please enter a password'
+      return invalidPasswordFeedback(this.password)
     },
   },
   methods: {
     onLoginClick() {
-      this.$browser.getFromStorage('account', account => {
+      this.$browser.getFromStorage('account').then(account => {
         if (account) {
           const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.password, Bip39Dictionary.ENGLISH, account.entropy)
 
@@ -60,7 +53,7 @@ export default {
               account: {
                 ...account
               }
-            }, () => replaceRoute("/home"))
+            }).then(() => replaceRoute("/home"))
           } else {
             showErrorToast(this, 'Login', 'Wrong password')
           }

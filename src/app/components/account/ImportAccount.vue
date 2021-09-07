@@ -51,6 +51,12 @@
 <script>
 import {AccountHelper, RemoteNode} from "hotweb3";
 import {EventBus, showErrorToast} from "../../internal/utils";
+import {
+  fieldNotEmptyFeedback,
+  invalidPasswordFeedback,
+  stateFieldNotEmpty,
+  statePassword
+} from "../../internal/validators";
 
 export default {
   name: "ImportWallet",
@@ -65,25 +71,16 @@ export default {
   },
   computed: {
     statePassword() {
-      return this.password === null ? null : this.password.length >= 8
+      return statePassword(this.password)
     },
     stateName() {
-      return this.name === null ? null : this.name.length > 0
+      return stateFieldNotEmpty(this.name)
     },
     invalidFeedbackPassword() {
-      if (this.password === null) {
-        return null
-      }
-      if (this.password.length > 0) {
-        return 'Please enter at least 8 characters'
-      }
-      return 'Please enter a password'
+      return invalidPasswordFeedback(this.password)
     },
     invalidFeedbackName() {
-      if (this.name === null) {
-        return null
-      }
-      return "Please enter the account\'s name"
+      return fieldNotEmptyFeedback(this.name, "Please enter the account\'s name")
     }
   },
   methods: {

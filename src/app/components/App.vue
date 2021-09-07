@@ -79,11 +79,12 @@ export default {
   width: 100% !important;
 }
 
-.address {
+.txt-secondary {
   color: theme-color('secondary');
   margin-bottom: 0;
   word-break: break-all;
 }
+
 
 @media only screen and (max-width: 768px) {
   .content {

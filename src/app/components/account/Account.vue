@@ -10,9 +10,9 @@
             label-for="i-name"
             :invalid-feedback="invalidFeedbackName"
             :state="stateName"
-            :disabled="!editAccount"
         >
-          <b-form-input type="text" id="i-name" v-model="account.name" :state="stateName" trim></b-form-input>
+          <b-form-input v-if="editAccount" type="text" id="i-name" v-model="account.name" :state="stateName" :disabled="!editAccount" trim></b-form-input>
+          <p v-if="!editAccount" class="txt-secondary">{{account.name}}</p>
         </b-form-group>
 
         <b-form-group
@@ -20,7 +20,7 @@
             id="i-address"
         >
           <label>Address</label>
-          <p class="address"> {{account.reference.transaction.hash}}#{{ parseInt(account.reference.progressive).toString(16) }}</p>
+          <p class="txt-secondary"> {{account.reference.transaction.hash}}#{{ parseInt(account.reference.progressive).toString(16) }}</p>
         </b-form-group>
 
 
@@ -58,6 +58,7 @@
 import {showErrorToast, showInfoToast} from "../../internal/utils";
 import {AccountHelper, Bip39Dictionary} from "hotweb3";
 import {replaceRoute} from "../../internal/router";
+import {fieldNotEmptyFeedback, stateFieldNotEmpty} from "../../internal/validators";
 
 export default {
   name: "Account",
@@ -72,25 +73,22 @@ export default {
   },
   computed: {
     stateName() {
-      return this.account.name === null ? null : this.account.name.length > 0
+      return stateFieldNotEmpty(this.account.name)
     },
     invalidFeedbackName() {
-      if (this.account.name === null) {
-        return null
-      }
-      return 'Please enter the account\'s name'
+      return fieldNotEmptyFeedback(this.account.name, 'Please enter the account\'s name')
     }
   },
   methods: {
     onContinueClick() {
-      this.$router.replace('/home')
+      replaceRoute('/home')
     },
     onSaveAccountClick() {
       this.$browser.setToStorage({
         account: {
           ...this.account
         }
-      }, () => replaceRoute("/home"))
+      }).then(() => replaceRoute("/home"))
     },
     onCopyContentClick() {
       const words = this.words.join(' ')
@@ -100,7 +98,7 @@ export default {
     }
   },
   created() {
-    this.$browser.getFromStorage('account', account => {
+    this.$browser.getFromStorage('account').then(account => {
       if (!account) {
         showErrorToast(this, 'Account', 'Cannot retrieve account')
       } else {

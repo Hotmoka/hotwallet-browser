@@ -28,9 +28,15 @@ export const showErrorToast = (vue, title, message) => {
 	})
 }
 
+/**
+ * Returns the an authentication object.
+ * @param vue the vue instance
+ * @return {Promise<unknown>} a promise that resolves to an authentication object
+ */
 export const getAuthentication = vue => {
 	return new Promise(resolve => {
-		vue.$browser.getFromStorage('account', account => {
+		vue.$browser.getFromStorage('account').then(account => {
+
 			const result = {
 				authenticated: false,
 				hasAccount: false
@@ -38,35 +44,35 @@ export const getAuthentication = vue => {
 
 			if (account) {
 				result.hasAccount = true
-
 				if (account.sessionPeriod && new Date() <= new Date(account.sessionPeriod)) {
 					result.authenticated = true
 				}
 			}
 
+			console.log('aut', result)
 			resolve(result)
 		})
-	})
+	}).catch(err => console.error(err))
 }
 
-export const WrapTask = taskFunc => {
+/**
+ * Helper method to wrap a promise task.
+ * @param promiseTask the promise task
+ * @return {Promise<unknown>} a promise that resolves to the result of the promise task
+ */
+export const WrapPromiseTask = (promiseTask) => {
+	return new Promise((resolve, reject) => {
 
-	try {
 		EventBus.$emit('showSpinner', true)
-		taskFunc()
-	} catch (e) {
-		EventBus.$emit('showSpinner', false)
-	}
-}
-
-export const WrapNetworkPromiseTask = (promiseTask, resultFunc) => {
-
-	EventBus.$emit('showSpinner', true)
-	promiseTask.then(result => {
-		EventBus.$emit('showSpinner', false)
-		resultFunc(result, null)
-	}).catch(err => {
-		EventBus.$emit('showSpinner', false)
-		resultFunc(null, err)
+		Promise.resolve(promiseTask())
+			.then(result => {
+				EventBus.$emit('showSpinner', false)
+				resolve(result)
+			})
+			.catch(err => {
+				EventBus.$emit('showSpinner', false)
+				reject(err)
+			})
 	})
 }
+

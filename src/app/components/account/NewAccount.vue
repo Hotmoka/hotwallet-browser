@@ -88,8 +88,14 @@
 
 <script>
 import {RemoteNode, AccountHelper, Algorithm, Bip39Dictionary, StorageReferenceModel} from "hotweb3"
-import {EventBus, getSessionPeriod, showErrorToast, WrapNetworkPromiseTask} from "../../internal/utils";
+import {getSessionPeriod, showErrorToast, WrapPromiseTask} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
+import {
+  fieldNotEmptyFeedback,
+  invalidPasswordFeedback,
+  stateFieldNotEmpty,
+  statePassword
+} from "../../internal/validators";
 
 export default {
   name: "NewWallet",
@@ -113,16 +119,16 @@ export default {
   },
   computed: {
     stateName() {
-      return this.newAccount.name === null ? null : this.newAccount.name.length > 0
+      return stateFieldNotEmpty(this.newAccount.name)
     },
     statePassword() {
-      return this.newAccount.password === null ? null : this.newAccount.password.length >= 8
+      return statePassword(this.newAccount.password)
     },
     statePayerPassword() {
       if (this.faucet.fromFaucet) {
         return true
       }
-      return this.payer.password === null ? null : this.payer.password.length >= 8
+      return statePassword(this.payer.password)
     },
     stateConfirmPassword() {
       return this.newAccount.confirmPassword === null ? null : (this.newAccount.confirmPassword.length >= 8 && this.newAccount.confirmPassword === this.newAccount.password)
@@ -137,61 +143,36 @@ export default {
       return !this.statePassword || !this.stateConfirmPassword || !this.stateName || !this.statePayer || !this.statePayerPassword
     },
     invalidFeedbackPassword() {
-      if (this.newAccount.password === null) {
-        return null
-      }
-      if (this.newAccount.password.length > 0) {
-        return 'Please enter at least 8 characters'
-      }
-      return 'Please enter a password'
+      return invalidPasswordFeedback(this.newAccount.password)
     },
     invalidFeedbackPayerPassword() {
-      if (this.payer.password === null) {
-        return null
-      }
-      if (this.payer.password.length > 0) {
-        return 'Please enter at least 8 characters'
-      }
-      return 'Please enter a password'
+      return invalidPasswordFeedback(this.payer.password)
     },
     invalidFeedbackConfirmPassword() {
-      if (this.newAccount.confirmPassword === null) {
-        return null
-      }
-      return 'The passwords don\'t match'
+      return fieldNotEmptyFeedback(this.newAccount.confirmPassword, 'The passwords don\'t match')
     },
     invalidFeedbackName() {
-      if (this.newAccount.name === null) {
-        return null
-      }
-      return 'Please enter the account\'s name'
+      return fieldNotEmptyFeedback(this.newAccount.name, 'Please enter the account\'s name')
     },
     invalidFeedbackPayer() {
-      if (this.newAccount.name === null) {
-        return null
-      }
-      return 'Please enter a valid address of 64 characters'
+      return fieldNotEmptyFeedback(this.payer.hashOfStorageReference, 'Please enter a valid address of 64 characters')
     }
   },
   methods: {
     createAccountFromFaucet: async function(balance) {
-      try {
-        EventBus.$emit('showSpinner', true)
+
+      WrapPromiseTask(async () => {
         const remoteNode = new RemoteNode(this.$blockchainConfig.remoteNodeUrl)
         const gamete = await remoteNode.getGamete()
         const balanceOfFaucet = await this.getBalanceOfAccount(gamete.transaction.hash)
 
-        if ((balance - balanceOfFaucet) > 0) {
-          EventBus.$emit('showSpinner', false)
-          showErrorToast(this, 'New account', 'Cannot transfer more than ' + balanceOfFaucet + ' from faucet')
-          return
+        if ((balance - Number(balanceOfFaucet)) > 0) {
+          return Promise.resolve({error: 'Cannot transfer more than ' + balanceOfFaucet + ' from faucet'})
         }
 
         const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.newAccount.password, Bip39Dictionary.ENGLISH)
         const account = await new AccountHelper(remoteNode).createAccountFromFaucet(Algorithm.ED25519, keyPair, balance.toString(), "0")
-        EventBus.$emit('showSpinner', false)
-
-        this.$browser.setToStorage({
+        const committed = await this.$browser.setToStorage({
           account: {
             sessionPeriod: getSessionPeriod(),
             name: this.newAccount.name,
@@ -199,19 +180,23 @@ export default {
             entropy: keyPair.entropy,
             publicKey: keyPair.publicKey,
           }
-        }, committed => {
-          if (committed) {
-            replaceRoute('/account')
-          } else {
-            showErrorToast(this, 'New account', 'Cannot save account to Hotwallet')
-          }
         })
 
-      } catch (err) {
-        console.error('account creation', err)
-        EventBus.$emit('showSpinner', false)
-        showErrorToast(this, 'New account', 'Error during account creation')
-      }
+        console.log('committed', committed)
+        return Promise.resolve({committed: committed})
+
+      }).then(result => {
+        console.log('result', result)
+        if (result.error) {
+          showErrorToast(this, 'New account', result.error)
+        } else if (result.committed) {
+          replaceRoute('/account')
+        } else {
+          showErrorToast(this, 'New account', 'Cannot save account to Hotwallet')
+        }
+      }).catch(err => {
+        showErrorToast(this, 'New account', err.message ? err.message : 'Error during account creation')
+      })
     },
     createAccountFromAnotherAccount(balance) {
       // TODO
@@ -230,14 +215,16 @@ export default {
       }
     },
     getBalanceOfAccount: async function (hashOfStorageReference) {
-      const balance = await new AccountHelper(new RemoteNode(this.$blockchainConfig.remoteNodeUrl))
+      return await new AccountHelper(new RemoteNode(this.$blockchainConfig.remoteNodeUrl))
           .getBalance(StorageReferenceModel.newStorageReference(hashOfStorageReference))
-      return Number(balance)
     },
     isFaucetAllowed() {
-      const promiseTask = new RemoteNode(this.$blockchainConfig.remoteNodeUrl).allowsUnsignedFaucet()
-      WrapNetworkPromiseTask(promiseTask, (allowsUnsignedFaucet, error) => {
-        this.faucet.allowsUnsignedFaucet = !error && allowsUnsignedFaucet
+      WrapPromiseTask(async () => {
+        return new RemoteNode(this.$blockchainConfig.remoteNodeUrl).allowsUnsignedFaucet()
+      }).then(result => {
+        this.faucet.allowsUnsignedFaucet = result
+      }).catch(error => {
+        showErrorToast(this, 'Faucet', error.message ? error.message : 'Cannot retrieve faucet')
       })
     }
   },

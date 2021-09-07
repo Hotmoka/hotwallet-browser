@@ -44,14 +44,10 @@ router.beforeEach(async (to, from, next) => {
 
     let route = null
     if (authRequired) {
-        if (auth.hasAccount) {
-            if (!auth.authenticated) {
-                route = '/login'
-            }
-        } else {
-            if (!inSubpages) {
-                route = '/welcome'
-            }
+        if (auth.hasAccount && !auth.authenticated) {
+            route = '/login'
+        } else if (!auth.hasAccount && !inSubpages) {
+            route = '/welcome'
         }
     } else {
 
