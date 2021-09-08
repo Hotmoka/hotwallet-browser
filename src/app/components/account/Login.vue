@@ -22,7 +22,7 @@
 
 <script>
 import {AccountHelper, Bip39Dictionary} from "hotweb3";
-import {getSessionPeriod, showErrorToast} from "../../internal/utils";
+import {showErrorToast} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
 import {statePassword, invalidPasswordFeedback} from "../../internal/validators";
 
@@ -43,14 +43,15 @@ export default {
   },
   methods: {
     onLoginClick() {
-      this.$browser.getFromStorage('account').then(account => {
+      this.$storageApi.getCurrentAccount().then(account => {
         if (account) {
           const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.password, Bip39Dictionary.ENGLISH, account.entropy)
-
           if (keyPair.publicKey === account.publicKey) {
-            account.sessionPeriod = getSessionPeriod()
-            this.$browser.setToStorage({
-              account: account
+            this.$storageApi.setToStorage({
+              account: {
+                ...account,
+                logged: true
+              }
             }).then(() => replaceRoute("/home"))
           } else {
             showErrorToast(this, 'Login', 'Wrong password')

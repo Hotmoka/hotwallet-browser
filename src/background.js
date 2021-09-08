@@ -1,8 +1,10 @@
 const browser = require("webextension-polyfill")
-const {decorateBrowserObject} = require('./internal/utils')
 const { v4: uuidv4 } = require('uuid')
+const {Storage} = require('./internal/Storage')
 
-decorateBrowserObject(browser)
+const storage = new Storage()
+storage.initStore()
+
 
 /**
  * The connection handler for Hotwallet.
@@ -12,25 +14,19 @@ const connectionHandler = (sendResponse) => {
     browser.storage.local.get('account').then(result => {
 
         if (result && result.account) {
-            if (result.account.sessionPeriod && new Date() > new Date(result.account.sessionPeriod)) {
-                sendResponse({
-                    error: "Please login to HotWallet"
-                })
-            } else {
-                browser.storage.local.get('transactionMap').then(result => {
-                    if (!result || !result.transactionMap) {
-                        browser.storage.local.set({transactionMap: {}})
-                    }
-                })
+            browser.storage.local.get('transactionMap').then(result => {
+                if (!result || !result.transactionMap) {
+                    browser.storage.local.set({transactionMap: {}})
+                }
+            })
 
-                sendResponse({
-                    account: {
-                        name: result.account.name,
-                        address: result.account.address,
-                        balance: result.account.balance
-                    }
-                })
-            }
+            sendResponse({
+                account: {
+                    name: result.account.name,
+                    address: result.account.address,
+                    balance: result.account.balance
+                }
+            })
         } else {
             sendResponse({
                 error: "Please create an account using Hotwallet"
@@ -95,6 +91,7 @@ const transactionMap = new Map()
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message && message.hotmoka) {
+
         if (message.hotmoka.type === 'connect') {
             connectionHandler(sendResponse)
 
@@ -109,10 +106,14 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             transactionMap.get(uuid).sendResponse({
                 error: message.hotmoka.transactionResult.error,
                 status: message.hotmoka.transactionResult.status,
-                storageValue:  message.hotmoka.transactionResult.storageValue
+                storageValue: message.hotmoka.transactionResult.storageValue
             })
             transactionMap.delete(uuid)
             removeTransaction(uuid)
+        } else if (message.hotmoka.type === 'storage-set') {
+            return storage.commitData(message.hotmoka.data)
+        } else if (message.hotmoka.type === 'storage-get') {
+            return storage.getFromMemory()
         }
 
         // async

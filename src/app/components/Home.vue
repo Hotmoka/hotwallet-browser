@@ -91,7 +91,7 @@ export default {
           }
         })
 
-        this.$browser.setToStorage({
+        this.$storageApi.setToStorage({
           account: {
             ...this.account,
             balance: this.account.balance,
@@ -105,9 +105,10 @@ export default {
     },
     onLogoutClick() {
       this.account.sessionPeriod = new Date().getTime()
-      this.$browser.setToStorage({
+      this.$storageApi.setToStorage({
         account: {
-          ...this.account
+          ...this.account,
+          logged: false
         }
       }).then(() => replaceRoute('/login'))
     },
@@ -116,7 +117,7 @@ export default {
     }
   },
   created() {
-    this.$browser.getFromStorage('account').then(account => {
+    this.$storageApi.getCurrentAccount().then(account => {
       if (account) {
         this.account = {...this.account, ...account}
         this.getAccountInfo(this.account.reference)

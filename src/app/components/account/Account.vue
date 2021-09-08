@@ -84,7 +84,7 @@ export default {
       replaceRoute('/home')
     },
     onSaveAccountClick() {
-      this.$browser.setToStorage({account: this.account}).then(() => replaceRoute("/home"))
+      this.$storageApi.setToStorage({account: this.account}).then(() => replaceRoute("/home"))
     },
     onCopyContentClick() {
       const words = this.words.join(' ')
@@ -94,7 +94,7 @@ export default {
     }
   },
   created() {
-    this.$browser.getFromStorage('account').then(account => {
+    this.$storageApi.getCurrentAccount().then(account => {
       if (!account) {
         showErrorToast(this, 'Account', 'Cannot retrieve account')
       } else {

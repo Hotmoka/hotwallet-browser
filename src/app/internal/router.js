@@ -6,7 +6,6 @@ import ImportWallet from "../components/account/ImportAccount";
 import NewWallet from "../components/account/NewAccount";
 import Account from "../components/account/Account";
 import Transaction from "../components/Transaction";
-import {getAuthentication} from "./utils";
 import Vue from "vue";
 
 export const router = new VueRouter({
@@ -40,7 +39,7 @@ router.beforeEach(async (to, from, next) => {
     const publicSubpages = ['/import-account', '/new-account']
     const inSubpages = publicSubpages.includes(to.path);
     const authRequired = !publicPages.includes(to.path);
-    const auth = await getAuthentication(Vue.prototype)
+    const auth = await Vue.prototype.$storageApi.getAuthentication()
 
     let route = null
     if (authRequired) {

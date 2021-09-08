@@ -88,7 +88,7 @@
 
 <script>
 import {RemoteNode, AccountHelper, Algorithm, Bip39Dictionary, StorageReferenceModel} from "hotweb3"
-import {getSessionPeriod, showErrorToast, WrapPromiseTask} from "../../internal/utils";
+import {showErrorToast, WrapPromiseTask} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
 import {
   fieldNotEmptyFeedback,
@@ -172,14 +172,15 @@ export default {
 
         const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.newAccount.password, Bip39Dictionary.ENGLISH)
         const account = await new AccountHelper(remoteNode).createAccountFromFaucet(Algorithm.ED25519, keyPair, balance.toString(), "0")
-        const committed = await this.$browser.setToStorage({
+        const committed = await this.$storageApi.setToStorage({
           account: {
-            sessionPeriod: getSessionPeriod(),
             name: this.newAccount.name,
             reference: account.reference.transaction.hash,
             nonce: account.reference.progressive,
             entropy: keyPair.entropy,
             publicKey: keyPair.publicKey,
+            selected: true,
+            logged: true
           }
         })
 

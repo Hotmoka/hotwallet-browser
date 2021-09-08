@@ -28,10 +28,10 @@ export default {
   },
   methods: {
     setNetwork() {
-      this.$browser.getFromStorage('network').then(network => {
+      this.$storageApi.getNetwork().then(network => {
         if (!network) {
           this.selectedNetwork = this.networks[0].value
-          this.$browser.setToStorage({
+          this.$storageApi.setToStorage({
             network: {...this.networks[0]}
           })
         } else {
