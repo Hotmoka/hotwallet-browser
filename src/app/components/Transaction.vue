@@ -110,7 +110,7 @@ export default {
     },
     addTransaction: async function() {
       const privateKey = await this.generatePrivateKey()
-      const remoteNode = new RemoteNode(this.$blockchainConfig.remoteNodeUrl, new Signer(Algorithm.ED25519, privateKey));
+      const remoteNode = new RemoteNode(this.$network.url, new Signer(Algorithm.ED25519, privateKey));
 
       const receiver = new StorageReferenceModel(new TransactionReferenceModel('local', this.transaction.receiver), '0')
       const eoaCaller = new StorageReferenceModel(new TransactionReferenceModel('local', this.transaction.caller), '0')

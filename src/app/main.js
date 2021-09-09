@@ -7,6 +7,7 @@ import VueRouter from 'vue-router'
 import App from './components/App'
 import {router} from "./internal/router";
 import {StorageApi} from "./internal/StorageApi";
+import {networks} from "./internal/networks";
 const browser = require('webextension-polyfill')
 
 Vue.use(VueRouter)
@@ -17,10 +18,7 @@ Vue.config.productionTip = false
 
 Vue.prototype.$browser = browser
 Vue.prototype.$storageApi = new StorageApi(browser)
-
-Vue.prototype.$blockchainConfig = {
-  remoteNodeUrl: process.env.VUE_APP_BLOCKCHAIN_REMOTE_NODE_URL
-}
+Vue.prototype.$network = networks[0]
 
 const root = document.getElementById('app')
 Vue.prototype.$isPopup = root.attributes['app-type'].value === 'popup'

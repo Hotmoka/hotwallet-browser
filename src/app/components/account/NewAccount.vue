@@ -163,7 +163,7 @@ export default {
 
       WrapPromiseTask(async () => {
 
-        const remoteNode = new RemoteNode(this.$blockchainConfig.remoteNodeUrl)
+        const remoteNode = new RemoteNode(this.$network.url)
         const gamete = await remoteNode.getGamete()
         const balanceOfFaucet = await this.getBalanceOfAccount(gamete.transaction.hash)
 
@@ -218,11 +218,11 @@ export default {
       }
     },
     getBalanceOfAccount: async function (hashOfStorageReference) {
-      return new AccountHelper(new RemoteNode(this.$blockchainConfig.remoteNodeUrl))
+      return new AccountHelper(new RemoteNode(this.$network.url))
           .getBalance(StorageReferenceModel.newStorageReference(hashOfStorageReference))
     },
     isFaucetAllowed() {
-      WrapPromiseTask(() => new RemoteNode(this.$blockchainConfig.remoteNodeUrl).allowsUnsignedFaucet())
+      WrapPromiseTask(() => new RemoteNode(this.$network.url).allowsUnsignedFaucet())
           .then(result => this.faucet.allowsUnsignedFaucet = result)
           .catch(error => showErrorToast(this, 'Faucet', error.message ? error.message : 'Cannot retrieve faucet'))
     }

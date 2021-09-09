@@ -79,7 +79,7 @@ export default {
       }
     },
     getAccountInfo(accountReference) {
-      WrapPromiseTask(() => new RemoteNode(this.$blockchainConfig.remoteNodeUrl).getState(StorageReferenceModel.newStorageReference(accountReference)))
+      WrapPromiseTask(() => new RemoteNode(this.$network.url).getState(StorageReferenceModel.newStorageReference(accountReference)))
           .then(result => {
             const updates = result.updates
             updates.forEach(update => {

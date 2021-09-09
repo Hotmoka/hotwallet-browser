@@ -12,35 +12,47 @@
 </template>
 
 <script>
-import {showInfoToast} from "../internal/utils";
+import {showErrorToast, showInfoToast, WrapPromiseTask} from "../internal/utils";
 import {replaceRoute} from "../internal/router";
+import {getNetwork, networks} from "../internal/networks";
 
 export default {
   name: "Header",
   data() {
     return {
       selectedNetwork: null,
-      networks: [
-        { value: 'panarea', text: 'panarea.hotmoka.io', protocol: 'http', network: 'http://panarea.hotmoka.io' },
-        { value: 'newNetwork', text: 'Connect to custom network' },
-      ]
+      networks: [...networks]
     }
   },
   methods: {
     setNetwork() {
-      this.$storageApi.getNetwork().then(network => {
-        if (!network) {
-          this.selectedNetwork = this.networks[0].value
-          this.$storageApi.setNetwork(this.networks[0])
-        } else {
-          this.selectedNetwork = network.value
-        }
+      this.$storageApi.getNetwork(this.$network).then(network => {
+        this.selectedNetwork = network.value
+        this.$network = network
       })
     },
     onNetworkChange(selectedNetwork) {
-      if (selectedNetwork === 'newNetwork') {
+      if (selectedNetwork === 'customNetwork') {
         showInfoToast(this,'Network', 'Feature not implemented')
-        this.selectedNetwork = this.networks[0].value
+        this.selectedNetwork = networks[0].value
+
+      } else {
+        const network = getNetwork(selectedNetwork)
+        if (!network) {
+          showErrorToast(this,'Network', 'Network not found')
+        } else {
+
+          WrapPromiseTask(() => this.$storageApi.setNetwork(network))
+          .then(result => {
+            if (result) {
+              this.selectedNetwork = selectedNetwork
+              this.$network = network
+            } else {
+              showErrorToast(this,'Network', 'Cannot set network')
+            }
+          })
+          .catch(() => showErrorToast(this,'Network', 'Cannot set network'))
+        }
       }
     },
     onHeaderImageClick() {
@@ -48,7 +60,7 @@ export default {
     }
   },
   created() {
-   this.setNetwork()
+    this.setNetwork()
   }
 }
 </script>

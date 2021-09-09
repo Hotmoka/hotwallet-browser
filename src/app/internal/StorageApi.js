@@ -89,7 +89,7 @@ export class StorageApi {
     }
 
     /**
-     * Sets the network object.
+     * Sets the selected network object.
      * @param network the network object
      * @return {Promise<boolean>} a promise that resolves the operation result
      */
@@ -98,11 +98,32 @@ export class StorageApi {
     }
 
     /**
-     * Returns the network object.
-     * @return {Promise<unknown>} a promise that resolves to the network object
+     * Returns the selected network object.
+     * @param defaultNetwork if specified and no network was found, it will set this object as the current network
+     * @return {Promise<unknown>} a promise that resolves to the selected network object
      */
-    getNetwork() {
-        return this.getLocalStorage('network')
+    async getNetwork(defaultNetwork) {
+        const network = await this.getLocalStorage('network')
+
+        if (network) {
+            return network
+        } else if (!defaultNetwork) {
+            throw new Error('No network found and default network not specified')
+        } else {
+            const committed = await this.setNetwork(defaultNetwork)
+            if (!committed) {
+                throw new Error('Cannot set default network')
+            }
+            return defaultNetwork
+        }
+     }
+
+    /**
+     * Returns the networks.
+     * @return {Promise<unknown>} a promise that resolves to the array of networks
+     */
+    getNetworks() {
+        return this.getLocalStorage('networks')
     }
 
     /**

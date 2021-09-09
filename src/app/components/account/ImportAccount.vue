@@ -102,7 +102,7 @@ export default {
         const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.password, Bip39Dictionary.ENGLISH, account.entropy)
 
         // get public key of the generated account
-        const publicKey = await new AccountHelper(new RemoteNode(this.$blockchainConfig.remoteNodeUrl)).getPublicKey(account.reference)
+        const publicKey = await new AccountHelper(new RemoteNode(this.$network.url)).getPublicKey(account.reference)
 
         // check if generated public key matches the public key from the remote node
         if (keyPair.publicKey === publicKey) {
