@@ -159,20 +159,24 @@ export default {
     }
   },
   methods: {
-    createAccountFromFaucet: async function(balance) {
-
+    createAccountFromFaucet(balance) {
       WrapPromiseTask(async () => {
+
         const remoteNode = new RemoteNode(this.$blockchainConfig.remoteNodeUrl)
         const gamete = await remoteNode.getGamete()
         const balanceOfFaucet = await this.getBalanceOfAccount(gamete.transaction.hash)
 
         if ((balance - Number(balanceOfFaucet)) > 0) {
-          return Promise.resolve({error: 'Cannot transfer more than ' + balanceOfFaucet + ' from faucet'})
+          return {error: 'Cannot transfer more than ' + balanceOfFaucet + ' from faucet'}
         }
 
+        // generate key pair
         const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.newAccount.password, Bip39Dictionary.ENGLISH)
         const account = await new AccountHelper(remoteNode).createAccountFromFaucet(Algorithm.ED25519, keyPair, balance.toString(), "0")
-        const committed = await this.$storageApi.setToStorage({
+
+        // init store and add account
+        await this.$storageApi.initStore(this.newAccount.password)
+        const committed = await this.$storageApi.setToStore({
           account: {
             name: this.newAccount.name,
             reference: account.reference.transaction.hash,
@@ -184,19 +188,18 @@ export default {
           }
         })
 
-        return Promise.resolve({committed: committed})
+        // reinit store
+        await this.$storageApi.initStore(this.newAccount.password)
+
+        return {committed: committed}
 
       }).then(result => {
-        if (result.error) {
-          showErrorToast(this, 'New account', result.error)
-        } else if (result.committed) {
+        if (result.committed) {
           replaceRoute('/account')
         } else {
-          showErrorToast(this, 'New account', 'Cannot save account to Hotwallet')
+          showErrorToast(this, 'New account', result.error)
         }
-      }).catch(err => {
-        showErrorToast(this, 'New account', err.message ? err.message : 'Error during account creation')
-      })
+      }).catch(err => showErrorToast(this, 'New account', err.message ? err.message : 'Error during account creation'))
     },
     createAccountFromAnotherAccount(balance) {
       // TODO
@@ -215,17 +218,13 @@ export default {
       }
     },
     getBalanceOfAccount: async function (hashOfStorageReference) {
-      return await new AccountHelper(new RemoteNode(this.$blockchainConfig.remoteNodeUrl))
+      return new AccountHelper(new RemoteNode(this.$blockchainConfig.remoteNodeUrl))
           .getBalance(StorageReferenceModel.newStorageReference(hashOfStorageReference))
     },
     isFaucetAllowed() {
-      WrapPromiseTask(async () => {
-        return new RemoteNode(this.$blockchainConfig.remoteNodeUrl).allowsUnsignedFaucet()
-      }).then(result => {
-        this.faucet.allowsUnsignedFaucet = result
-      }).catch(error => {
-        showErrorToast(this, 'Faucet', error.message ? error.message : 'Cannot retrieve faucet')
-      })
+      WrapPromiseTask(() => new RemoteNode(this.$blockchainConfig.remoteNodeUrl).allowsUnsignedFaucet())
+          .then(result => this.faucet.allowsUnsignedFaucet = result)
+          .catch(error => showErrorToast(this, 'Faucet', error.message ? error.message : 'Cannot retrieve faucet'))
     }
   },
   created() {

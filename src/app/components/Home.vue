@@ -12,6 +12,7 @@
       </b-popover>
 
       <div class="navigation">
+        <div></div>
         <h6>{{ account.name }}</h6>
         <b-link class="float-right" @click="showOptionsMenu = !showOptionsMenu">
           <b-icon id="popover-options-button" width="18" icon="three-dots-vertical" variant="primary"></b-icon>
@@ -78,34 +79,29 @@ export default {
       }
     },
     getAccountInfo(accountReference) {
-      WrapPromiseTask(async () => {
-          return new RemoteNode(this.$blockchainConfig.remoteNodeUrl)
-              .getState(StorageReferenceModel.newStorageReference(accountReference))
-      }).then(result => {
-        const updates = result.updates
-        updates.forEach(update => {
-          if (update.field && update.field.name) {
-            if (this.account.hasOwnProperty(update.field.name)) {
-              this.account[update.field.name] = update.value.value
-            }
-          }
-        })
+      WrapPromiseTask(() => new RemoteNode(this.$blockchainConfig.remoteNodeUrl).getState(StorageReferenceModel.newStorageReference(accountReference)))
+          .then(result => {
+            const updates = result.updates
+            updates.forEach(update => {
+              if (update.field && update.field.name) {
+                if (this.account.hasOwnProperty(update.field.name)) {
+                  this.account[update.field.name] = update.value.value
+                }
+              }
+            })
 
-        this.$storageApi.setToStorage({
-          account: {
-            ...this.account,
-            balance: this.account.balance,
-            balanceRed: this.account.balanceRed
-          }
-        })
-
-      }).catch(error => {
-        showErrorToast(this, 'Account', error.message ? error.message : 'Cannot retrieve account details')
-      })
+            this.$storageApi.setToStore({
+              account: {
+                ...this.account,
+                balance: this.account.balance,
+                balanceRed: this.account.balanceRed
+              }
+            })
+          })
+          .catch(error => showErrorToast(this, 'Account', error.message ? error.message : 'Cannot retrieve account details'))
     },
     onLogoutClick() {
-      this.account.sessionPeriod = new Date().getTime()
-      this.$storageApi.setToStorage({
+      this.$storageApi.setToStore({
         account: {
           ...this.account,
           logged: false
@@ -117,12 +113,14 @@ export default {
     }
   },
   created() {
-    this.$storageApi.getCurrentAccount().then(account => {
-      if (account) {
-        this.account = {...this.account, ...account}
-        this.getAccountInfo(this.account.reference)
-      }
-    })
+    WrapPromiseTask(() => this.$storageApi.getCurrentAccount())
+        .then(account => {
+          if (account) {
+            this.account = {...this.account, ...account}
+            this.getAccountInfo(this.account.reference)
+          }
+        })
+        .catch(error => showErrorToast(this, 'Account', error.message ? error.message : 'Cannot retrieve account'))
   }
 }
 </script>
@@ -138,7 +136,7 @@ export default {
 .navigation {
   width: 100%;
   display: grid;
-  grid-template-columns: 55% 45%;
+  grid-template-columns: 10% 80% 10%;
   margin-bottom: 1rem;
 }
 
@@ -148,7 +146,7 @@ export default {
 
 .navigation h6 {
   margin: 0;
-  place-self: end;
+  place-self: center;
   align-self: center;
 }
 

@@ -55,7 +55,7 @@
 </template>
 
 <script>
-import {showErrorToast, showInfoToast} from "../../internal/utils";
+import {showErrorToast, showInfoToast, WrapPromiseTask} from "../../internal/utils";
 import {AccountHelper, Bip39Dictionary} from "hotweb3";
 import {replaceRoute} from "../../internal/router";
 import {fieldNotEmptyFeedback, stateFieldNotEmpty} from "../../internal/validators";
@@ -84,7 +84,7 @@ export default {
       replaceRoute('/home')
     },
     onSaveAccountClick() {
-      this.$storageApi.setToStorage({account: this.account}).then(() => replaceRoute("/home"))
+      this.$storageApi.setToStore({account: this.account}).then(() => replaceRoute("/home"))
     },
     onCopyContentClick() {
       const words = this.words.join(' ')
@@ -94,14 +94,16 @@ export default {
     }
   },
   created() {
-    this.$storageApi.getCurrentAccount().then(account => {
-      if (!account) {
-        showErrorToast(this, 'Account', 'Cannot retrieve account')
-      } else {
-        this.account = account
-        this.words = AccountHelper.generateMnemonicWordsFrom(account.entropy, account.reference, Bip39Dictionary.ENGLISH)
-      }
-    })
+    WrapPromiseTask(() => this.$storageApi.getCurrentAccount())
+        .then(account => {
+          if (!account) {
+            showErrorToast(this, 'Account', 'Cannot retrieve account')
+          } else {
+            this.account = account
+            this.words = AccountHelper.generateMnemonicWordsFrom(account.entropy, account.reference, Bip39Dictionary.ENGLISH)
+          }
+        })
+        .catch(() => showErrorToast(this, 'Account', 'Cannot retrieve account'))
   }
 }
 </script>

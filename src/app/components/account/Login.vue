@@ -22,7 +22,7 @@
 
 <script>
 import {AccountHelper, Bip39Dictionary} from "hotweb3";
-import {showErrorToast} from "../../internal/utils";
+import {showErrorToast, WrapPromiseTask} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
 import {statePassword, invalidPasswordFeedback} from "../../internal/validators";
 
@@ -39,27 +39,47 @@ export default {
     },
     invalidFeedback() {
       return invalidPasswordFeedback(this.password)
-    },
+    }
   },
   methods: {
-    onLoginClick() {
-      this.$storageApi.getCurrentAccount().then(account => {
-        if (account) {
-          const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.password, Bip39Dictionary.ENGLISH, account.entropy)
-          if (keyPair.publicKey === account.publicKey) {
-            this.$storageApi.setToStorage({
-              account: {
-                ...account,
-                logged: true
-              }
-            }).then(() => replaceRoute("/home"))
-          } else {
-            showErrorToast(this, 'Login', 'Wrong password')
-          }
-        } else {
-          showErrorToast(this, 'Login', 'Cannot retrieve account')
+    login() {
+      WrapPromiseTask(async () => {
+
+        // init store
+        await this.$storageApi.initStore(this.password)
+        const account = await this.$storageApi.getCurrentAccount()
+
+        if (!account) {
+          return {error: 'Cannot retrieve account'}
         }
+
+        // generate key pair from password and check public keys
+        const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.password, Bip39Dictionary.ENGLISH, account.entropy)
+        if (keyPair.publicKey === account.publicKey) {
+          const committed = await this.$storageApi.setToStore({
+            account: {
+              ...account,
+              logged: true
+            }
+          })
+          return {committed: committed}
+
+        } else {
+          return {error: 'Wrong password'}
+        }
+
+      }).then(result => {
+        if (result.committed) {
+          replaceRoute("/home")
+        } else {
+          showErrorToast(this, 'Login', result.error)
+        }
+      }).catch(error => {
+        showErrorToast(this, 'Login', error.message ? error.message : 'Error during login')
       })
+    },
+    onLoginClick() {
+      this.login()
     }
   }
 }

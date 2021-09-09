@@ -31,9 +31,7 @@ export default {
       this.$storageApi.getNetwork().then(network => {
         if (!network) {
           this.selectedNetwork = this.networks[0].value
-          this.$storageApi.setToStorage({
-            network: {...this.networks[0]}
-          })
+          this.$storageApi.setNetwork(this.networks[0])
         } else {
           this.selectedNetwork = network.value
         }
@@ -41,7 +39,7 @@ export default {
     },
     onNetworkChange(selectedNetwork) {
       if (selectedNetwork === 'newNetwork') {
-        showInfoToast(this,'Network', 'Feature')
+        showInfoToast(this,'Network', 'Feature not implemented')
         this.selectedNetwork = this.networks[0].value
       }
     },
