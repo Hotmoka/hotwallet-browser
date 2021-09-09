@@ -35,7 +35,7 @@
               <b-form-input
                   :id="'i-words-' + index"
                   :placeholder="'word ' + index"
-                  v-model="words[index]"
+                  v-model="words[index - 1]"
                   trim
               ></b-form-input>
             </div>
