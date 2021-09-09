@@ -119,14 +119,6 @@ export class StorageApi {
      }
 
     /**
-     * Returns the networks.
-     * @return {Promise<unknown>} a promise that resolves to the array of networks
-     */
-    getNetworks() {
-        return this.getLocalStorage('networks')
-    }
-
-    /**
      * Returns the authentication object.
      * @return {Promise<unknown>} a promise that resolves to an authentication object
      */
