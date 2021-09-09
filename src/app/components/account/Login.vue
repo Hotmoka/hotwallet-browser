@@ -1,5 +1,7 @@
 <template>
     <div class="content text-center">
+      <img src="../../assets/img/logo-web-transparent.png" height="128" width="400" alt="hotmoka" id="logo-hotmoka">
+
       <h6 class="title">Login</h6>
 
       <div class="d-flex justify-content-center">
@@ -87,5 +89,16 @@ export default {
 .title {
   margin-top: 4rem;
   margin-bottom: 2rem;
+}
+
+#logo-hotmoka {
+  margin-top: 1.5rem;
+}
+
+@media only screen and (max-width: 768px) {
+  #logo-hotmoka {
+    width: 246px;
+    height: 76px;
+  }
 }
 </style>
