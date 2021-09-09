@@ -160,6 +160,7 @@ export default {
   },
   methods: {
     createAccountFromFaucet(balance) {
+
       WrapPromiseTask(async () => {
 
         const remoteNode = new RemoteNode(this.$blockchainConfig.remoteNodeUrl)
@@ -167,7 +168,7 @@ export default {
         const balanceOfFaucet = await this.getBalanceOfAccount(gamete.transaction.hash)
 
         if ((balance - Number(balanceOfFaucet)) > 0) {
-          return {error: 'Cannot transfer more than ' + balanceOfFaucet + ' from faucet'}
+          throw new Error('Cannot transfer more than ' + balanceOfFaucet + ' from faucet')
         }
 
         // generate key pair
@@ -188,18 +189,17 @@ export default {
           }
         })
 
+        if (!committed) {
+          throw new Error('Cannot set account')
+        }
+
         // reinit store
         await this.$storageApi.initStore(this.newAccount.password)
 
-        return {committed: committed}
-
-      }).then(result => {
-        if (result.committed) {
+      }).then(() =>
           replaceRoute('/account')
-        } else {
-          showErrorToast(this, 'New account', result.error)
-        }
-      }).catch(err => showErrorToast(this, 'New account', err.message ? err.message : 'Error during account creation'))
+      ).catch(err => showErrorToast(this, 'New account', err.message ? err.message : 'Error during account creation'))
+
     },
     createAccountFromAnotherAccount(balance) {
       // TODO

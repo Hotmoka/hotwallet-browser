@@ -43,6 +43,7 @@ export default {
   },
   methods: {
     login() {
+
       WrapPromiseTask(async () => {
 
         // init store
@@ -50,7 +51,7 @@ export default {
         const account = await this.$storageApi.getCurrentAccount()
 
         if (!account) {
-          return {error: 'Cannot retrieve account'}
+          throw new Error('Cannot retrieve account')
         }
 
         // generate key pair from password and check public keys
@@ -62,21 +63,18 @@ export default {
               logged: true
             }
           })
-          return {committed: committed}
 
+          if (!committed) {
+            throw new Error('Cannot set account')
+          }
         } else {
-          return {error: 'Wrong password'}
+          throw new Error('Wrong password')
         }
 
-      }).then(result => {
-        if (result.committed) {
-          replaceRoute("/home")
-        } else {
-          showErrorToast(this, 'Login', result.error)
-        }
-      }).catch(error => {
-        showErrorToast(this, 'Login', error.message ? error.message : 'Error during login')
-      })
+      }).then(() =>
+          replaceRoute('/home')
+      ).catch(error => showErrorToast(this, 'Login', error.message ? error.message : 'Error during login'))
+
     },
     onLoginClick() {
       this.login()
