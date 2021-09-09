@@ -35,7 +35,7 @@
               <b-form-input
                   :id="'i-words-' + index"
                   :placeholder="'word ' + index"
-                  v-model="accountImporter.words[index]"
+                  v-model="words[index]"
                   trim
               ></b-form-input>
             </div>
@@ -49,14 +49,15 @@
 </template>
 
 <script>
-import {AccountHelper, RemoteNode} from "hotweb3";
-import {EventBus, showErrorToast} from "../../internal/utils";
+import {AccountHelper, Bip39Dictionary, RemoteNode} from "hotweb3";
+import {showErrorToast, WrapPromiseTask} from "../../internal/utils";
 import {
   fieldNotEmptyFeedback,
   invalidPasswordFeedback,
   stateFieldNotEmpty,
   statePassword
 } from "../../internal/validators";
+import {replaceRoute} from "../../internal/router";
 
 export default {
   name: "ImportWallet",
@@ -64,9 +65,7 @@ export default {
     return {
       password: null,
       name: null,
-      accountImporter: {
-        words: []
-      }
+      words: []
     }
   },
   computed: {
@@ -84,23 +83,63 @@ export default {
     }
   },
   methods: {
+
     onImportAccountClick() {
 
-      for (let i = 0; i < 36; i++) {
-        if (!this.accountImporter.words[i]) {
-          showErrorToast(this, 'Account', 'Please enter all 36 words')
-          return
-        }
-      }
+      WrapPromiseTask(async () => {
 
-      // TODO import account
-      /*const remoteNode = new RemoteNode(this.$blockchainConfig.remoteNodeUrl)
-      const accountHelper = new AccountHelper(remoteNode)*/
+        for (let i = 0; i < 36; i++) {
+          if (!this.words[i]) {
+            return {error: 'Please enter all 36 words'}
+          }
+        }
+
+        // generate account from mnemonic
+        const mnemonic = this.words.join(' ')
+        const account = AccountHelper.generateAccountFrom(mnemonic, Bip39Dictionary.ENGLISH)
+
+        // generate key pair
+        const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.password, Bip39Dictionary.ENGLISH, account.entropy)
+
+        // get public key of the generated account
+        const publicKey = await new AccountHelper(new RemoteNode(this.$blockchainConfig.remoteNodeUrl)).getPublicKey(account.reference)
+
+        // check if generated public key matches the public key from the remote node
+        if (keyPair.publicKey === publicKey) {
+          // init store and add account
+          await this.$storageApi.initStore(this.password)
+          const committed = await this.$storageApi.setToStore({
+            account: {
+              name: this.name,
+              reference: account.reference.transaction.hash,
+              nonce: account.reference.progressive,
+              entropy: keyPair.entropy,
+              publicKey: keyPair.publicKey,
+              selected: true,
+              logged: true
+            }
+          })
+
+          if (!committed) {
+            throw new Error('Cannot set account')
+          }
+
+          // reinit store
+          await this.$storageApi.initStore(this.password)
+
+        } else {
+          throw new Error('Invalid words or password')
+        }
+
+      }).then(() =>
+          replaceRoute('/home')
+      ).catch(error => showErrorToast(this, 'Import account', error.message ? error.message : 'Cannot import account'))
+
     }
   },
   created() {
     for (let i = 0; i < 36; i++) {
-      this.accountImporter.words.push(null)
+      this.words.push(null)
     }
   }
 }
