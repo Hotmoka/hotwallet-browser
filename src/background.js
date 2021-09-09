@@ -1,10 +1,9 @@
 const browser = require("webextension-polyfill")
 const { v4: uuidv4 } = require('uuid')
-const {Storage} = require('./internal/Storage')
+const {Store} = require('./internal/Store')
 
-const storage = new Storage()
-storage.initStore()
-
+const storage = new Store()
+storage.checkStore()
 
 /**
  * The connection handler for Hotwallet.
@@ -110,10 +109,16 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             })
             transactionMap.delete(uuid)
             removeTransaction(uuid)
-        } else if (message.hotmoka.type === 'storage-set') {
-            return storage.commitData(message.hotmoka.data)
-        } else if (message.hotmoka.type === 'storage-get') {
-            return storage.getFromMemory()
+        } else if (message.hotmoka.type === 'store-set') {
+            return storage.setToStore(message.hotmoka.data)
+        } else if (message.hotmoka.type === 'store-get') {
+            return storage.getStore()
+        } else if (message.hotmoka.type === 'store-init') {
+            return storage.initStore(message.hotmoka.password)
+        } else if (message.hotmoka.type === 'storage-local-set') {
+            return storage.localStorage.setData(message.hotmoka.data)
+        } else if (message.hotmoka.type === 'storage-local-get') {
+            return storage.localStorage.getData(message.hotmoka.key)
         }
 
         // async
