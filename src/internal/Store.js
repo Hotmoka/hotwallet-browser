@@ -33,11 +33,29 @@ export class Store {
      * @return {Promise<unknown>} a promise that resolves to void
      */
     async initStore(password) {
+
         if (!password) {
             throw new Error('A password must be provided')
         }
 
         this.password = password
+        return this.reinitStore()
+    }
+
+    /**
+     * It reinitializes the store.
+     * @return {Promise<unknown>} a promise that resolves to void
+     */
+    async reinitStore() {
+
+        if (!this.password) {
+            throw new Error('No password set. Call first initStore and provide a password')
+        }
+
+        if (typeof this.password !== 'string') {
+            throw new Error('The password must be a string')
+        }
+
         const data = await this.localStorage.getData('data')
         if (data && data.enc) {
             try {

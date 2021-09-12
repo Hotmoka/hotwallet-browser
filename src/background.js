@@ -115,6 +115,8 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return storage.getStore()
         } else if (message.hotmoka.type === 'store-init') {
             return storage.initStore(message.hotmoka.password)
+        } else if (message.hotmoka.type === 'store-reinit') {
+            return storage.reinitStore()
         } else if (message.hotmoka.type === 'storage-local-set') {
             return storage.localStorage.setData(message.hotmoka.data)
         } else if (message.hotmoka.type === 'storage-local-get') {

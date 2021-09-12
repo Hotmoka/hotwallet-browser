@@ -8,7 +8,7 @@ export class LocalStorage {
     /**
      * It returns the data from local storage.
      * @param key an optional key that if specified returns the data associated with that key
-     * @return {Promise<unknown>} a promise that resolves to the result data from storage
+     * @return {Promise<unknown>} a promise that resolves to the result data from storage or null if data was not found
      */
     async getData(key) {
         try {
