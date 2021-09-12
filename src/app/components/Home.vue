@@ -44,7 +44,7 @@
 
 <script>
 import {RemoteNode, StorageReferenceModel} from "hotweb3";
-import {WrapPromiseTask, showErrorToast} from "../internal/utils";
+import {WrapPromiseTask, showErrorToast, EventBus} from "../internal/utils";
 import {pushRoute, replaceRoute} from "../internal/router";
 
 export default {
@@ -110,17 +110,21 @@ export default {
     },
     onEditAccountClick() {
       pushRoute('/edit-account')
+    },
+    displayAccount() {
+      WrapPromiseTask(() => this.$storageApi.getCurrentAccount())
+          .then(account => {
+            if (account) {
+              this.account = {...this.account, ...account}
+              this.getAccountInfo(this.account.reference)
+            }
+          })
+          .catch(error => showErrorToast(this, 'Account', error.message ? error.message : 'Cannot retrieve account'))
     }
   },
   created() {
-    WrapPromiseTask(() => this.$storageApi.getCurrentAccount())
-        .then(account => {
-          if (account) {
-            this.account = {...this.account, ...account}
-            this.getAccountInfo(this.account.reference)
-          }
-        })
-        .catch(error => showErrorToast(this, 'Account', error.message ? error.message : 'Cannot retrieve account'))
+    EventBus.$on('reloadAccount', () => this.displayAccount())
+    this.displayAccount()
   }
 }
 </script>

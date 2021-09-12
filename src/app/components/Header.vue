@@ -41,8 +41,7 @@
 </template>
 
 <script>
-import {showErrorToast, WrapPromiseTask} from "../internal/utils";
-import {replaceRoute} from "../internal/router";
+import {EventBus, showErrorToast, WrapPromiseTask} from "../internal/utils";
 import {getNetwork} from "../internal/networks";
 import {stateFieldNotEmpty} from "../internal/validators";
 
@@ -129,13 +128,19 @@ export default {
         this.networks.push(network)
         this.selectedNetwork = network.value
         this.$network = network
-        this.$router.go()
+
+        if (this.$route.path === '/home') {
+          EventBus.$emit('reloadAccount')
+        }
       })
       .catch(error => {
         this.customNetwork.form.url = null
         showErrorToast(this,'Custom network connection', error.message ? error.message : 'Cannot connect to custom network')
         // restore previous network
         this.selectedNetwork = this.$network.value
+        if (this.$route.path === '/home') {
+          EventBus.$emit('reloadAccount')
+        }
       })
     },
     setNetworks: async function() {
@@ -164,10 +169,9 @@ export default {
               this.$network = network
 
               if (this.$route.path === '/home') {
-                this.$router.go()
-              } else {
-                replaceRoute('/home')
+                EventBus.$emit('reloadAccount')
               }
+
             } else {
               showErrorToast(this,'Network', 'Cannot set network')
             }
