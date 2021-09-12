@@ -1,3 +1,5 @@
+import {networks} from "./networks";
+
 /**
  * API to access the storage of the Hotwallet extension.
  */
@@ -22,6 +24,18 @@ export class StorageApi {
     }
 
     /**
+     * It reinitializes the local storage and the in memory storage.
+     * @return {Promise<unknown>} a promise that resolves to void
+     */
+    reinitStore() {
+        return this.browser.runtime.sendMessage({
+            hotmoka: {
+                type: 'store-reinit'
+            }
+        })
+    }
+
+    /**
      * It publishes an object to the in memory store.
      * @param data the data object
      * @return {Promise<boolean>} a promise that resolves to the result of the operation
@@ -38,7 +52,7 @@ export class StorageApi {
     /**
      * It returns the data from the in memory store.
      * @param key an optional key that if specified returns the data associated with that key
-     * @return {Promise<unknown>} a promise that resolves to the result data
+     * @return {Promise<unknown>} a promise that resolves to the result data or undefined if data was not found
      */
     getStore(key) {
         return new Promise((resolve, reject) => {
@@ -69,7 +83,7 @@ export class StorageApi {
     /**
      * It returns the data from the browser's local storage.
      * @param key an optional key that if specified returns the data associated with that key
-     * @return {Promise<unknown>} a promise that resolves to the result data from storage
+     * @return {Promise<unknown>} a promise that resolves to the result data from storage or null if data was not found
      */
     getLocalStorage(key) {
         return this.browser.runtime.sendMessage({
@@ -82,7 +96,7 @@ export class StorageApi {
 
     /**
      * Returns the current account object.
-     * @return {Promise<unknown>} a promise that resolves to the current account object
+     * @return {Promise<unknown>} a promise that resolves to the current account object or undefined if data was not found
      */
     getCurrentAccount() {
         return this.getStore('account')
@@ -95,6 +109,22 @@ export class StorageApi {
      */
     setNetwork(network) {
         return this.setToLocalStorage({network: network})
+    }
+
+    /**
+     * It adds a network the list of networks.
+     * @param network the network object
+     * @return {Promise<boolean>} a promise that resolves the operation result
+     */
+    async addNetwork(network) {
+        const networks = await this.getNetworks()
+        for (const _network of networks) {
+            if (_network.value === network.value) {
+                throw new Error('Network already registered')
+            }
+        }
+        networks.push(network)
+        return this.setToLocalStorage({networks: networks})
     }
 
     /**
@@ -117,6 +147,21 @@ export class StorageApi {
             return defaultNetwork
         }
      }
+
+    /**
+     * Returns the array of networks.
+     * @return {Promise<unknown>} a promise that resolves to array of networks
+     */
+    async getNetworks() {
+        const storedNetworks = await this.getLocalStorage('networks')
+
+        if (storedNetworks && Array.isArray(storedNetworks) && storedNetworks.length > 0) {
+            return storedNetworks
+        } else {
+            await this.setToLocalStorage({networks: networks})
+            return networks
+        }
+    }
 
     /**
      * Returns the authentication object.

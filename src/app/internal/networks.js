@@ -3,7 +3,11 @@ export const networks = [
     { value: 'customNetwork', text: 'Connect to custom network' }
 ]
 
-export const getNetwork = value => {
+export const getNetwork = (value, networks) => {
+    if (!networks) {
+        return null
+    }
+
     const _networks = networks.filter(network => network.value === value)
     if (_networks.length > 0) {
         return _networks[0]
