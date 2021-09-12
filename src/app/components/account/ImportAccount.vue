@@ -125,7 +125,7 @@ export default {
           }
 
           // reinit store
-          await this.$storageApi.initStore(this.password)
+          await this.$storageApi.reinitStore()
 
         } else {
           throw new Error('Invalid words or password')

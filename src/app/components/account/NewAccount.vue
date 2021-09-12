@@ -185,7 +185,9 @@ export default {
             entropy: keyPair.entropy,
             publicKey: keyPair.publicKey,
             selected: true,
-            logged: true
+            logged: true,
+            network: this.$network,
+            timestamp: new Date().getTime()
           }
         })
 
@@ -194,7 +196,7 @@ export default {
         }
 
         // reinit store
-        await this.$storageApi.initStore(this.newAccount.password)
+        await this.$storageApi.reinitStore()
 
       }).then(() =>
           replaceRoute('/account')
