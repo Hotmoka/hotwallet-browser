@@ -94,12 +94,9 @@ export default {
           .catch(error => showErrorToast(this, 'Account', error.message ? error.message : 'Cannot retrieve account details'))
     },
     onLogoutClick() {
-      this.$storageApi.setToStore({
-        account: {
-          ...this.account,
-          logged: false
-        }
-      }).then(() => replaceRoute('/login'))
+      this.$storageApi.setAccountLogin(this.account, false)
+          .then(() => replaceRoute('/login'))
+          .catch(() => showErrorToast(this, 'Account','Unable to logout'))
     },
     displayAccount() {
       WrapPromiseTask(() => this.$storageApi.getCurrentAccount(this.$network))

@@ -144,15 +144,16 @@ export class StorageApi {
     }
 
     /**
-     * It marks an account as logged.
+     * It marks an account as logged or not logged.
      * @param account the account object
+     * @param logged the login state of the account, true if logged, false if not logged
      * @return {Promise<boolean>} a promise that resolves the operation result
      */
-    async loginAccount(account) {
+    async setAccountLogin(account, logged) {
         const accounts = await this.getAccounts()
         accounts.forEach(account=> {
             if (account.publicKey === account.publicKey) {
-                account.logged = true
+                account.logged = logged
             }
         })
 

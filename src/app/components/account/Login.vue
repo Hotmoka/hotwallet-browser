@@ -59,7 +59,7 @@ export default {
         // generate key pair from password and check public keys
         const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.password, Bip39Dictionary.ENGLISH, account.entropy)
         if (keyPair.publicKey === account.publicKey) {
-          const committed = await this.$storageApi.loginAccount(account)
+          const committed = await this.$storageApi.setAccountLogin(account, true)
 
           if (!committed) {
             throw new Error('Cannot login with the account')
