@@ -18,7 +18,7 @@ Vue.config.productionTip = false
 
 Vue.prototype.$browser = browser
 Vue.prototype.$storageApi = new StorageApi(browser)
-Vue.prototype.$network = networks[0]
+Vue.prototype.$network = networks[0] // default network
 
 const root = document.getElementById('app')
 Vue.prototype.$isPopup = root.attributes['app-type'].value === 'popup'

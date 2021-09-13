@@ -151,10 +151,7 @@ export default {
     setNetworks: async function() {
       const _networks = await this.$storageApi.getNetworks()
       this.networks = [..._networks]
-
-      const currentNetwork = await this.$storageApi.getNetwork(this.$network)
-      this.selectedNetwork = currentNetwork.value
-      this.$network = currentNetwork
+      this.selectedNetwork = this.$network.value
     },
     onNetworkChange(selectedNetwork) {
       if (this.networkSelectionDisabled) {

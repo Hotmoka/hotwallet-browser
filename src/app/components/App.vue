@@ -46,7 +46,14 @@ export default {
       return this.appType === 'popup'
     }
   },
+  methods: {
+    setNetwork: async function() {
+      const currentNetwork = await this.$storageApi.getNetwork(this.$network)
+      this.$network = currentNetwork
+    }
+  },
   created() {
+    this.setNetwork()
     EventBus.$on('showSpinner', show => this.showSpinner = show)
 
     // check if from transaction

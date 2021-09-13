@@ -1,3 +1,6 @@
+/**
+ * Default networks.
+ */
 export const networks = [
     { value: 'panarea', text: 'panarea.hotmoka.io', protocol: 'http', url: 'http://panarea.hotmoka.io' },
     { value: 'customNetwork', text: 'Connect to custom network' }
