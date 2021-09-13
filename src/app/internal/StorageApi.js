@@ -1,5 +1,6 @@
 import {networks} from "./networks";
 
+
 /**
  * API to access the storage of the Hotwallet extension.
  */
@@ -95,19 +96,76 @@ export class StorageApi {
     }
 
     /**
-     * Returns the current account object.
-     * @return {Promise<unknown>} a promise that resolves to the current account object or undefined if data was not found
+     * Returns the array of accounts.
+     * @return {Promise<unknown>} a promise that resolves to the array of accounts
      */
-    getCurrentAccount() {
-        return this.getStore('account')
+    async getAccounts() {
+        const accounts = await this.getStore('accounts')
+        if (accounts && Array.isArray(accounts)) {
+            return accounts
+        }
+        return []
     }
 
     /**
-     * Sets the selected network object.
+     * It adds an account the list of accounts.
+     * @param account the account object
+     * @return {Promise<boolean>} a promise that resolves the operation result
+     */
+    async addAccount(account) {
+        const accounts = await this.getAccounts()
+
+        // mark the accounts as unselected and not logged
+        accounts.forEach(account => {
+            account.selected = false
+            account.logged = false
+        })
+        accounts.push(account)
+
+        const committed = await this.setToStore({accounts: accounts})
+        return committed
+    }
+
+    /**
+     * Returns the current select account object of a network.
+     * @param network the current network
+     * @return {Promise<unknown>} a promise that resolves to the current account object or undefined if data was not found
+     */
+    async getCurrentAccount(network) {
+        const accounts = await this.getAccounts()
+        for (const account of accounts) {
+            if (account.network.value === network.value && account.selected) {
+                return account
+            }
+        }
+
+        // no account found
+        throw new Error('No account found for this network')
+    }
+
+    /**
+     * It marks an account as logged.
+     * @param account the account object
+     * @return {Promise<boolean>} a promise that resolves the operation result
+     */
+    async loginAccount(account) {
+        const accounts = await this.getAccounts()
+        accounts.forEach(account=> {
+            if (account.publicKey === account.publicKey) {
+                account.logged = true
+            }
+        })
+
+        const committed = await this.setToStore({accounts: accounts})
+        return committed
+    }
+
+    /**
+     * Sets the current selected network object.
      * @param network the network object
      * @return {Promise<boolean>} a promise that resolves the operation result
      */
-    setNetwork(network) {
+    setCurrentNetwork(network) {
         return this.setToLocalStorage({network: network})
     }
 
@@ -128,11 +186,11 @@ export class StorageApi {
     }
 
     /**
-     * Returns the selected network object.
+     * Returns the current selected network object.
      * @param defaultNetwork if specified and no network was found, it will set this object as the current network
      * @return {Promise<unknown>} a promise that resolves to the selected network object
      */
-    async getNetwork(defaultNetwork) {
+    async getCurrentNetwork(defaultNetwork) {
         const network = await this.getLocalStorage('network')
 
         if (network) {
@@ -140,7 +198,7 @@ export class StorageApi {
         } else if (!defaultNetwork) {
             throw new Error('No network found and default network not specified')
         } else {
-            const committed = await this.setNetwork(defaultNetwork)
+            const committed = await this.setCurrentNetwork(defaultNetwork)
             if (!committed) {
                 throw new Error('Cannot set default network')
             }
@@ -178,8 +236,12 @@ export class StorageApi {
 
                 if (store && store.checked) {
                     result.hasAccount = true
-                    if (store.account) {
-                        result.authenticated = store.account.logged
+                    if (store.accounts) {
+                        store.accounts.forEach(account => {
+                            if (account.logged) {
+                                result.authenticated = true
+                            }
+                        })
                     }
                 }
 
