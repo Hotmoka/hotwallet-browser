@@ -25,12 +25,11 @@
 
       <div v-if="account.balance">
         <p class="text-dark">Balance</p>
-        <h4 class="text-success">{{ account.balance }} Mokas </h4>
-        <h4 class="text-danger">{{ account.balanceRed ? account.balanceRed : '0' }} Mokas </h4>
+        <h4 class="text-success">{{ account.balance }} Panarea </h4>
+        <h4 class="text-danger">{{ account.balanceRed ? account.balanceRed : '0' }} Panarea </h4>
       </div>
 
       <hr/>
-      <b-button variant="outline-primary" @click="onEditAccountClick">Edit account</b-button>
 
       <div class="btn-logout">
         <div class="d-flex justify-content-center">
@@ -52,11 +51,7 @@ export default {
   data() {
     return {
       showOptionsMenu: false,
-      account: {
-        balance: 0,
-        balanceRed: 0,
-        nonce: 0
-      }
+      account: null
     }
   },
   computed: {
@@ -92,9 +87,7 @@ export default {
 
             this.$storageApi.setToStore({
               account: {
-                ...this.account,
-                balance: this.account.balance,
-                balanceRed: this.account.balanceRed
+                ...this.account
               }
             })
           })
@@ -108,14 +101,16 @@ export default {
         }
       }).then(() => replaceRoute('/login'))
     },
-    onEditAccountClick() {
-      pushRoute('/edit-account')
-    },
     displayAccount() {
       WrapPromiseTask(() => this.$storageApi.getCurrentAccount())
           .then(account => {
             if (account) {
-              this.account = {...this.account, ...account}
+              this.account = {
+                balance: 0,
+                balanceRed: 0,
+                nonce: 0,
+                ...account
+              }
               this.getAccountInfo(this.account.reference)
             }
           })
