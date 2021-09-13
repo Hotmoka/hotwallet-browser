@@ -44,6 +44,7 @@
 import {EventBus, showErrorToast, WrapPromiseTask} from "../internal/utils";
 import {getNetwork} from "../internal/networks";
 import {stateFieldNotEmpty} from "../internal/validators";
+import {replaceRoute} from "../internal/router";
 
 export default {
   name: "Header",
@@ -86,9 +87,13 @@ export default {
     }
   },
   methods: {
-    onCancelConnectionClick() {
+    resetForm() {
       this.customNetwork.showModal = false
       this.customNetwork.form.url = null
+      this.customNetwork.form.name = null
+    },
+    onCancelConnectionClick() {
+      this.resetForm()
       // restore old network
       this.selectedNetwork = this.$network.value
     },
@@ -124,7 +129,7 @@ export default {
         return network
       })
       .then(network => {
-        this.customNetwork.form.url = null
+        this.resetForm()
         this.networks.push(network)
         this.selectedNetwork = network.value
         this.$network = network
@@ -134,7 +139,7 @@ export default {
         }
       })
       .catch(error => {
-        this.customNetwork.form.url = null
+        this.resetForm()
         showErrorToast(this,'Custom network connection', error.message ? error.message : 'Cannot connect to custom network')
         // restore previous network
         this.selectedNetwork = this.$network.value
@@ -152,6 +157,10 @@ export default {
       this.$network = currentNetwork
     },
     onNetworkChange(selectedNetwork) {
+      if (this.networkSelectionDisabled) {
+        showErrorToast(this,'Network', 'Option disabled')
+        return
+      }
 
       if (selectedNetwork === 'customNetwork') {
         this.customNetwork.showModal = true
@@ -182,9 +191,9 @@ export default {
     },
     onHeaderImageClick() {
       if (this.$route.path === '/home') {
-        this.$router.go()
+        EventBus.$emit('reloadAccount')
       } else {
-
+        replaceRoute('/home')
       }
     }
   },
