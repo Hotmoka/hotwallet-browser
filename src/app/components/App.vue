@@ -48,7 +48,7 @@ export default {
   },
   methods: {
     setNetwork: async function() {
-      const currentNetwork = await this.$storageApi.getNetwork(this.$network)
+      const currentNetwork = await this.$storageApi.getCurrentNetwork(this.$network)
       this.$network = currentNetwork
     }
   },

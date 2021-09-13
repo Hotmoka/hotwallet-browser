@@ -116,7 +116,7 @@ export default {
           throw new Error('Cannot add network')
         }
 
-        const committed = await this.$storageApi.setNetwork(network)
+        const committed = await this.$storageApi.setCurrentNetwork(network)
         if (!committed) {
           throw new Error('Cannot set network')
         }
@@ -168,7 +168,7 @@ export default {
           showErrorToast(this,'Network', 'Network not found')
         } else {
 
-          WrapPromiseTask(() => this.$storageApi.setNetwork(network))
+          WrapPromiseTask(() => this.$storageApi.setCurrentNetwork(network))
           .then(result => {
             if (result) {
               this.selectedNetwork = selectedNetwork

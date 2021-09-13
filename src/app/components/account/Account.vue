@@ -94,7 +94,7 @@ export default {
     }
   },
   created() {
-    WrapPromiseTask(() => this.$storageApi.getCurrentAccount())
+    WrapPromiseTask(() => this.$storageApi.getCurrentAccount(this.$network))
         .then(account => {
           if (!account) {
             showErrorToast(this, 'Account', 'Cannot retrieve account')

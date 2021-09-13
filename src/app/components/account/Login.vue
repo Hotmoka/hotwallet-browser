@@ -50,7 +50,7 @@ export default {
 
         // init store
         await this.$storageApi.initStore(this.password)
-        const account = await this.$storageApi.getCurrentAccount()
+        const account = await this.$storageApi.getCurrentAccount(this.$network)
 
         if (!account) {
           throw new Error('Cannot retrieve account')
@@ -59,15 +59,10 @@ export default {
         // generate key pair from password and check public keys
         const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.password, Bip39Dictionary.ENGLISH, account.entropy)
         if (keyPair.publicKey === account.publicKey) {
-          const committed = await this.$storageApi.setToStore({
-            account: {
-              ...account,
-              logged: true
-            }
-          })
+          const committed = await this.$storageApi.loginAccount(account)
 
           if (!committed) {
-            throw new Error('Cannot set account')
+            throw new Error('Cannot login with the account')
           }
         } else {
           throw new Error('Wrong password')

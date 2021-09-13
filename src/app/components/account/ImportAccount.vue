@@ -108,17 +108,19 @@ export default {
         if (keyPair.publicKey === publicKey) {
           // init store and add account
           await this.$storageApi.initStore(this.password)
-          const committed = await this.$storageApi.setToStore({
-            account: {
-              name: this.name,
-              reference: account.reference.transaction.hash,
-              nonce: account.reference.progressive,
-              entropy: keyPair.entropy,
-              publicKey: keyPair.publicKey,
-              selected: true,
-              logged: true
-            }
-          })
+          const committed = await this.$storageApi.addAccount(
+              {
+                name: this.name,
+                reference: account.reference.transaction.hash,
+                nonce: account.reference.progressive,
+                entropy: keyPair.entropy,
+                publicKey: keyPair.publicKey,
+                selected: true,
+                logged: true,
+                network: this.$network,
+                timestamp: new Date().getTime()
+              }
+          )
 
           if (!committed) {
             throw new Error('Cannot set account')

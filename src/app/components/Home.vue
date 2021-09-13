@@ -102,7 +102,7 @@ export default {
       }).then(() => replaceRoute('/login'))
     },
     displayAccount() {
-      WrapPromiseTask(() => this.$storageApi.getCurrentAccount())
+      WrapPromiseTask(() => this.$storageApi.getCurrentAccount(this.$network))
           .then(account => {
             if (account) {
               this.account = {
