@@ -7,6 +7,7 @@ import NewWallet from "../components/account/NewAccount";
 import Account from "../components/account/Account";
 import Transaction from "../components/Transaction";
 import Vue from "vue";
+import ListAccounts from "../components/account/ListAccounts";
 
 export const router = new VueRouter({
     routes: [
@@ -17,6 +18,7 @@ export const router = new VueRouter({
         { path: '/new-account', component: NewWallet },
         { path: '/account', component: Account, props: {editAccount: false} },
         { path: '/edit-account', component: Account, props: {editAccount: true} },
+        { path: '/account-list', component: ListAccounts },
         { path: '/transaction', name: 'transaction', component: Transaction, props: true },
         { path: '*', redirect: '/welcome' }
     ]
