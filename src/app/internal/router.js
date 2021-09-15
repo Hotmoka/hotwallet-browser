@@ -2,20 +2,21 @@ import VueRouter from "vue-router";
 import Welcome from "../components/Welcome";
 import Home from "../components/Home";
 import Login from "../components/account/Login";
-import ImportWallet from "../components/account/ImportAccount";
-import NewWallet from "../components/account/NewAccount";
+import ImportAccount from "../components/account/ImportAccount";
+import NewAccount from "../components/account/NewAccount";
 import Account from "../components/account/Account";
 import Transaction from "../components/Transaction";
 import Vue from "vue";
 import ListAccounts from "../components/account/ListAccounts";
+
 
 export const router = new VueRouter({
     routes: [
         { path: '/welcome', component: Welcome },
         { path: '/home', component: Home },
         { path: '/login', component: Login },
-        { path: '/import-account', component: ImportWallet },
-        { path: '/new-account', component: NewWallet },
+        { path: '/import-account', component: ImportAccount },
+        { path: '/new-account', component: NewAccount },
         { path: '/account', component: Account, props: {editAccount: false} },
         { path: '/edit-account', component: Account, props: {editAccount: true} },
         { path: '/account-list', component: ListAccounts },
@@ -24,14 +25,20 @@ export const router = new VueRouter({
     ]
 })
 
-export const replaceRoute = (route) => {
+export const replaceRoute = (route, params) => {
     if (router.currentRoute.path !== route) {
-        router.replace(route).catch(() => {})
+        if (params && typeof params === 'object') {
+            router.push({ name: route.substring(1), params: params}).catch(() => {})
+        } else {
+            router.replace(route).catch(() => {})
+        }
     }
 }
 
-export const pushRoute = (route) => {
-    if (router.currentRoute.path !== route) {
+export const pushRoute = (route, params) => {
+    if (params && typeof params === 'object') {
+        router.push({ name: route.substring(1), params: params}).catch(() => {})
+    } else {
         router.push(route).catch(() => {})
     }
 }
