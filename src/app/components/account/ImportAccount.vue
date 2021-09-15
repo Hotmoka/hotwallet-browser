@@ -60,7 +60,7 @@ import {
 import {replaceRoute} from "../../internal/router";
 
 export default {
-  name: "ImportWallet",
+  name: "ImportAccount",
   data() {
     return {
       password: null,

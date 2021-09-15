@@ -98,7 +98,7 @@ import {
 } from "../../internal/validators";
 
 export default {
-  name: "NewWallet",
+  name: "NewAccount",
   data() {
     return {
       faucet: {
