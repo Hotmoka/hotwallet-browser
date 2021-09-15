@@ -84,7 +84,9 @@ export default {
       replaceRoute('/home')
     },
     onSaveAccountClick() {
-      this.$storageApi.setToStore({account: this.account}).then(() => replaceRoute("/home"))
+      this.$storageApi.updateAccount(this.account)
+          .then(() => replaceRoute("/home"))
+          .catch(() => showErrorToast(this, 'Account', 'Cannot update account'))
     },
     onCopyContentClick() {
       const words = this.words.join(' ')

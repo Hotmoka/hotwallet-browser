@@ -5,9 +5,9 @@
       <b-popover :show.sync="showOptionsMenu" target="popover-options-button" placement="top">
         <b-list-group>
           <b-list-group-item button @click="onOptionClick('expand-view')" v-if="isPopup">Expand view</b-list-group-item>
-          <b-list-group-item button @click="onOptionClick('edit-account')">Edit account</b-list-group-item>
-          <b-list-group-item button @click="onOptionClick('import-account')">Import account</b-list-group-item>
-          <b-list-group-item button @click="onOptionClick('account-list')">Account list</b-list-group-item>
+          <b-list-group-item button @click="onOptionClick('/edit-account')">Edit account</b-list-group-item>
+          <b-list-group-item button @click="onOptionClick('/import-account')">Import account</b-list-group-item>
+          <b-list-group-item button @click="onOptionClick('/account-list')">Account list</b-list-group-item>
         </b-list-group>
       </b-popover>
 
@@ -65,12 +65,8 @@ export default {
         this.$browser.tabs.create({
           url: this.$browser.runtime.getURL("app/index.html")
         });
-      } else if (option === 'edit-account') {
-        pushRoute('/edit-account')
-      } else if (option === 'import-account') {
-        pushRoute('/import-account')
-      } else if (option === 'account-list') {
-        pushRoute('/account-list')
+      } else {
+        pushRoute(option)
       }
     },
     getAccountInfo(accountReference) {
@@ -85,11 +81,7 @@ export default {
               }
             })
 
-            this.$storageApi.setToStore({
-              account: {
-                ...this.account
-              }
-            })
+            this.$storageApi.updateAccount(this.account)
           })
           .catch(error => showErrorToast(this, 'Account', error.message ? error.message : 'Cannot retrieve account details'))
     },

@@ -127,6 +127,20 @@ export class StorageApi {
     }
 
     /**
+     * It updates an account.
+     * @param account the account
+     * @return {Promise<boolean>} a promise that resolves  the operation result
+     */
+    async updateAccount(account) {
+        const accounts = await this.getAccounts()
+        const temp_accounts = accounts.filter(acc => acc.publicKey !== account.publicKey)
+        temp_accounts.push(account)
+
+        const committed = await this.setToStore({accounts: temp_accounts})
+        return committed
+    }
+
+    /**
      * Returns the current select account object of a network.
      * @param network the current network
      * @return {Promise<unknown>} a promise that resolves to the current account object or undefined if data was not found
@@ -151,9 +165,12 @@ export class StorageApi {
      */
     async setAccountLogin(account, logged) {
         const accounts = await this.getAccounts()
-        accounts.forEach(account=> {
-            if (account.publicKey === account.publicKey) {
-                account.logged = logged
+        accounts.forEach(account_ => {
+            if (account_.publicKey === account.publicKey) {
+                account_.logged = logged
+            } else {
+                account_.logged = false
+                account_.selected = false
             }
         })
 

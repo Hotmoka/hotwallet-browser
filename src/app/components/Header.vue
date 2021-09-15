@@ -195,6 +195,7 @@ export default {
     }
   },
   created() {
+    EventBus.$on('networkChange', () => this.selectedNetwork = this.$network.value)
     this.networkSelectionDisabled = this.$route.path !== '/home' && this.$route.path !== '/welcome'
     this.setNetworks()
   }
