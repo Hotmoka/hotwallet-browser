@@ -86,7 +86,7 @@ export default {
     onSaveAccountClick() {
       this.$storageApi.updateAccount(this.account)
           .then(() => replaceRoute("/home"))
-          .catch(() => showErrorToast(this, 'Account', 'Cannot update account'))
+          .catch(err => showErrorToast(this, 'Account', err.message ? err.message : 'Cannot update account'))
     },
     onCopyContentClick() {
       const words = this.words.join(' ')

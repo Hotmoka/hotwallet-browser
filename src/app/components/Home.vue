@@ -7,6 +7,7 @@
           <b-list-group-item button @click="onOptionClick('expand-view')" v-if="isPopup">Expand view</b-list-group-item>
           <b-list-group-item button @click="onOptionClick('/edit-account')">Edit account</b-list-group-item>
           <b-list-group-item button @click="onOptionClick('/import-account')">Import account</b-list-group-item>
+          <b-list-group-item button @click="onOptionClick('/new-account')">Create account</b-list-group-item>
           <b-list-group-item button @click="onOptionClick('/account-list')">Account list</b-list-group-item>
         </b-list-group>
       </b-popover>

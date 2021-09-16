@@ -48,8 +48,9 @@ export default {
 
       WrapPromiseTask(async () => {
 
-        // init store
-        await this.$storageApi.initStore(this.password)
+        // set password and init store
+        await this.$storageApi.setPassword(this.password)
+        await this.$storageApi.initStore()
         const account = await this.$storageApi.getCurrentAccount(this.$network)
 
         if (!account) {

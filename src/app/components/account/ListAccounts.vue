@@ -11,12 +11,24 @@
       </b-list-group-item>
     </b-list-group>
 
-    <b-modal v-model="modal.showModal" centered :hideHeaderClose="true" title="Account">
-      <p>Are you sure you want to switch to the selected account ?</p>
+
+    <b-modal v-model="modal.showModal" centered :hideHeaderClose="true" title="Login">
+      <p>Please login with the selected account</p>
+      <div class="text-left form-container">
+        <b-form-group
+            id="i-pwd"
+            label="Password"
+            label-for="i-pwd"
+            :invalid-feedback="invalidFeedback"
+            :state="state"
+        >
+          <b-form-input type="password" id="i-pwd" v-model="accountSelected.password" :state="state" trim></b-form-input>
+        </b-form-group>
+      </div>
 
       <template #modal-footer>
-        <b-button @click="onModalActionClick(false)" variant="secondary">No</b-button>
-        <b-button @click="onModalActionClick(true)" variant="primary">Yes</b-button>
+        <b-button @click="onModalActionClick(false)" variant="secondary">Cancel</b-button>
+        <b-button @click="onModalActionClick(true)" variant="primary" :disabled="!state">Login</b-button>
       </template>
 
     </b-modal>
@@ -27,6 +39,8 @@
 <script>
 import {EventBus, showErrorToast, WrapPromiseTask} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
+import {invalidPasswordFeedback, statePassword} from "../../internal/validators";
+import {AccountHelper, Bip39Dictionary} from "hotweb3";
 
 export default {
   name: "ListAccounts",
@@ -35,35 +49,62 @@ export default {
       modal: {
         showModal: false
       },
-      accountSelected: null,
+      accountSelected: {
+        account: null,
+        password: null
+      },
       accounts: [],
       currentAccount: null
     }
   },
+  computed: {
+    state() {
+      return statePassword(this.accountSelected.password)
+    },
+    invalidFeedback() {
+      return invalidPasswordFeedback(this.accountSelected.password)
+    },
+  },
   methods: {
+    resetSelectedAccount() {
+      this.accountSelected.account = null
+      this.accountSelected.password = null
+    },
     onModalActionClick(switchAccount) {
       this.modal.showModal = false
+
       if (switchAccount) {
         WrapPromiseTask(async () => {
 
-          const committed = await this.$storageApi.setAccountLogin(this.accountSelected, true)
+          // generate public key from password and the entropy of the selected account
+          const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.accountSelected.password, Bip39Dictionary.ENGLISH, this.accountSelected.account.entropy)
+          if (keyPair.publicKey !== this.accountSelected.account.publicKey) {
+            throw new Error("Wrong password")
+          }
+
+          // set new password
+          await this.$storageApi.setPassword(this.accountSelected.password)
+          const committed = await this.$storageApi.setAccountLogin(this.accountSelected.account, true)
           if (!committed) {
             throw new Error('Cannot switch to the selected account')
           }
 
-          this.$network = this.accountSelected.network
+          this.$network = this.accountSelected.account.network
           EventBus.$emit('networkChanged')
         }).then(() => replaceRoute('/home'))
-        .catch(err => showErrorToast(this, 'Accounts',err.message ? err.message : 'Cannot switch to the selected account'))
+          .catch(err => {
+              this.resetSelectedAccount()
+              showErrorToast(this, 'Accounts', err.message ? err.message : 'Cannot switch to the selected account')
+          })
 
       } else {
-        this.accountSelected = null
+        this.resetSelectedAccount()
       }
     },
     onAccountClick(index) {
       if (this.currentAccount.publicKey !== this.accounts[index].publicKey) {
         this.modal.showModal = true
-        this.accountSelected = this.accounts[index]
+        this.accountSelected.account = this.accounts[index]
       }
     },
     getAccounts() {

@@ -106,8 +106,8 @@ export default {
 
         // check if generated public key matches the public key from the remote node
         if (keyPair.publicKey === publicKey) {
-          // init store and add account
-          await this.$storageApi.initStore(this.password)
+          // set password and add account
+          await this.$storageApi.setPassword(this.password)
           const committed = await this.$storageApi.addAccount(
               {
                 name: this.name,
@@ -126,9 +126,6 @@ export default {
             throw new Error('Cannot set account')
           }
 
-          // reinit store
-          await this.$storageApi.reinitStore()
-
         } else {
           throw new Error('Invalid words or password')
         }
@@ -140,8 +137,12 @@ export default {
     }
   },
   created() {
+    const test = "session gas pass sell industry gentle sister hope charge fiber collect word spy lunar alone open build recall salt able avoid citizen basic gossip crash vocal actor sound fiscal average fish sausage tray cereal faith grape"
+    const arr = test.split(" ")
+
+
     for (let i = 0; i < 36; i++) {
-      this.words.push(null)
+      this.words.push(arr[i])
     }
   }
 }

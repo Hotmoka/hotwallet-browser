@@ -121,11 +121,6 @@ export default {
           throw new Error('Cannot set network')
         }
 
-        // reinit store
-        if (this.$route.path === '/home') {
-          await this.$storageApi.reinitStore()
-        }
-
         return network
       })
       .then(network => {

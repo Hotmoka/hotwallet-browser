@@ -175,8 +175,8 @@ export default {
         const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.newAccount.password, Bip39Dictionary.ENGLISH)
         const account = await new AccountHelper(remoteNode).createAccountFromFaucet(Algorithm.ED25519, keyPair, balance.toString(), "0")
 
-        // init store and add account
-        await this.$storageApi.initStore(this.newAccount.password)
+        // set password and add account
+        await this.$storageApi.setPassword(this.newAccount.password)
         const committed = await this.$storageApi.addAccount(
             {
               name: this.newAccount.name,
@@ -194,9 +194,6 @@ export default {
         if (!committed) {
           throw new Error('Cannot add account')
         }
-
-        // reinit store
-        await this.$storageApi.reinitStore()
 
       }).then(() =>
           replaceRoute('/account')
