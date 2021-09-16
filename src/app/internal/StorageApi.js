@@ -11,27 +11,27 @@ export class StorageApi {
     }
 
     /**
-     * It initializes the local storage and the in memory storage.
+     * It set the password of the store.
      * @param password the password to encrypt/decrypt the data of local storage
      * @return {Promise<unknown>} a promise that resolves to void
      */
-    initStore(password) {
+    setPassword(password) {
         return this.browser.runtime.sendMessage({
             hotmoka: {
-                type: 'store-init',
+                type: 'store-set-pwd',
                 password: password
             }
         })
     }
 
     /**
-     * It reinitializes the local storage and the in memory storage.
+     * It initializes the local storage and the in memory storage.
      * @return {Promise<unknown>} a promise that resolves to void
      */
-    reinitStore() {
+    initStore() {
         return this.browser.runtime.sendMessage({
             hotmoka: {
-                type: 'store-reinit'
+                type: 'store-init'
             }
         })
     }
@@ -114,6 +114,11 @@ export class StorageApi {
      */
     async addAccount(account) {
         const accounts = await this.getAccounts()
+        for (const acc of accounts) {
+            if (acc.name === account.name) {
+                throw new Error('Account name already registered')
+            }
+        }
 
         // mark the accounts as unselected and not logged
         accounts.forEach(account => {
@@ -133,10 +138,15 @@ export class StorageApi {
      */
     async updateAccount(account) {
         const accounts = await this.getAccounts()
-        const temp_accounts = accounts.filter(acc => acc.publicKey !== account.publicKey)
-        temp_accounts.push(account)
+        const tempAccounts = accounts.filter(acc => acc.publicKey !== account.publicKey)
+        for (const acc of tempAccounts) {
+            if (acc.name === account.name) {
+                throw new Error('Account name already registered')
+            }
+        }
+        tempAccounts.push(account)
 
-        const committed = await this.setToStore({accounts: temp_accounts})
+        const committed = await this.setToStore({accounts: tempAccounts})
         return committed
     }
 
@@ -165,12 +175,14 @@ export class StorageApi {
      */
     async setAccountLogin(account, logged) {
         const accounts = await this.getAccounts()
-        accounts.forEach(account_ => {
-            if (account_.publicKey === account.publicKey) {
-                account_.logged = logged
+        accounts.forEach(acc => {
+
+            if (acc.publicKey === account.publicKey) {
+                acc.logged = logged
+                acc.selected = true
             } else {
-                account_.logged = false
-                account_.selected = false
+                acc.logged = false
+                acc.selected = false
             }
         })
 
@@ -252,7 +264,7 @@ export class StorageApi {
                     hasAccount: false
                 }
 
-                if (store && store.checked) {
+                if (store && (store.checked || store.accounts)) {
                     result.hasAccount = true
                     if (store.accounts) {
                         store.accounts.forEach(account => {

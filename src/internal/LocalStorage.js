@@ -22,12 +22,11 @@ export class LocalStorage {
     /**
      * It publishes an object to local storage.
      * @param data the data object
-     * @return <Promise<boolean> a promise that resolves to the result of the operation
+     * @return <Promise<void> a promise that resolves to void or throws an error if data could not be saved
      */
     async setData(data) {
         try {
             await browser.storage.local.set({...data})
-            return true
         } catch (err) {
             throw new Error(err.message ? err.message : 'Error while publishing to local storage')
         }

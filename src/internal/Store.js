@@ -28,32 +28,31 @@ export class Store {
     }
 
     /**
-     * It initializes the store.
+     * It sets a password for this store.
      * @param password the password to encrypt/decrypt the data of local storage
      * @return {Promise<unknown>} a promise that resolves to void
      */
-    async initStore(password) {
+    async setPassword(password) {
 
         if (!password) {
             throw new Error('A password must be provided')
         }
 
+        if (typeof password !== 'string') {
+            throw new Error('The password must be a string')
+        }
+
         this.password = password
-        return this.reinitStore()
     }
 
     /**
-     * It reinitializes the store.
+     * It initializes the store.
      * @return {Promise<unknown>} a promise that resolves to void
      */
-    async reinitStore() {
+    async initStore() {
 
         if (!this.password) {
-            throw new Error('No password set. Call first initStore and provide a password')
-        }
-
-        if (typeof this.password !== 'string') {
-            throw new Error('The password must be a string')
+            throw new Error('A password must be provided using setPassword method')
         }
 
         const data = await this.localStorage.getData('data')
@@ -68,6 +67,7 @@ export class Store {
         }
     }
 
+
     /**
      * It returns the store.
      * @return {Promise<unknown>} a promise that resolves the store object
@@ -79,14 +79,13 @@ export class Store {
     /**
      * It publishes an object to the store. The browser's local storage will get updated too.
      * @param data the data object
-     * @return {Promise<unknown>} a promise that resolves to the result of the operation
+     * @return {Promise<void>} a promise that resolves to void or throws an error if data could not be saved
      */
     async setToStore(data) {
         try {
             this.store = {...this.store, ...data}
             const encryptedData = await aesEncrypt(JSON.stringify(this.store), this.password)
             await this.localStorage.setData({data: {enc: encryptedData}})
-            return true
         } catch (err) {
             throw new Error(err.message ? err.message : 'Error while publishing to store')
         }
