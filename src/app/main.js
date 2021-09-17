@@ -7,7 +7,7 @@ import VueRouter from 'vue-router'
 import App from './components/App'
 import {router} from "./internal/router";
 import {StorageApi} from "./internal/StorageApi";
-import {networks} from "../internal/constants";
+import {NetworkHolder} from "./internal/NetworkHolder";
 const browser = require('webextension-polyfill')
 
 Vue.use(VueRouter)
@@ -18,7 +18,7 @@ Vue.config.productionTip = false
 
 Vue.prototype.$browser = browser
 Vue.prototype.$storageApi = new StorageApi(browser)
-Vue.prototype.$network = networks[0] // default network
+Vue.prototype.$network = new NetworkHolder(Vue.prototype.$storageApi)
 
 const root = document.getElementById('app')
 Vue.prototype.$isPopup = root.attributes['app-type'].value === 'popup'

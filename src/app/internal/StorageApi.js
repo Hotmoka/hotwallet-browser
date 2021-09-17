@@ -98,6 +98,17 @@ export class StorageApi {
     }
 
     /**
+     * Returns the array of accounts of a network.
+     * @param network the network
+     * @return {Promise<unknown>} a promise that resolves to the array of accounts
+     */
+    async getAccountsForNetwork(network) {
+        const accounts = await this.getAccounts()
+        return accounts.filter(acc => acc.network.value === network.value)
+    }
+
+
+    /**
      * It adds an account to the list of accounts.
      * @param account the account object
      * @return {Promise<void>} a promise that resolves to void
@@ -189,11 +200,26 @@ export class StorageApi {
     }
 
     /**
+     * It performs a logout for all the accounts.
+     * @return {Promise<void>} a promise that resolves to void
+     */
+    async logoutAllAccounts() {
+        const accounts = await this.getAccounts()
+        accounts.forEach(acc => {
+            acc.logged = false
+            acc.selected = false
+        })
+
+        await this.persistToPrivateStore('accounts', accounts)
+        await this.persistToPublicStore('account', null)
+    }
+
+    /**
      * Sets the current network as the selected network.
      * @param network the network object
      * @return {Promise<void>} a promise that resolves to void
      */
-    async setCurrentNetwork(network) {
+    async selectNetwork(network) {
         const networks = await this.getNetworks()
         networks.forEach(network_ => network_.selected = network_.value === network.value)
         await this.persistToPublicStore('networks', networks)
@@ -230,10 +256,10 @@ export class StorageApi {
     }
 
     /**
-     * Returns the selected network.
+     * Returns the current selected network.
      * @return {Promise<unknown>} a promise that resolves to selected network or to null
      */
-    async getSelectedNetwork() {
+    async getCurrentNetwork() {
         const networks = await this.getNetworks()
         const selectedNetworks = networks.filter(network => network.selected)
         const network = selectedNetworks.length > 0 ? selectedNetworks[0] : null

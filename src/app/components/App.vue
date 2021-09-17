@@ -15,7 +15,7 @@
       <div :class="isPopup ? 'popup' : 'card'">
         <Header/>
         <Navigation :isPopup="isPopup"/>
-        <router-view></router-view>
+        <router-view v-if="showView"></router-view>
       </div>
     </div>
   </b-overlay>
@@ -23,7 +23,7 @@
 
 <script>
 
-import {EventBus} from "../internal/utils";
+import {EventBus, showErrorToast, WrapPromiseTask} from "../internal/utils";
 import Header from "./Header"
 import Navigation from "./Navigation";
 
@@ -38,7 +38,8 @@ export default {
   },
   data() {
     return {
-      showSpinner: false
+      showSpinner: false,
+      showView: false
     }
   },
   computed: {
@@ -49,11 +50,17 @@ export default {
   created() {
     EventBus.$on('showSpinner', show => this.showSpinner = show)
 
-    // check if from transaction
-    if (this.$route.redirectedFrom && this.$route.redirectedFrom.indexOf('/transaction') !== -1) {
-      const uuid = this.$route.redirectedFrom.split(":")[1]
-      this.$router.replace({ name: 'transaction', params: { uuid: uuid }})
-    }
+    WrapPromiseTask(() => this.$network.init())
+        .then(() => {
+          this.showView = true
+
+          // check if from transaction
+          if (this.$route.redirectedFrom && this.$route.redirectedFrom.indexOf('/transaction') !== -1) {
+            const uuid = this.$route.redirectedFrom.split(":")[1]
+            this.$router.replace({name: 'transaction', params: {uuid: uuid}})
+          }
+        })
+        .catch(() => showErrorToast(this, 'Error', 'An error occured'))
   }
 };
 </script>

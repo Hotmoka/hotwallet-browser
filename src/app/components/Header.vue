@@ -44,6 +44,7 @@
 import {EventBus, showErrorToast, WrapPromiseTask, getNetwork} from "../internal/utils";
 import {stateFieldNotEmpty} from "../internal/validators";
 import {replaceRoute} from "../internal/router";
+import {RemoteNode} from "hotweb3";
 
 export default {
   name: "Header",
@@ -94,7 +95,7 @@ export default {
     onCancelConnectionClick() {
       this.resetForm()
       // restore old network
-      this.selectedNetwork = this.$network.value
+      this.selectedNetwork = this.$network.get().value
     },
     onConnectToCustomNetworkClick() {
       this.customNetwork.showModal = false
@@ -111,38 +112,35 @@ export default {
           selected: true
         }
 
+        const validNetwork = await this.testNetwork(network)
+        if (!validNetwork) {
+          throw new Error('Cannot connect to network')
+        }
+
         // add and set network as selected
         await this.$storageApi.addNetwork(network)
-        await this.$storageApi.setCurrentNetwork(network)
+        await this.$storageApi.selectNetwork(network)
+        await this.$storageApi.logoutAllAccounts()
 
         return network
       })
       .then(network => {
         this.resetForm()
+        this.$network.set(network)
         this.networks.push(network)
         this.selectedNetwork = network.value
-        this.$network = network
-
-        if (this.$route.path === '/home') {
-          EventBus.$emit('reloadAccount')
-        }
+        replaceRoute('/')
       })
       .catch(error => {
         this.resetForm()
         showErrorToast(this,'Custom network connection', error.message ? error.message : 'Cannot connect to custom network')
 
         // restore previous network
-        this.selectedNetwork = this.$network.value
+        this.selectedNetwork = this.$network.get().value
         if (this.$route.path === '/home') {
           EventBus.$emit('reloadAccount')
         }
       })
-    },
-    setNetworks: async function() {
-      const _networks = await this.$storageApi.getNetworks()
-      this.networks = [..._networks]
-      this.$network = await this.$storageApi.getSelectedNetwork()
-      this.selectedNetwork = this.$network.value
     },
     onNetworkChange(selectedNetwork) {
       if (this.networkSelectionDisabled) {
@@ -154,23 +152,32 @@ export default {
         this.customNetwork.showModal = true
 
       } else {
+
         const network = getNetwork(selectedNetwork, this.networks)
         if (!network) {
           showErrorToast(this,'Network', 'Network not found')
         } else {
 
-          WrapPromiseTask(() => this.$storageApi.setCurrentNetwork(network))
-          .then(result => {
-            if (result) {
-              this.selectedNetwork = selectedNetwork
-              this.$network = network
+          WrapPromiseTask(async () => {
+            await this.$storageApi.selectNetwork(network)
+            const accountsForNetwork = await this.$storageApi.getAccountsForNetwork(network)
 
-              if (this.$route.path === '/home') {
-                EventBus.$emit('reloadAccount')
-              }
-
+            if (accountsForNetwork.length === 0) {
+              return {network, newAccount: true}
             } else {
-              showErrorToast(this,'Network', 'Cannot set network')
+              await this.$storageApi.setAccountAuth(accountsForNetwork[0], true)
+              return {network, newAccount: false}
+            }
+
+          })
+          .then(result => {
+            this.$network.set(result.network)
+            this.selectedNetwork = result.network.value
+
+            if (result.newAccount) {
+              replaceRoute('/')
+            } else if (this.$route.path === '/home') {
+              EventBus.$emit('reloadAccount')
             }
           })
           .catch(() => showErrorToast(this,'Network', 'Cannot set network'))
@@ -183,10 +190,25 @@ export default {
       } else {
         replaceRoute('/home')
       }
+    },
+    setNetworks: async function() {
+      const _networks = await this.$storageApi.getNetworks()
+      this.networks = [..._networks]
+      const currentNetwork = await this.$storageApi.getCurrentNetwork()
+      this.$network.set(currentNetwork)
+      this.selectedNetwork = currentNetwork.value
+    },
+    testNetwork: async function(network) {
+      try {
+        const takamakaCode = await new RemoteNode(network.url).getTakamakaCode()
+        return takamakaCode && takamakaCode.hash
+      } catch (e) {
+        return false
+      }
     }
   },
   created() {
-    EventBus.$on('networkChange', () => this.selectedNetwork = this.$network.value)
+    EventBus.$on('networkChange', (network) => this.selectedNetwork = network.value)
     this.networkSelectionDisabled = this.$route.path !== '/home' && this.$route.path !== '/welcome'
     this.setNetworks()
   }

@@ -163,7 +163,7 @@ export default {
 
       WrapPromiseTask(async () => {
 
-        const remoteNode = new RemoteNode(this.$network.url)
+        const remoteNode = new RemoteNode(this.$network.get().url)
         const gamete = await remoteNode.getGamete()
         const balanceOfFaucet = await this.getBalanceOfAccount(gamete.transaction.hash)
 
@@ -186,7 +186,7 @@ export default {
               publicKey: keyPair.publicKey,
               selected: true,
               logged: true,
-              network: {value: this.$network.value, url: this.$network.url},
+              network: {value: this.$network.get().value, url: this.$network.get().url},
               created: new Date().getTime()
             }
         )
@@ -212,17 +212,18 @@ export default {
       }
     },
     getBalanceOfAccount: async function (hashOfStorageReference) {
-      return new AccountHelper(new RemoteNode(this.$network.url))
+      return new AccountHelper(new RemoteNode(this.$network.get().url))
           .getBalance(StorageReferenceModel.newStorageReference(hashOfStorageReference))
     },
     isFaucetAllowed() {
-      WrapPromiseTask(() => new RemoteNode(this.$network.url).allowsUnsignedFaucet())
+      WrapPromiseTask(() => new RemoteNode(this.$network.get().url).allowsUnsignedFaucet())
           .then(result => this.faucet.allowsUnsignedFaucet = result)
           .catch(error => showErrorToast(this, 'Faucet', error.message ? error.message : 'Cannot retrieve faucet'))
     }
   },
   created() {
     this.isFaucetAllowed()
+    console.log('network', this.$network.get())
   }
 }
 </script>

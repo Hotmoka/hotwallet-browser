@@ -7,7 +7,7 @@
                          v-for="(account, index) in accounts"
                          :active="account.publicKey === currentAccount.publicKey"
                           @click="onAccountClick(index)">
-        {{ account.name }} <br/> <span style="color: #000">{{ account.network.text }}</span>
+        <span style="color: #000; word-break: break-word"> {{ account.name }} </span><br/> <span class="text-secondary">{{ account.network.url }}</span>
       </b-list-group-item>
     </b-list-group>
 
@@ -22,7 +22,7 @@
             :invalid-feedback="invalidFeedback"
             :state="state"
         >
-          <b-form-input type="password" id="i-pwd" v-model="accountSelected.password" :state="state" trim></b-form-input>
+          <b-form-input type="password" id="i-pwd" v-model="accountSelection.password" :state="state" trim></b-form-input>
         </b-form-group>
       </div>
 
@@ -49,7 +49,7 @@ export default {
       modal: {
         showModal: false
       },
-      accountSelected: {
+      accountSelection: {
         account: null,
         password: null
       },
@@ -59,16 +59,16 @@ export default {
   },
   computed: {
     state() {
-      return statePassword(this.accountSelected.password)
+      return statePassword(this.accountSelection.password)
     },
     invalidFeedback() {
-      return invalidPasswordFeedback(this.accountSelected.password)
+      return invalidPasswordFeedback(this.accountSelection.password)
     },
   },
   methods: {
-    resetSelectedAccount() {
-      this.accountSelected.account = null
-      this.accountSelected.password = null
+    resetAccountSelection() {
+      this.accountSelection.account = null
+      this.accountSelection.password = null
     },
     onModalActionClick(switchAccount) {
       this.modal.showModal = false
@@ -77,36 +77,41 @@ export default {
         WrapPromiseTask(async () => {
 
           // generate public key from password and the entropy of the selected account
-          const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.accountSelected.password, Bip39Dictionary.ENGLISH, this.accountSelected.account.entropy)
-          if (keyPair.publicKey !== this.accountSelected.account.publicKey) {
+          const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.accountSelection.password, Bip39Dictionary.ENGLISH, this.accountSelection.account.entropy)
+          if (keyPair.publicKey !== this.accountSelection.account.publicKey) {
             throw new Error("Wrong password")
           }
 
           // set new password
-          await this.$storageApi.setPassword(this.accountSelected.password)
-          await this.$storageApi.setAccountAuth(this.accountSelected.account, true)
-          this.$network = this.accountSelected.account.network
-          EventBus.$emit('networkChanged')
+          await this.$storageApi.setPassword(this.accountSelection.password)
+          await this.$storageApi.setAccountAuth(this.accountSelection.account, true)
+          await this.$storageApi.selectNetwork(this.accountSelection.account.network)
+          const currentNetwork = await this.$storageApi.getCurrentNetwork()
+          this.$network.set(currentNetwork)
+
+          // notify network change
+          EventBus.$emit('networkChange', currentNetwork)
 
         }).then(() => replaceRoute('/home'))
           .catch(err => {
-              this.resetSelectedAccount()
+              this.resetAccountSelection()
               showErrorToast(this, 'Accounts', err.message ? err.message : 'Cannot switch to the selected account')
           })
 
       } else {
-        this.resetSelectedAccount()
+        this.resetAccountSelection()
       }
     },
     onAccountClick(index) {
       if (this.currentAccount.publicKey !== this.accounts[index].publicKey) {
         this.modal.showModal = true
-        this.accountSelected.account = this.accounts[index]
+        this.accountSelection.account = this.accounts[index]
       }
     },
     getAccounts() {
       WrapPromiseTask(async () => {
-        const currentAccount = await this.$storageApi.getCurrentAccount(this.$network)
+        const network = await this.$storageApi.getCurrentNetwork()
+        const currentAccount = await this.$storageApi.getCurrentAccount(network)
         const accounts = await this.$storageApi.getAccounts()
 
         return {currentAccount, accounts}

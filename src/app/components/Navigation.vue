@@ -74,7 +74,8 @@ export default {
   text-decoration: none !important;
 }
 
-.navigation a:hover > svg {
+.navigation a:hover, .navigation a:hover > svg {
   color: darkblue !important;
 }
+
 </style>

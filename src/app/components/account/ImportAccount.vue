@@ -102,7 +102,7 @@ export default {
         const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.password, Bip39Dictionary.ENGLISH, account.entropy)
 
         // get public key of the generated account
-        const publicKey = await new AccountHelper(new RemoteNode(this.$network.url)).getPublicKey(account.reference)
+        const publicKey = await new AccountHelper(new RemoteNode(this.$network.get().url)).getPublicKey(account.reference)
 
         // check if generated public key matches the public key from the remote node
         if (keyPair.publicKey === publicKey) {
@@ -117,7 +117,7 @@ export default {
                 publicKey: keyPair.publicKey,
                 selected: true,
                 logged: true,
-                network: {value: this.$network.value, url: this.$network.url},
+                network: {value: this.$network.get().value, url: this.$network.get().url},
                 created: new Date().getTime()
               }
           )
@@ -132,12 +132,8 @@ export default {
     }
   },
   created() {
-    const test = "session gas pass sell industry gentle sister hope charge fiber collect word spy lunar alone open build recall salt able avoid citizen basic gossip crash vocal actor sound fiscal average fish sausage tray cereal faith grape"
-    const arr = test.split(" ")
-
-
     for (let i = 0; i < 36; i++) {
-      this.words.push(arr[i])
+      this.words.push(null)
     }
   }
 }

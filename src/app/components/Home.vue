@@ -71,7 +71,7 @@ export default {
       }
     },
     getAccountInfo(accountReference) {
-      WrapPromiseTask(() => new RemoteNode(this.$network.url).getState(StorageReferenceModel.newStorageReference(accountReference)))
+      WrapPromiseTask(() => new RemoteNode(this.$network.get().url).getState(StorageReferenceModel.newStorageReference(accountReference)))
           .then(result => {
             const updates = result.updates
             updates.forEach(update => {
@@ -92,19 +92,17 @@ export default {
           .catch(() => showErrorToast(this, 'Account','Unable to logout'))
     },
     displayAccount() {
-      WrapPromiseTask(() => this.$storageApi.getCurrentAccount(this.$network))
-          .then(account => {
-            if (account) {
-              this.account = {
-                balance: 0,
-                balanceRed: 0,
-                nonce: 0,
-                ...account
-              }
-              this.getAccountInfo(this.account.reference)
-            }
-          })
-          .catch(error => showErrorToast(this, 'Account', error.message ? error.message : 'Cannot retrieve account'))
+      WrapPromiseTask(() => this.$storageApi.getCurrentAccount(this.$network.get())).then(account => {
+        if (account) {
+          this.account = {
+            balance: 0,
+            balanceRed: 0,
+            nonce: 0,
+            ...account
+          }
+          this.getAccountInfo(this.account.reference)
+        }
+      }).catch(error => showErrorToast(this, 'Account', error.message ? error.message : 'Cannot retrieve account'))
     }
   },
   created() {

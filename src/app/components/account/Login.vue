@@ -55,7 +55,7 @@ export default {
         // set password and init store
         await this.$storageApi.setPassword(this.password)
         await this.$storageApi.initPrivateStore()
-        const account = await this.$storageApi.getCurrentAccount(this.$network)
+        const account = await this.$storageApi.getCurrentAccount(this.$network.get())
 
         if (!account) {
           throw new Error('Cannot retrieve account')
