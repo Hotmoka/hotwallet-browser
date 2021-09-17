@@ -1,7 +1,7 @@
 const browser = require("webextension-polyfill")
 const {Store} = require('./internal/store/Store')
 const {BackgroundHandler} = require("./internal/background/BackgroundHandler");
-const {publicStoreObjectKeys, privateStoreObjectKeys} = require("./internal/store/StoreHelper");
+const {publicStoreObjectKeys, privateStoreObjectKeys, networks} = require("./internal/constants");
 
 (async() => {
     const store = new Store()
@@ -40,5 +40,5 @@ const {publicStoreObjectKeys, privateStoreObjectKeys} = require("./internal/stor
     })
 
     await store.loadStore(publicStoreObjectKeys, privateStoreObjectKeys)
-    await backgroundHandler.storeHelper.initNetworks()
+    await backgroundHandler.storeHelper.initNetworks(networks)
 })()

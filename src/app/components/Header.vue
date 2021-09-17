@@ -41,8 +41,7 @@
 </template>
 
 <script>
-import {EventBus, showErrorToast, WrapPromiseTask} from "../internal/utils";
-import {getNetwork} from "../internal/networks";
+import {EventBus, showErrorToast, WrapPromiseTask, getNetwork} from "../internal/utils";
 import {stateFieldNotEmpty} from "../internal/validators";
 import {replaceRoute} from "../internal/router";
 

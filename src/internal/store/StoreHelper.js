@@ -1,8 +1,3 @@
-import {networks} from "../../app/internal/networks";
-
-export const privateStoreObjectKeys = ['accounts', 'connectedApps']
-export const publicStoreObjectKeys = ['networks', 'account']
-
 /**
  * Helper class for the store.
  */
@@ -14,9 +9,10 @@ export class StoreHelper {
 
     /**
      * It persists the networks to public storage, if not persisted yet.
+     * @param networks the networks
      * @return {Promise<void>} a promise that resolves to void
      */
-    async initNetworks() {
+    async initNetworks(networks) {
         const storedNetworks = await this.store.getStore('networks')
         if (!storedNetworks) {
             await this.store.persistToPublicStore('networks', networks)

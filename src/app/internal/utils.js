@@ -22,6 +22,19 @@ export const showErrorToast = (vue, title, message) => {
 	})
 }
 
+export const getNetwork = (value, networks) => {
+	if (!networks) {
+		return null
+	}
+
+	const _networks = networks.filter(network => network.value === value)
+	if (_networks.length > 0) {
+		return _networks[0]
+	} else {
+		return null
+	}
+}
+
 /**
  * Helper method to wrap a promise task.
  * @param promiseTask the promise task

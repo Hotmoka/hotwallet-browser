@@ -1,5 +1,4 @@
-import {networks} from "./networks";
-import {privateStoreObjectKeys} from "../../internal/store/StoreHelper";
+import {privateStoreObjectKeys} from "../../internal/constants";
 
 
 /**
@@ -257,7 +256,7 @@ export class StorageApi {
                     authenticated: false,
                     hasAccount: false
                 }
-                console.log('auth', store)
+
                 if (store && store.account) {
                     result.hasAccount = true
                     if (store.accounts) {

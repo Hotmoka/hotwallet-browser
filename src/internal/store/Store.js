@@ -80,8 +80,6 @@ export class Store {
                 privateStoreObjectKeys.forEach(key => this.store[key] = null)
             }
         }
-
-        console.log('loaded store', this.store)
     }
 
     /**

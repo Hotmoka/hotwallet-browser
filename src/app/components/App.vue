@@ -48,6 +48,7 @@ export default {
   },
   created() {
     EventBus.$on('showSpinner', show => this.showSpinner = show)
+
     // check if from transaction
     if (this.$route.redirectedFrom && this.$route.redirectedFrom.indexOf('/transaction') !== -1) {
       const uuid = this.$route.redirectedFrom.split(":")[1]

@@ -54,6 +54,12 @@ const dispatchToBackground = (message, data) => {
             taskId: data.taskId,
             result: {...result}
         })
+    }).catch(err => {
+        channel.sendMessage({
+            eventName: data.eventName,
+            taskId: data.taskId,
+            result: {error: err.message ? err.message : 'Error while processing request'}
+        })
     })
 }
 

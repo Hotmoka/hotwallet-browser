@@ -7,7 +7,7 @@ import VueRouter from 'vue-router'
 import App from './components/App'
 import {router} from "./internal/router";
 import {StorageApi} from "./internal/StorageApi";
-import {networks} from "./internal/networks";
+import {networks} from "../internal/constants";
 const browser = require('webextension-polyfill')
 
 Vue.use(VueRouter)
