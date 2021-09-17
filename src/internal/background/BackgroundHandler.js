@@ -1,16 +1,17 @@
 import {StoreHelper} from "../store/StoreHelper";
+import {Store} from "../store/Store";
 const { v4: uuidv4 } = require('uuid')
 const browser = require("webextension-polyfill")
 
 export class BackgroundHandler {
 
 
-    constructor(store) {
+    constructor() {
         /**
          * The transaction map of the wallet.
          */
         this.transactionMap = new Map()
-        this.store = store
+        this.store = new Store()
         this.storeHelper = new StoreHelper(this.store)
     }
 

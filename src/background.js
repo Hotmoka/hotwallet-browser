@@ -1,11 +1,9 @@
 const browser = require("webextension-polyfill")
-const {Store} = require('./internal/store/Store')
 const {BackgroundHandler} = require("./internal/background/BackgroundHandler");
 const {publicStoreObjectKeys, privateStoreObjectKeys, networks} = require("./internal/constants");
 
 (async() => {
-    const store = new Store()
-    const backgroundHandler = new BackgroundHandler(store)
+    const backgroundHandler = new BackgroundHandler()
 
     /**
      * The runtime message listener of the browser which
@@ -23,15 +21,15 @@ const {publicStoreObjectKeys, privateStoreObjectKeys, networks} = require("./int
                 backgroundHandler.endTransaction(message.hotmoka.transactionResult)
 
             } else if (message.hotmoka.type === 'store-init-private') {
-                return store.initPrivateStore(message.hotmoka.keys)
+                return backgroundHandler.store.initPrivateStore(message.hotmoka.keys)
             } else if (message.hotmoka.type === 'store-persist-private') {
-                return store.persistToPrivateStore(message.hotmoka.key, message.hotmoka.data)
+                return backgroundHandler.store.persistToPrivateStore(message.hotmoka.key, message.hotmoka.data)
             } else if (message.hotmoka.type === 'store-persist-public') {
-                return store.persistToPublicStore(message.hotmoka.key, message.hotmoka.data)
+                return backgroundHandler.store.persistToPublicStore(message.hotmoka.key, message.hotmoka.data)
             } else if (message.hotmoka.type === 'store-get') {
-                return store.getStore(message.hotmoka.key)
+                return backgroundHandler.store.getStore(message.hotmoka.key)
             } else if (message.hotmoka.type === 'store-set-pwd') {
-                return store.setPassword(message.hotmoka.password)
+                return backgroundHandler.store.setPassword(message.hotmoka.password)
             }
 
             // async
@@ -39,6 +37,6 @@ const {publicStoreObjectKeys, privateStoreObjectKeys, networks} = require("./int
         }
     })
 
-    await store.loadStore(publicStoreObjectKeys, privateStoreObjectKeys)
+    await backgroundHandler.store.loadStore(publicStoreObjectKeys, privateStoreObjectKeys)
     await backgroundHandler.storeHelper.initNetworks(networks)
 })()
