@@ -13,16 +13,20 @@ export class LocalStorage {
     async getData(key) {
         try {
             const result = await browser.storage.local.get(key)
-            return result && result[key] ? result[key] : null
+            if (key === null) {
+                return result
+            } else {
+                return result && result[key] ? result[key] : null
+            }
         } catch (err) {
             throw new Error(err.message ? err.message : 'Error while fetching from local storage')
         }
     }
 
     /**
-     * It publishes an object to local storage.
+     * It persists an object to local storage.
      * @param data the data object
-     * @return <Promise<void> a promise that resolves to void or throws an error if data could not be saved
+     * @return <Promise<void> a promise that resolves to void or throws an error if data could not be persisted
      */
     async setData(data) {
         try {
