@@ -46,16 +46,8 @@ export default {
       return this.appType === 'popup'
     }
   },
-  methods: {
-    setNetwork: async function() {
-      const currentNetwork = await this.$storageApi.getCurrentNetwork(this.$network)
-      this.$network = currentNetwork
-    }
-  },
   created() {
-    this.setNetwork()
     EventBus.$on('showSpinner', show => this.showSpinner = show)
-
     // check if from transaction
     if (this.$route.redirectedFrom && this.$route.redirectedFrom.indexOf('/transaction') !== -1) {
       const uuid = this.$route.redirectedFrom.split(":")[1]

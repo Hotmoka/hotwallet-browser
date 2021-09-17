@@ -84,13 +84,10 @@ export default {
 
           // set new password
           await this.$storageApi.setPassword(this.accountSelected.password)
-          const committed = await this.$storageApi.setAccountLogin(this.accountSelected.account, true)
-          if (!committed) {
-            throw new Error('Cannot switch to the selected account')
-          }
-
+          await this.$storageApi.setAccountAuth(this.accountSelected.account, true)
           this.$network = this.accountSelected.account.network
           EventBus.$emit('networkChanged')
+
         }).then(() => replaceRoute('/home'))
           .catch(err => {
               this.resetSelectedAccount()

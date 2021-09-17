@@ -108,7 +108,7 @@ export default {
         if (keyPair.publicKey === publicKey) {
           // set password and add account
           await this.$storageApi.setPassword(this.password)
-          const committed = await this.$storageApi.addAccount(
+          await this.$storageApi.addAccount(
               {
                 name: this.name,
                 reference: account.reference.transaction.hash,
@@ -117,15 +117,10 @@ export default {
                 publicKey: keyPair.publicKey,
                 selected: true,
                 logged: true,
-                network: this.$network,
-                timestamp: new Date().getTime()
+                network: {value: this.$network.value, url: this.$network.url},
+                created: new Date().getTime()
               }
           )
-
-          if (!committed) {
-            throw new Error('Cannot set account')
-          }
-
         } else {
           throw new Error('Invalid words or password')
         }

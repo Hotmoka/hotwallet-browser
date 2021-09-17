@@ -2,7 +2,7 @@
     <div class="content text-center">
       <img src="../../assets/img/logo-web-transparent.png" height="128" width="400" alt="hotmoka" id="logo-hotmoka">
 
-      <h6 class="title">Login</h6>
+      <h5 class="title" v-if="account && account.name">Welcome back <br/><span class="text-secondary">{{account.name}}</span></h5>
 
       <div class="d-flex justify-content-center">
         <div class="text-left form-container">
@@ -32,7 +32,8 @@ export default {
   name: "Login",
   data() {
     return {
-      password: null
+      password: null,
+      account: null
     }
   },
   computed: {
@@ -44,13 +45,12 @@ export default {
     }
   },
   methods: {
-    login() {
-
+    onLoginClick() {
       WrapPromiseTask(async () => {
 
         // set password and init store
         await this.$storageApi.setPassword(this.password)
-        await this.$storageApi.initStore()
+        await this.$storageApi.initPrivateStore()
         const account = await this.$storageApi.getCurrentAccount(this.$network)
 
         if (!account) {
@@ -60,11 +60,7 @@ export default {
         // generate key pair from password and check public keys
         const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.password, Bip39Dictionary.ENGLISH, account.entropy)
         if (keyPair.publicKey === account.publicKey) {
-          const committed = await this.$storageApi.setAccountLogin(account, true)
-
-          if (!committed) {
-            throw new Error('Cannot login with the account')
-          }
+          await this.$storageApi.setAccountAuth(account, true)
         } else {
           throw new Error('Wrong password')
         }
@@ -72,11 +68,22 @@ export default {
       }).then(() =>
           replaceRoute('/home')
       ).catch(error => showErrorToast(this, 'Login', error.message ? error.message : 'Error during login'))
-
     },
-    onLoginClick() {
-      this.login()
+    getCurrentAccountName() {
+      WrapPromiseTask(async () => {
+
+        const account = await this.$storageApi.getStore('account')
+        if (!account) {
+          throw new Error('Cannot retrieve account')
+        }
+        return account
+      }).then(account =>
+          this.account = account
+      ).catch(error => showErrorToast(this, 'Login', error.message ? error.message : 'Cannot retrieve account'))
     }
+  },
+  created() {
+    this.getCurrentAccountName()
   }
 }
 </script>

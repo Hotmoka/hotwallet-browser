@@ -87,7 +87,7 @@ export default {
           .catch(error => showErrorToast(this, 'Account', error.message ? error.message : 'Cannot retrieve account details'))
     },
     onLogoutClick() {
-      this.$storageApi.setAccountLogin(this.account, false)
+      this.$storageApi.setAccountAuth(this.account, false)
           .then(() => replaceRoute('/login'))
           .catch(() => showErrorToast(this, 'Account','Unable to logout'))
     },

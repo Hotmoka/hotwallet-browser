@@ -108,18 +108,13 @@ export default {
           url: this.customNetwork.form.url,
           protocol: splittedUrl[0],
           text: networkName ? networkName : splittedUrl[1],
-          value: networkName ? networkName + '_' + splittedUrl[1] : splittedUrl[1]
+          value: networkName ? networkName + '_' + splittedUrl[1] : splittedUrl[1],
+          selected: true
         }
 
-        const networkAdded = await this.$storageApi.addNetwork(network)
-        if (!networkAdded) {
-          throw new Error('Cannot add network')
-        }
-
-        const committed = await this.$storageApi.setCurrentNetwork(network)
-        if (!committed) {
-          throw new Error('Cannot set network')
-        }
+        // add and set network as selected
+        await this.$storageApi.addNetwork(network)
+        await this.$storageApi.setCurrentNetwork(network)
 
         return network
       })
@@ -136,6 +131,7 @@ export default {
       .catch(error => {
         this.resetForm()
         showErrorToast(this,'Custom network connection', error.message ? error.message : 'Cannot connect to custom network')
+
         // restore previous network
         this.selectedNetwork = this.$network.value
         if (this.$route.path === '/home') {
@@ -146,6 +142,7 @@ export default {
     setNetworks: async function() {
       const _networks = await this.$storageApi.getNetworks()
       this.networks = [..._networks]
+      this.$network = await this.$storageApi.getSelectedNetwork()
       this.selectedNetwork = this.$network.value
     },
     onNetworkChange(selectedNetwork) {
