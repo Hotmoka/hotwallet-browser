@@ -13,7 +13,7 @@
               :invalid-feedback="invalidFeedback"
               :state="state"
           >
-            <b-form-input type="password" id="i-pwd" v-model="password" :state="state" trim></b-form-input>
+            <b-form-input type="password" id="i-pwd" v-model="password" :state="state" @keydown.enter.native="onLoginClick" trim></b-form-input>
           </b-form-group>
 
           <b-button @click="onLoginClick" variant="primary" :disabled="!state">Login</b-button>
@@ -46,6 +46,10 @@ export default {
   },
   methods: {
     onLoginClick() {
+      if (!this.state) {
+        return
+      }
+
       WrapPromiseTask(async () => {
 
         // set password and init store
