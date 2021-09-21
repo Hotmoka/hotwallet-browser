@@ -41,7 +41,7 @@
 </template>
 
 <script>
-import {EventBus, showErrorToast, WrapPromiseTask, getNetwork} from "../internal/utils";
+import {EventBus, showErrorToast, WrapPromiseTask, getNetworkByValue} from "../internal/utils";
 import {stateFieldNotEmpty} from "../internal/validators";
 import {replaceRoute} from "../internal/router";
 import {RemoteNode} from "hotweb3";
@@ -153,7 +153,7 @@ export default {
 
       } else {
 
-        const network = getNetwork(selectedNetwork, this.networks)
+        const network = getNetworkByValue(selectedNetwork, this.networks)
         if (!network) {
           showErrorToast(this,'Network', 'Network not found')
         } else {

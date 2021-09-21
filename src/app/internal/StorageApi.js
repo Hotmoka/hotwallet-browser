@@ -2,7 +2,7 @@ import {privateStoreObjectKeys} from "../../internal/constants";
 
 
 /**
- * API to access the store of the Hotwallet extension.
+ * API to access the store of the Hotwallet.
  */
 export class StorageApi {
 

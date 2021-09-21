@@ -122,8 +122,8 @@ export default {
   .container {
     width: 600px !important;
     height: 100vh;
-    padding-bottom: 2.5rem;
-    padding-top: 2.5rem;
+    padding-bottom: 1.5rem;
+    padding-top: 1.5rem;
   }
 }
 

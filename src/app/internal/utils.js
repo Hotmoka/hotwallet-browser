@@ -22,7 +22,7 @@ export const showErrorToast = (vue, title, message) => {
 	})
 }
 
-export const getNetwork = (value, networks) => {
+export const getNetworkByValue = (value, networks) => {
 	if (!networks) {
 		return null
 	}
