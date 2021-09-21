@@ -3,11 +3,12 @@ import Welcome from "../components/Welcome";
 import Home from "../components/Home";
 import Login from "../components/account/Login";
 import ImportAccount from "../components/account/ImportAccount";
-import NewAccount from "../components/account/NewAccount";
+import CreateAccount from "../components/account/CreateAccount";
 import Account from "../components/account/Account";
 import Transaction from "../components/Transaction";
 import Vue from "vue";
 import ListAccounts from "../components/account/ListAccounts";
+import CreateKey from "../components/account/CreateKey";
 
 
 export const router = new VueRouter({
@@ -15,8 +16,9 @@ export const router = new VueRouter({
         { path: '/welcome', component: Welcome },
         { path: '/home', component: Home },
         { path: '/login', component: Login },
+        { path: '/create-key', component: CreateKey },
         { path: '/import-account', component: ImportAccount },
-        { path: '/new-account', component: NewAccount },
+        { path: '/create-account', component: CreateAccount },
         { path: '/account', component: Account, props: {editAccount: false} },
         { path: '/edit-account', component: Account, props: {editAccount: true} },
         { path: '/account-list', component: ListAccounts },
@@ -45,7 +47,7 @@ export const pushRoute = (route, params) => {
 
 router.beforeEach(async (to, from, next) => {
     const publicPages = ['/login', '/welcome'];
-    const publicSubpages = ['/import-account', '/new-account']
+    const publicSubpages = ['/import-account', '/create-key']
     const inSubpages = publicSubpages.includes(to.path);
     const authRequired = !publicPages.includes(to.path);
     const auth = await Vue.prototype.$storageApi.getAuthentication()

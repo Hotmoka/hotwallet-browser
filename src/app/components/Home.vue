@@ -7,7 +7,8 @@
           <b-list-group-item button @click="onOptionClick('expand-view')" v-if="isPopup">Expand view</b-list-group-item>
           <b-list-group-item button @click="onOptionClick('/edit-account')">Edit account</b-list-group-item>
           <b-list-group-item button @click="onOptionClick('/import-account')">Import account</b-list-group-item>
-          <b-list-group-item button @click="onOptionClick('/new-account')">Create account</b-list-group-item>
+          <b-list-group-item button @click="onOptionClick('/create-account')" v-if="isAccount || allowsFaucet">Create account</b-list-group-item>
+          <b-list-group-item button @click="onOptionClick('/create-key')">Create key</b-list-group-item>
           <b-list-group-item button @click="onOptionClick('/account-list')">Account list</b-list-group-item>
         </b-list-group>
       </b-popover>
@@ -20,14 +21,22 @@
         </b-link>
       </div>
 
-      <p class="txt-secondary" v-if="account.reference">
+      <p class="txt-secondary" v-if="isAccount && account.reference">
         {{ account.reference }}#{{ parseInt(account.nonce).toString(16) }}</p>
+
+      <p class="txt-secondary" v-if="!isAccount && account.publicKeyBase58">
+        {{ account.publicKeyBase58 }}
+      </p>
       <hr/>
 
-      <div v-if="account.balance">
+      <div v-if="isAccount && account.balance">
         <p class="text-dark">Balance</p>
         <h4 class="text-success">{{ account.balance }} Panarea </h4>
         <h4 class="text-danger">{{ account.balanceRed ? account.balanceRed : '0' }} Panarea </h4>
+      </div>
+
+      <div v-if="!isAccount">
+        <p class="text-dark">Waiting for payment for this key</p>
       </div>
 
       <hr/>
@@ -52,7 +61,9 @@ export default {
   data() {
     return {
       showOptionsMenu: false,
-      account: null
+      account: null,
+      isAccount: false,
+      allowsFaucet: false
     }
   },
   computed: {
@@ -87,21 +98,31 @@ export default {
           .catch(error => showErrorToast(this, 'Account', error.message ? error.message : 'Cannot retrieve account details'))
     },
     onLogoutClick() {
-      this.$storageApi.setAccountAuth(this.account, false)
+      WrapPromiseTask(() => this.$storageApi.setAccountAuth(this.account, false))
           .then(() => replaceRoute('/login'))
           .catch(() => showErrorToast(this, 'Account','Unable to logout'))
     },
     displayAccount() {
-      WrapPromiseTask(() => this.$storageApi.getCurrentAccount(this.$network.get())).then(account => {
-        if (account) {
-          this.account = {
-            balance: 0,
-            balanceRed: 0,
-            nonce: 0,
-            ...account
-          }
+      WrapPromiseTask(async () => {
+        const account = await this.$storageApi.getCurrentAccount(this.$network.get())
+        const allowsFaucet = await new RemoteNode(this.$network.get().url).allowsUnsignedFaucet()
+
+        return {account, allowsFaucet}
+      }).then(result => {
+        this.allowsFaucet = result.allowsFaucet
+
+        this.account = {
+          balance: 0,
+          balanceRed: 0,
+          nonce: 0,
+          ...result.account
+        }
+
+        if (this.account.reference) {
+          this.isAccount = true
           this.getAccountInfo(this.account.reference)
         }
+
       }).catch(error => showErrorToast(this, 'Account', error.message ? error.message : 'Cannot retrieve account'))
     }
   },

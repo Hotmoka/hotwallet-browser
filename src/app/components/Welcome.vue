@@ -3,7 +3,7 @@
     <div class="center">
       <h6 class="title">Are you new to Hotwallet ?</h6>
 
-      <b-button @click="onNewAccountClick" variant="outline-primary mt-3">Create account</b-button>
+      <b-button @click="onCreateKeyClick" variant="outline-primary mt-3">Create key</b-button>
       <p class="mt-3">or</p>
       <b-button @click="onImportAccountClick" variant="outline-primary">Import account</b-button>
     </div>
@@ -18,8 +18,8 @@ import {pushRoute} from "../internal/router";
 export default {
   name: "Welcome",
   methods: {
-    onNewAccountClick() {
-      pushRoute('/new-account')
+    onCreateKeyClick() {
+      pushRoute('/create-key')
     },
     onImportAccountClick() {
       pushRoute('/import-account')
