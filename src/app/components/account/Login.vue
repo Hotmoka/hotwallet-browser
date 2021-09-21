@@ -57,21 +57,22 @@ export default {
         await this.$storageApi.initPrivateStore()
         const account = await this.$storageApi.getCurrentAccount(this.$network.get())
 
-        if (!account) {
-          throw new Error('Cannot retrieve account')
-        }
+        // verify public key
+        const publicKeyVerified = AccountHelper.verifyPublicKey(
+            this.password,
+            account.entropy,
+            Bip39Dictionary.ENGLISH,
+            account.publicKey
+        )
 
-        // generate key pair from password and check public keys
-        const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.password, Bip39Dictionary.ENGLISH, account.entropy)
-        if (keyPair.publicKey === account.publicKey) {
+        if (publicKeyVerified) {
           await this.$storageApi.setAccountAuth(account, true)
         } else {
           throw new Error('Wrong password')
         }
 
-      }).then(() =>
-          replaceRoute('/home')
-      ).catch(error => showErrorToast(this, 'Login', error.message ? error.message : 'Error during login'))
+      }).then(() => replaceRoute('/home'))
+        .catch(error => showErrorToast(this, 'Login', error.message ? error.message : 'Error during login'))
     },
     getCurrentAccountName() {
       WrapPromiseTask(async () => {
@@ -81,9 +82,8 @@ export default {
           throw new Error('Cannot retrieve account')
         }
         return account
-      }).then(account =>
-          this.account = account
-      ).catch(error => showErrorToast(this, 'Login', error.message ? error.message : 'Cannot retrieve account'))
+      }).then(account => this.account = account)
+        .catch(error => showErrorToast(this, 'Login', error.message ? error.message : 'Cannot retrieve account'))
     }
   },
   created() {

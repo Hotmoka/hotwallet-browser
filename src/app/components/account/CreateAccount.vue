@@ -44,7 +44,7 @@
         </b-form-group>
 
         <b-form-group
-            v-if="faucet.allowsUnsignedFaucet"
+            v-if="allowsUnsignedFaucet"
             id="i-faucet"
         >
           <b-form-checkbox
@@ -58,29 +58,8 @@
           </b-form-checkbox>
         </b-form-group>
 
-        <b-form-group
-            v-if="!faucet.fromFaucet"
-            id="i-payer"
-            label="Payer"
-            label-for="i-payer"
-            :invalid-feedback="invalidFeedbackPayer"
-            :state="statePayer"
-        >
-          <b-form-input type="text" id="i-payer" v-model="payer.hashOfStorageReference" :state="statePayer" trim></b-form-input>
-        </b-form-group>
 
-        <b-form-group
-            v-if="!faucet.fromFaucet"
-            id="i-payer-pwd"
-            label="Password of Payer"
-            label-for="i-payer-pwd"
-            :invalid-feedback="invalidFeedbackPayerPassword"
-            :state="statePayerPassword"
-        >
-          <b-form-input type="text" id="i-payer-pwd" v-model="payer.password" :state="statePayerPassword" trim></b-form-input>
-        </b-form-group>
-
-        <b-button @click="onCreateAccountClick" variant="primary" :disabled="stateForm">Create</b-button>
+        <b-button @click="onCreateAccountClick" variant="primary" :disabled="stateFormDisabled">Create</b-button>
       </div>
     </div>
   </div>
@@ -99,15 +78,14 @@ import {
 
 export default {
   name: "CreateAccount",
+  props: {
+    allowsUnsignedFaucet: Boolean,
+    hasAccount: Boolean
+  },
   data() {
     return {
       faucet: {
-        allowsUnsignedFaucet: false,
         fromFaucet: false
-      },
-      payer: {
-        hashOfStorageReference: null,
-        password: null
       },
       newAccount: {
         name: null,
@@ -124,43 +102,24 @@ export default {
     statePassword() {
       return statePassword(this.newAccount.password)
     },
-    statePayerPassword() {
-      if (this.faucet.fromFaucet) {
-        return true
-      }
-      return statePassword(this.payer.password)
-    },
     stateConfirmPassword() {
       return this.newAccount.confirmPassword === null ? null : (this.newAccount.confirmPassword.length >= 8 && this.newAccount.confirmPassword === this.newAccount.password)
     },
-    statePayer() {
-      if (this.faucet.fromFaucet) {
-        return true
-      }
-      return this.payer.hashOfStorageReference === null ? null : this.payer.hashOfStorageReference.length === 64
-    },
-    stateForm() {
-      return !this.statePassword || !this.stateConfirmPassword || !this.stateName || !this.statePayer || !this.statePayerPassword
+    stateFormDisabled() {
+      return !this.statePassword || !this.stateConfirmPassword || !this.stateName
     },
     invalidFeedbackPassword() {
       return invalidPasswordFeedback(this.newAccount.password)
-    },
-    invalidFeedbackPayerPassword() {
-      return invalidPasswordFeedback(this.payer.password)
     },
     invalidFeedbackConfirmPassword() {
       return fieldNotEmptyFeedback(this.newAccount.confirmPassword, 'The passwords don\'t match')
     },
     invalidFeedbackName() {
       return fieldNotEmptyFeedback(this.newAccount.name, 'Please enter the account\'s name')
-    },
-    invalidFeedbackPayer() {
-      return fieldNotEmptyFeedback(this.payer.hashOfStorageReference, 'Please enter a valid address of 64 characters')
     }
   },
   methods: {
     createAccountFromFaucet(balance) {
-
       WrapPromiseTask(async () => {
 
         const remoteNode = new RemoteNode(this.$network.get().url)
@@ -195,8 +154,49 @@ export default {
       ).catch(err => showErrorToast(this, 'New account', err.message ? err.message : 'Error during account creation'))
 
     },
-    createAccountFromAnotherAccount(balance) {
-      // TODO
+    createAccountFromCurrentAccount(balance) {
+      WrapPromiseTask(async () => {
+
+        const remoteNode = new RemoteNode(this.$network.get().url)
+        const payer = await this.$storageApi.getCurrentAccount(this.$network.get())
+        const balanceOfPayer = await this.getBalanceOfAccount(payer.reference)
+
+        if ((balance - Number(balanceOfPayer)) > 0) {
+          throw new Error('Cannot transfer more than ' + balanceOfPayer + ' from payer ' + payer.name)
+        }
+
+        // generate key pair of payer
+        const keyPairOfPayer = AccountHelper.generateEd25519KeyPairFrom(payer.password, Bip39Dictionary.ENGLISH, payer.entropy)
+
+        // generate key pair for the new account
+        const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.newAccount.password, Bip39Dictionary.ENGLISH)
+        const account = await new AccountHelper(remoteNode).createAccountFromPayer(
+            Algorithm.ED25519,
+            StorageReferenceModel.newStorageReference(payer.reference),
+            keyPairOfPayer,
+            keyPair,
+            balance.toString(),
+            "0",
+            false
+        )
+
+        // set password for the private store and add account
+        await this.$storageApi.setPassword(this.newAccount.password)
+        await this.$storageApi.addAccount(
+            {
+              name: this.newAccount.name,
+              reference: account.reference.transaction.hash,
+              nonce: account.reference.progressive,
+              entropy: keyPair.entropy,
+              publicKey: keyPair.publicKey,
+              selected: true,
+              logged: true,
+              network: {value: this.$network.get().value, url: this.$network.get().url},
+              created: new Date().getTime()
+            }
+        )
+      }).then(() => replaceRoute('/account'))
+        .catch(err => showErrorToast(this, 'New account', err.message ? err.message : 'Error during account creation'))
     },
     onCreateAccountClick() {
       if (isNaN(this.newAccount.balance)) {
@@ -208,7 +208,7 @@ export default {
       if (this.faucet.fromFaucet) {
         this.createAccountFromFaucet(balance)
       } else {
-        this.createAccountFromAnotherAccount(balance)
+        this.createAccountFromCurrentAccount(balance)
       }
     },
     getBalanceOfAccount: async function (hashOfStorageReference) {
@@ -222,8 +222,7 @@ export default {
     }
   },
   created() {
-    this.isFaucetAllowed()
-    console.log('network', this.$network.get())
+ //   this.isFaucetAllowed()
   }
 }
 </script>

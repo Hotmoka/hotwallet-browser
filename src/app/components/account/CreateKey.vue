@@ -45,7 +45,7 @@ import {
   statePassword
 } from "../../internal/validators";
 import {showErrorToast, WrapPromiseTask} from "../../internal/utils";
-import {AccountHelper, Base58, Bip39Dictionary} from "hotweb3";
+import {AccountHelper, Bip39Dictionary} from "hotweb3";
 import {replaceRoute} from "../../internal/router";
 
 
@@ -76,9 +76,8 @@ export default {
 
       WrapPromiseTask(async () => {
 
-        // generate key pair
-        const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.password, Bip39Dictionary.ENGLISH)
-        const publicKeyBase58 = Base58.encode(keyPair.publicKey)
+        // create key
+        const account = AccountHelper.createKey(this.password, Bip39Dictionary.ENGLISH)
 
         // set password for the private store and add account
         await this.$storageApi.setPassword(this.password)
@@ -87,9 +86,10 @@ export default {
               name: this.name,
               reference: null,
               nonce: 0,
-              entropy: keyPair.entropy,
-              publicKey: keyPair.publicKey,
-              publicKeyBase58: publicKeyBase58,
+              entropy: account.entropy,
+              publicKey: account.publicKey,
+              publicKeyBase58: account.name,
+              balance: account.balance,
               selected: true,
               logged: true,
               network: {value: this.$network.get().value, url: this.$network.get().url},
@@ -97,7 +97,7 @@ export default {
             }
         )
       }).then(() => replaceRoute('/home'))
-      .catch(err => showErrorToast(this, 'Create key', err.message ? err.message : 'Error during key creation'))
+        .catch(err => showErrorToast(this, 'Create key', err.message ? err.message : 'Error during key creation'))
     }
   }
 }

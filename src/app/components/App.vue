@@ -26,6 +26,7 @@
 import {EventBus, showErrorToast, WrapPromiseTask} from "../internal/utils";
 import Header from "./Header"
 import Navigation from "./Navigation";
+import {replaceRoute} from "../internal/router";
 
 export default {
   name: "App",
@@ -57,7 +58,7 @@ export default {
           // check if from transaction
           if (this.$route.redirectedFrom && this.$route.redirectedFrom.indexOf('/transaction') !== -1) {
             const uuid = this.$route.redirectedFrom.split(":")[1]
-            this.$router.replace({name: 'transaction', params: {uuid: uuid}})
+            replaceRoute('/transaction', {uuid: uuid})
           }
         })
         .catch(() => showErrorToast(this, 'Error', 'An error occured'))

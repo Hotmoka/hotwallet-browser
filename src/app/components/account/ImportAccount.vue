@@ -90,44 +90,33 @@ export default {
 
         for (let i = 0; i < 36; i++) {
           if (!this.words[i]) {
-            return {error: 'Please enter all 36 words'}
+            throw new Error('Please enter all 36 words')
           }
         }
 
         // generate account from mnemonic
         const mnemonic = this.words.join(' ')
-        const account = AccountHelper.generateAccountFrom(mnemonic, Bip39Dictionary.ENGLISH)
+        const account = await new AccountHelper(new RemoteNode(this.$network.get().url)).importAccount(this.name, mnemonic, Bip39Dictionary.ENGLISH, this.password)
 
-        // generate key pair
-        const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.password, Bip39Dictionary.ENGLISH, account.entropy)
+        // set password and add account
+        await this.$storageApi.setPassword(this.password)
+        await this.$storageApi.addAccount(
+            {
+              name: this.name,
+              reference: account.reference.transaction.hash,
+              nonce: account.reference.progressive,
+              entropy: account.entropy,
+              publicKey: account.publicKey,
+              balance: account.balance,
+              selected: true,
+              logged: true,
+              network: {value: this.$network.get().value, url: this.$network.get().url},
+              created: new Date().getTime()
+            }
+        )
 
-        // get public key of the generated account
-        const publicKey = await new AccountHelper(new RemoteNode(this.$network.get().url)).getPublicKey(account.reference)
-
-        // check if generated public key matches the public key from the remote node
-        if (keyPair.publicKey === publicKey) {
-          // set password and add account
-          await this.$storageApi.setPassword(this.password)
-          await this.$storageApi.addAccount(
-              {
-                name: this.name,
-                reference: account.reference.transaction.hash,
-                nonce: account.reference.progressive,
-                entropy: keyPair.entropy,
-                publicKey: keyPair.publicKey,
-                selected: true,
-                logged: true,
-                network: {value: this.$network.get().value, url: this.$network.get().url},
-                created: new Date().getTime()
-              }
-          )
-        } else {
-          throw new Error('Invalid words or password')
-        }
-
-      }).then(() =>
-          replaceRoute('/home')
-      ).catch(error => showErrorToast(this, 'Import account', error.message ? error.message : 'Cannot import account'))
+      }).then(() => replaceRoute('/home'))
+        .catch(error => showErrorToast(this, 'Import account', error.message ? error.message : 'Cannot import account'))
 
     }
   },

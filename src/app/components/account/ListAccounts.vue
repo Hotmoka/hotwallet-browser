@@ -76,9 +76,15 @@ export default {
       if (switchAccount) {
         WrapPromiseTask(async () => {
 
-          // generate public key from password and the entropy of the selected account
-          const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.accountSelection.password, Bip39Dictionary.ENGLISH, this.accountSelection.account.entropy)
-          if (keyPair.publicKey !== this.accountSelection.account.publicKey) {
+          // verify account
+          const publicKeyVerified = AccountHelper.verifyPublicKey(
+              this.accountSelection.password,
+              this.accountSelection.account.entropy,
+              Bip39Dictionary.ENGLISH,
+              this.accountSelection.account.publicKey
+          )
+
+          if (!publicKeyVerified) {
             throw new Error("Wrong password")
           }
 
@@ -96,7 +102,7 @@ export default {
           .catch(err => {
               this.resetAccountSelection()
               showErrorToast(this, 'Accounts', err.message ? err.message : 'Cannot switch to the selected account')
-          })
+            })
 
       } else {
         this.resetAccountSelection()
@@ -110,8 +116,7 @@ export default {
     },
     getAccounts() {
       WrapPromiseTask(async () => {
-        const network = await this.$storageApi.getCurrentNetwork()
-        const currentAccount = await this.$storageApi.getCurrentAccount(network)
+        const currentAccount = await this.$storageApi.getCurrentAccount(this.$network.get())
         const accounts = await this.$storageApi.getAccounts()
 
         return {currentAccount, accounts}
