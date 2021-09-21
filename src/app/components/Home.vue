@@ -4,7 +4,7 @@
 
       <b-popover :show.sync="showOptionsMenu" target="popover-options-button" placement="top">
         <b-list-group>
-          <b-list-group-item button @click="onOptionClick('expand-view')" v-if="isPopup">Expand view</b-list-group-item>
+          <b-list-group-item button @click="onOptionClick('/expand-view')" v-if="isPopup">Expand view</b-list-group-item>
           <b-list-group-item button @click="onOptionClick('/edit-account')">Edit account</b-list-group-item>
           <b-list-group-item button @click="onOptionClick('/import-account')">Import account</b-list-group-item>
           <b-list-group-item button @click="onOptionClick('/create-account')" v-if="isAccount || allowsFaucet">Create account</b-list-group-item>
@@ -73,10 +73,12 @@ export default {
   },
   methods: {
     onOptionClick(option) {
-      if (option === 'expand-view') {
+      if (option === '/expand-view') {
         this.$browser.tabs.create({
           url: this.$browser.runtime.getURL("app/index.html")
         });
+      } else if (option === '/edit-account') {
+        pushRoute(option, {isAccount: this.isAccount})
       } else {
         pushRoute(option)
       }

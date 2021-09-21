@@ -19,8 +19,8 @@ export const router = new VueRouter({
         { path: '/create-key', component: CreateKey },
         { path: '/import-account', component: ImportAccount },
         { path: '/create-account', component: CreateAccount },
-        { path: '/account', component: Account, props: {editAccount: false} },
-        { path: '/edit-account', component: Account, props: {editAccount: true} },
+        { path: '/account', component: Account, props: {editAccount: false, isAccount: true} },
+        { path: '/edit-account', name: 'edit-account', component: Account, props: {editAccount: true} },
         { path: '/account-list', component: ListAccounts },
         { path: '/transaction', name: 'transaction', component: Transaction, props: true },
         { path: '*', redirect: '/welcome' }

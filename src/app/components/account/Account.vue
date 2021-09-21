@@ -16,15 +16,23 @@
         </b-form-group>
 
         <b-form-group
-            v-if="account.reference"
+            v-if="isAccount && account.reference"
             id="i-address"
         >
           <label>Address</label>
           <p class="txt-secondary"> {{account.reference}}#{{ parseInt(account.nonce).toString(16) }}</p>
         </b-form-group>
 
+        <b-form-group
+            v-if="!isAccount"
+            id="i-address"
+        >
+          <label>Public key</label>
+          <p class="txt-secondary"> {{account.publicKeyBase58}}</p>
+        </b-form-group>
 
-        <div v-if="words">
+
+        <div v-if="words && words.length > 0">
           <label>Words<span class="copy-container"><b-icon width="18" variant="primary" icon="clipboard"
                                                            @click="onCopyContentClick"></b-icon></span></label>
 
@@ -63,7 +71,8 @@ import {fieldNotEmptyFeedback, stateFieldNotEmpty} from "../../internal/validato
 export default {
   name: "Account",
   props: {
-    editAccount: Boolean
+    editAccount: Boolean,
+    isAccount: Boolean
   },
   data() {
     return {
@@ -84,7 +93,7 @@ export default {
       replaceRoute('/home')
     },
     onSaveAccountClick() {
-      this.$storageApi.updateAccount(this.account)
+      WrapPromiseTask(() => this.$storageApi.updateAccount(this.account))
           .then(() => replaceRoute("/home"))
           .catch(err => showErrorToast(this, 'Account', err.message ? err.message : 'Cannot update account'))
     },
@@ -98,10 +107,9 @@ export default {
   created() {
     WrapPromiseTask(() => this.$storageApi.getCurrentAccount(this.$network.get()))
         .then(account => {
-          if (!account) {
-            showErrorToast(this, 'Account', 'Cannot retrieve account')
-          } else {
-            this.account = account
+          this.account = account
+
+          if (this.isAccount) {
             this.words = AccountHelper.generateMnemonicWordsFrom(account.entropy, account.reference, Bip39Dictionary.ENGLISH)
           }
         })
