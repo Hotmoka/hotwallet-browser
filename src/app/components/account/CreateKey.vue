@@ -1,6 +1,6 @@
 <template>
   <div class="content">
-    <h6 class="mt-4 mb-4 text-center">Create key</h6>
+    <h6 class="mb-4 text-center">Create key</h6>
 
     <p>Once you (or somebody else) pay to that key, it will become an account,
       that you can control through the password specified below. Keep note of that password,
@@ -30,7 +30,18 @@
           <b-form-input type="password" id="i-pwd" v-model="password" :state="statePassword" trim></b-form-input>
         </b-form-group>
 
-        <b-button @click="onCreateClick" variant="primary" :disabled="!statePassword || !stateName">Create</b-button>
+        <b-form-group
+            id="i-c-pwd"
+            label="Confirm password"
+            label-for="i-c-pwd"
+            :invalid-feedback="invalidFeedbackConfirmPassword"
+            :state="stateConfirmPassword"
+        >
+          <b-form-input type="password" id="i-c-pwd" v-model="confirmPassword" :state="stateConfirmPassword" trim></b-form-input>
+        </b-form-group>
+
+
+        <b-button @click="onCreateClick" variant="primary" :disabled="!statePassword || !stateName || !stateConfirmPassword">Create</b-button>
       </div>
     </div>
 
@@ -54,6 +65,7 @@ export default {
   data() {
     return {
       password: null,
+      confirmPassword: null,
       name: null
     }
   },
@@ -61,15 +73,21 @@ export default {
     statePassword() {
       return statePassword(this.password)
     },
-    invalidFeedbackPassword() {
-      return invalidPasswordFeedback(this.password)
-    },
     stateName() {
       return stateFieldNotEmpty(this.name)
     },
+    stateConfirmPassword() {
+      return this.confirmPassword === null ? null : (this.confirmPassword.length >= 8 && this.confirmPassword === this.password)
+    },
+    invalidFeedbackPassword() {
+      return invalidPasswordFeedback(this.password)
+    },
     invalidFeedbackName() {
       return fieldNotEmptyFeedback(this.name, 'Please enter a name')
-    }
+    },
+    invalidFeedbackConfirmPassword() {
+      return fieldNotEmptyFeedback(this.confirmPassword, 'The passwords don\'t match')
+    },
   },
   methods: {
     onCreateClick() {
