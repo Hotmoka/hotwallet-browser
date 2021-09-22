@@ -1,6 +1,6 @@
 <template>
   <div class="content">
-    <h6 class="mt-4 mb-4">Transaction</h6>
+    <h6 class="mb-4">Transaction</h6>
 
     <h5>Confirm transaction <span v-if="transaction.name">{{ transaction.name }} </span> ?</h5>
     <p>Amount: <span v-if="transaction.amount">{{ transaction.amount }} Mokas </span></p>
@@ -12,6 +12,29 @@
       <br/>
       <h6 class="text-center" style="font-weight: bold; color: green; margin-top: 2rem;">Transaction successful</h6>
     </div>
+
+    <b-modal v-model="showModal" centered :hideHeaderClose="true" title="Account">
+      <p>Please enter password to verify account</p>
+      <div class="text-left form-container">
+        <b-form-group
+            id="i-pwd"
+            label="Password"
+            label-for="i-pwd"
+            :invalid-feedback="invalidFeedback"
+            :state="state"
+        >
+          <b-form-input type="password" id="i-pwd" v-model="password" :state="state" trim></b-form-input>
+        </b-form-group>
+      </div>
+
+      <template #modal-footer>
+        <b-button @click="onModalActionClick(false)" variant="secondary">Cancel</b-button>
+        <b-button @click="onModalActionClick(true)" variant="primary" :disabled="!state">Verify</b-button>
+      </template>
+
+    </b-modal>
+
+
   </div>
 </template>
 
@@ -19,7 +42,8 @@
 import {showErrorToast, WrapPromiseTask} from "../internal/utils";
 
 import {
-  Algorithm,
+  AccountHelper,
+  Algorithm, Bip39Dictionary,
   InstanceMethodCallTransactionRequestModel,
   NonVoidMethodSignatureModel,
   RemoteNode,
@@ -28,6 +52,7 @@ import {
   TransactionReferenceModel,
   VoidMethodSignatureModel
 } from "hotweb3";
+import {invalidPasswordFeedback, statePassword} from "../internal/validators";
 
 export default {
   name: "Transaction",
@@ -45,26 +70,63 @@ export default {
         methodSignature: null,
         receiver: null,
         actuals: []
-      }
+      },
+      password: null,
+      privateKey: null,
+      showModal: true
+    }
+  },
+  computed: {
+    state() {
+      return statePassword(this.password)
+    },
+    invalidFeedback() {
+      return invalidPasswordFeedback(this.password)
     }
   },
   methods: {
+    onModalActionClick(selection) {
+      if (!selection) {
+        this.sendTransactionResponse({
+          status: false
+        }, 0)
+      } else {
+        WrapPromiseTask(async () => {
+          const account = await this.$storageApi.getCurrentAccount(this.$network.get())
+          const publicKeyVerified = AccountHelper.verifyPublicKey(
+              this.password,
+              account.entropy,
+              Bip39Dictionary.ENGLISH,
+              account.publicKey
+          )
+
+          if (publicKeyVerified) {
+            const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.password, Bip39Dictionary.ENGLISH, account.entropy)
+            return keyPair.privateKey
+          } else {
+            throw new Error('Wrong password')
+          }
+        }).then(privateKey => {
+          this.privateKey = privateKey
+          this.showModal = false
+        }).catch(err => showErrorToast(this, 'Account', err.message ? err.message : 'Cannot verify account'))
+      }
+    },
     onYesClick() {
+      WrapPromiseTask(() => this.addTransaction())
+          .then(result => {
+            this.showOverlay = true
 
-      WrapPromiseTask(async () => {
-        return this.addTransaction()
-      }).then(result => {
-        this.showOverlay = true
-
-        this.sendTransactionResponse({
-          status: true,
-          storageValue: result
-        }, 3000)
-      }).catch(err => {
-        console.error(err)
-        this.sendTransactionResponse({
-          error: err.message
-        })
+            this.sendTransactionResponse({
+              status: true,
+              storageValue: result
+            }, 3000)
+          })
+          .catch(err => {
+            console.error(err)
+            this.sendTransactionResponse({
+              error: err.message
+            })
       })
     },
     onNoClick() {
@@ -104,13 +166,8 @@ export default {
         }
       })
     },
-    generatePrivateKey: async function() {
-      // TODO
-      return null
-    },
     addTransaction: async function() {
-      const privateKey = await this.generatePrivateKey()
-      const remoteNode = new RemoteNode(this.$network.url, new Signer(Algorithm.ED25519, privateKey));
+      const remoteNode = new RemoteNode(this.$network.get().url, new Signer(Algorithm.ED25519, this.privateKey));
 
       const receiver = new StorageReferenceModel(new TransactionReferenceModel('local', this.transaction.receiver), '0')
       const eoaCaller = new StorageReferenceModel(new TransactionReferenceModel('local', this.transaction.caller), '0')

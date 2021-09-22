@@ -7,7 +7,7 @@ export const showInfoToast = (vue, title, message) => {
 		title: title,
 		variant: 'info',
 		solid: true,
-		autoHideDelay: 1500,
+		autoHideDelay: 2000,
 		toaster: 'b-toaster-top-center'
 	})
 }
@@ -17,7 +17,7 @@ export const showErrorToast = (vue, title, message) => {
 		title: title,
 		variant: 'danger',
 		solid: true,
-		autoHideDelay: 1500,
+		autoHideDelay: 2000,
 		toaster: 'b-toaster-top-center'
 	})
 }

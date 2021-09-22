@@ -1,6 +1,6 @@
 <template>
   <div class="content">
-    <h6 class="mt-4 mb-4 text-center">Account</h6>
+    <h6 class="mb-4 text-center">Account</h6>
 
     <div class="d-flex justify-content-center" v-if="account">
       <div class="text-left form-container">

@@ -61,7 +61,7 @@ export default {
             replaceRoute('/transaction', {uuid: uuid})
           }
         })
-        .catch(() => showErrorToast(this, 'Error', 'An error occured'))
+        .catch(() => showErrorToast(this, 'Error', 'An error occurred'))
   }
 };
 </script>

@@ -1,6 +1,6 @@
 <template>
   <div class="content">
-    <h6 class="mt-4 mb-4 text-center">Import account</h6>
+    <h6 class="mb-4 text-center">Import account</h6>
 
     <div class="d-flex justify-content-center">
       <div class="text-left form-container">

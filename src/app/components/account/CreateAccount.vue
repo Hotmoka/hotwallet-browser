@@ -1,6 +1,6 @@
 <template>
   <div class="content">
-    <h6 class="mt-4 mb-4 text-center">Create account</h6>
+    <h6 class="mb-4 text-center">Create account</h6>
 
     <div class="d-flex justify-content-center">
       <div class="text-left form-container">
@@ -49,7 +49,7 @@
         >
           <b-form-checkbox
               id="checkbox-faucet"
-              v-model="faucet.fromFaucet"
+              v-model="fromFaucet"
               name="checkbox-1"
               :value="true"
               :unchecked-value="false"
@@ -58,6 +58,13 @@
           </b-form-checkbox>
         </b-form-group>
 
+        <b-form-group
+            v-if="account.reference && !fromFaucet"
+            id="i-address"
+        >
+          <label>Payer</label>
+          <p class="txt-secondary"> {{account.name}}</p>
+        </b-form-group>
 
         <b-button @click="onCreateAccountClick" variant="primary" :disabled="stateFormDisabled">Create</b-button>
       </div>
@@ -80,13 +87,11 @@ export default {
   name: "CreateAccount",
   props: {
     allowsUnsignedFaucet: Boolean,
-    hasAccount: Boolean
+    account: Object
   },
   data() {
     return {
-      faucet: {
-        fromFaucet: false
-      },
+      fromFaucet: false,
       newAccount: {
         name: null,
         confirmPassword: null,
@@ -158,7 +163,7 @@ export default {
       WrapPromiseTask(async () => {
 
         const remoteNode = new RemoteNode(this.$network.get().url)
-        const payer = await this.$storageApi.getCurrentAccount(this.$network.get())
+        const payer = this.account
         const balanceOfPayer = await this.getBalanceOfAccount(payer.reference)
 
         if ((balance - Number(balanceOfPayer)) > 0) {
@@ -204,8 +209,14 @@ export default {
         return
       }
 
+      if (!this.account.reference && !this.fromFaucet) {
+        const message = 'Cannot use a key as a payer' + (this.allowsUnsignedFaucet ? '. Use faucet as payer' : '')
+        showErrorToast(this, 'New account', message)
+        return
+      }
+
       const balance = Math.round(Number(this.newAccount.balance))
-      if (this.faucet.fromFaucet) {
+      if (this.fromFaucet) {
         this.createAccountFromFaucet(balance)
       } else {
         this.createAccountFromCurrentAccount(balance)
@@ -214,15 +225,7 @@ export default {
     getBalanceOfAccount: async function (hashOfStorageReference) {
       return new AccountHelper(new RemoteNode(this.$network.get().url))
           .getBalance(StorageReferenceModel.newStorageReference(hashOfStorageReference))
-    },
-    isFaucetAllowed() {
-      WrapPromiseTask(() => new RemoteNode(this.$network.get().url).allowsUnsignedFaucet())
-          .then(result => this.faucet.allowsUnsignedFaucet = result)
-          .catch(error => showErrorToast(this, 'Faucet', error.message ? error.message : 'Cannot retrieve faucet'))
     }
-  },
-  created() {
- //   this.isFaucetAllowed()
   }
 }
 </script>
