@@ -1,19 +1,27 @@
 <template>
   <div class="content">
-    <h6 class="mt-4 mb-4 text-center">Account list</h6>
+    <h6 class="mb-4 text-center">Account list</h6>
 
     <b-list-group>
       <b-list-group-item button
                          v-for="(account, index) in accounts"
                          :active="account.publicKey === currentAccount.publicKey"
                           @click="onAccountClick(index)">
-        <span style="color: #000; word-break: break-word"> {{ account.name }} </span><br/> <span class="text-secondary">{{ account.network.url }}</span>
+        <span style="color: #000; word-break: break-word">
+            <b-icon v-if="!account.reference" width="18" icon="key" :variant="account.publicKey === currentAccount.publicKey ? 'text-dark' : 'primary'"></b-icon>
+            <b-icon v-if="account.reference" width="18" icon="person" :variant="account.publicKey === currentAccount.publicKey ? 'text-dark' : 'primary'"></b-icon>
+          {{ account.name }}
+        </span>
+        <br/>
+        <span class="text-secondary font-small">{{ account.network.url }}</span>
+        <br/>
+        <span v-if="!account.reference" class="text-secondary font-small">Waiting for payment to this key</span>
       </b-list-group-item>
     </b-list-group>
 
 
     <b-modal v-model="modal.showModal" centered :hideHeaderClose="true" title="Login">
-      <p>Please login with the selected account</p>
+      <p>Please login with the selected {{ accountSelection.reference ? 'account' : 'key' }}</p>
       <div class="text-left form-container">
         <b-form-group
             id="i-pwd"
@@ -135,5 +143,7 @@ export default {
 </script>
 
 <style scoped>
-
+.font-small {
+  font-size: 15px;
+}
 </style>
