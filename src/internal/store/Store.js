@@ -12,8 +12,17 @@ import {aesDecrypt, aesEncrypt} from "../utils";
 export class Store {
 
     constructor() {
+        this.initialized = false
         this.store = {}
         this.localStorage = new LocalStorage()
+    }
+
+    /**
+     * Checks if the store is initialized.
+     * @return {boolean} true if the store is initialized, false otherwise
+     */
+    isInitialized() {
+        return this.initialized
     }
 
     /**
@@ -61,6 +70,7 @@ export class Store {
                 }
             }
         }
+        this.initialized = true
     }
 
     /**
