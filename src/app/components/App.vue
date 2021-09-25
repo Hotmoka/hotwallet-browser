@@ -54,12 +54,6 @@ export default {
     WrapPromiseTask(() => this.$network.init())
         .then(() => {
           this.showView = true
-
-          // check if from transaction
-          if (this.$route.redirectedFrom && this.$route.redirectedFrom.indexOf('/transaction') !== -1) {
-            const uuid = this.$route.redirectedFrom.split(":")[1]
-            replaceRoute('/transaction', {uuid: uuid})
-          }
         })
         .catch(() => showErrorToast(this, 'Error', 'An error occurred'))
   }

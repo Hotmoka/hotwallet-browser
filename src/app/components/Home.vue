@@ -15,7 +15,12 @@
 
       <div class="navigation">
         <div></div>
-        <h6>{{ account.name }}</h6>
+        <h6><b-icon v-if="account.reference" width="18" icon="person"
+                    :variant="'text-dark'"></b-icon>
+          <b-icon v-if="!account.reference" width="18" icon="key"
+                  :variant="'text-dark'"></b-icon>
+          {{ account.name }}
+        </h6>
         <b-link class="float-right" @click="showOptionsMenu = !showOptionsMenu">
           <b-icon id="popover-options-button" width="18" icon="three-dots-vertical" variant="primary"></b-icon>
         </b-link>

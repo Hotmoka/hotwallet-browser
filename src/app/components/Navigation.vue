@@ -38,7 +38,10 @@ export default {
       this.showNavigationContainer = path !== '/welcome' && this.showNavigation
     },
     isPathForNavigation(path) {
-      return !['/login', '/home', '/account', '/transaction'].includes(path)
+      if (path.startsWith("/transaction")) {
+        return false
+      }
+      return !['/login', '/home', '/account'].includes(path)
     },
     onExpandAppClick() {
       this.$browser.tabs.create({
