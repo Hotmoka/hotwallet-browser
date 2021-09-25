@@ -38,7 +38,7 @@ export default {
       this.showNavigationContainer = path !== '/welcome' && this.showNavigation
     },
     isPathForNavigation(path) {
-      if (path.startsWith("/transaction")) {
+      if (path.indexOf("/transaction") !== -1) {
         return false
       }
       return !['/login', '/home', '/account'].includes(path)

@@ -185,6 +185,10 @@ export default {
       }
     },
     onHeaderImageClick() {
+      if (this.$route.path.indexOf('/transaction') !== -1) {
+        return
+      }
+
       if (this.$route.path === '/home') {
         EventBus.$emit('reloadAccount')
       } else {
