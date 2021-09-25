@@ -227,7 +227,6 @@ export default {
     addTransaction: async function() {
       const remoteNode = new RemoteNode(this.$network.get().url, new Signer(Algorithm.ED25519, this.privateKey));
 
-      const receiver = StorageReferenceModel.newStorageReference(this.transaction.receiver)
       const caller = StorageReferenceModel.newStorageReference(this.account.reference)
       const nonceOfEoa = await remoteNode.getNonceOf(caller)
       const gasPrice = await remoteNode.getGasPrice()
@@ -243,9 +242,9 @@ export default {
               chainId,
               this.transaction.gas,
               gasPrice,
-              new TransactionReferenceModel('local', this.transaction.smartContractAddress),
+              this.transaction.smartContractAddress,
               method,
-              receiver,
+              this.transaction.receiver,
               this.transaction.actuals,
               remoteNode.signer
           )

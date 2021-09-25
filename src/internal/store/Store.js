@@ -95,7 +95,7 @@ export class Store {
     /**
      * It returns the store object.
      * @param key optional key that if specified it returns the store object associated with the key
-     * @return {Promise<unknown>} a promise that resolves to the store object o undefined if the object does not exist
+     * @return {Promise<unknown>} a promise that resolves to the store object
      */
     async getStore(key) {
         if (key) {

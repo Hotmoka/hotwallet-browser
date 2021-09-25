@@ -10,6 +10,10 @@ export class BackgroundHandler {
         this.store = new Store()
         this.storeHelper = new StoreHelper(this.store)
         this.store.setToStore('transactions', {})
+        this.width = 374
+        this.height = 640
+        this.left = (screen.width/2)-(this.width/2);
+        this.top = (screen.height/2)-(this.height/2) - 20;
     }
 
     /**
@@ -55,9 +59,12 @@ export class BackgroundHandler {
             await this.connect()
             await browser.windows.create({
                 type: 'popup',
-                url: browser.runtime.getURL("app/popup.html#/transaction/" + transaction.uuid),
-                width: 371,
-                height: 640
+                url: browser.runtime.getURL("app/index.html#/transaction/" + transaction.uuid),
+                width: this.width,
+                height: this.height,
+                focused: true,
+                left: this.left,
+                top: this.top
             })
         } catch (e) {
             await this.endTransaction({
@@ -76,15 +83,19 @@ export class BackgroundHandler {
     async endTransaction(transactionResult) {
         const uuid = transactionResult.uuid
 
-        // send transaction response
-        this.transactionMapResponse.get(uuid).sendResponse({
-            error: transactionResult.error,
-            status: transactionResult.status,
-            storageValue: transactionResult.storageValue
-        })
+        if (this.transactionMapResponse.has(uuid)) {
 
-        // delete transaction
-        this.transactionMapResponse.delete(uuid)
+            // send transaction response
+            this.transactionMapResponse.get(uuid).sendResponse({
+                error: transactionResult.error,
+                status: transactionResult.status,
+                storageValue: transactionResult.storageValue
+            })
+
+            // delete transaction
+            this.transactionMapResponse.delete(uuid)
+        }
+
         const transactions = await this.store.getStore('transactions')
         if (transactions && transactions.hasOwnProperty(uuid)) {
             delete transactions[uuid]
