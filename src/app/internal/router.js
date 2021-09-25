@@ -52,14 +52,6 @@ router.beforeEach(async (to, from, next) => {
     const authRequired = !publicPages.includes(to.path);
     const auth = await Vue.prototype.$storageApi.getAuthentication()
 
-    console.log('auth from', from)
-    console.log('auth to', to)
-
-    if (to.redirectedFrom && to.redirectedFrom === '/transaction') {
-        next()
-        return
-    }
-
     let route = null
     if (authRequired) {
         if (auth.hasAccount && !auth.authenticated) {
