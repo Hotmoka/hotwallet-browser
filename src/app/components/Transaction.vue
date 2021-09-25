@@ -78,7 +78,6 @@ import {
   RemoteNode,
   Signer,
   StorageReferenceModel,
-  TransactionReferenceModel,
   VoidMethodSignatureModel
 } from "hotweb3";
 import {invalidPasswordFeedback, statePassword} from "../internal/validators";
@@ -95,12 +94,12 @@ export default {
       transaction: {
         name: null,
         amount: null,
-        caller: null,
         smartContractAddress: null,
         methodSignature: null,
         receiver: null,
         actuals: [],
-        gas: '30000'
+        gas: '30000',
+        timer: 51
       },
       account: null,
       accountName: '',
@@ -162,7 +161,7 @@ export default {
             this.sendTransactionResponse({
               status: true,
               storageValue: result
-            }, 3000)
+            })
           })
           .catch(err => {
             console.error(err)
@@ -177,9 +176,9 @@ export default {
       this.sendTransactionResponse({
         status: false,
         error: 'Transaction reject by payer'
-      }, 0)
+      })
     },
-    sendTransactionResponse(result, timeout) {
+    sendTransactionResponse(result, timeout = 4000) {
       this.$browser.runtime.sendMessage({
         hotmoka: {
           type: 'transactionResult',
@@ -215,7 +214,7 @@ export default {
         return {account, transaction}
       }).then(result => {
         this.account = result.account
-        this.transaction = result.transaction
+        this.transaction = {...this.transaction, ...result.transaction}
       }).catch(err => {
         this.showTransactionErrorView(err.message ? err.message : 'Cannot start transaction')
         this.sendTransactionResponse({
@@ -249,11 +248,26 @@ export default {
               remoteNode.signer
           )
       );
+    },
+    setTransactionTimer() {
+      const timer = setInterval(() => {
+        this.transaction.timer--
+
+        if (this.transaction.timer === 0) {
+          clearInterval(timer)
+          this.showTransactionErrorView('Transaction cancelled for timeout')
+          this.sendTransactionResponse({
+            status: false,
+            error: 'Transaction cancelled for timeout'
+          })
+        }
+      }, 1000);
     }
   },
   created() {
     this.uuid = this.$route.params.uuid
 
+    this.setTransactionTimer()
     WrapPromiseTask(async () => {
       const account = await this.$storageApi.getStore('account')
       if (!account) {
