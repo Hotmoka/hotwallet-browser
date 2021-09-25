@@ -17,9 +17,10 @@ const {publicStoreObjectKeys, privateStoreObjectKeys, networks} = require("./int
                 return backgroundHandler.connect()
             } else if (message.hotmoka.type === 'transaction') {
                 backgroundHandler.startTransaction(message.hotmoka.transaction, sendResponse)
+                return true // async
             } else if (message.hotmoka.type === 'transactionResult') {
                 backgroundHandler.endTransaction(message.hotmoka.transactionResult)
-
+                return true // async
             } else if (message.hotmoka.type === 'store-init-private') {
                 return backgroundHandler.store.initPrivateStore(message.hotmoka.keys)
             } else if (message.hotmoka.type === 'store-persist-private') {
@@ -30,10 +31,9 @@ const {publicStoreObjectKeys, privateStoreObjectKeys, networks} = require("./int
                 return backgroundHandler.store.getStore(message.hotmoka.key)
             } else if (message.hotmoka.type === 'store-set-pwd') {
                 return backgroundHandler.store.setPassword(message.hotmoka.password)
+            } else {
+                return false
             }
-
-            // async
-            return true
         }
     })
 

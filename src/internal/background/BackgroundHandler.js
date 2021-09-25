@@ -5,14 +5,11 @@ const browser = require("webextension-polyfill")
 
 export class BackgroundHandler {
 
-
     constructor() {
-        /**
-         * The transaction map of the wallet.
-         */
-        this.transactionMap = new Map()
+        this.transactionMapResponse = new Map()
         this.store = new Store()
         this.storeHelper = new StoreHelper(this.store)
+        this.store.setToStore('transactions', {})
     }
 
     /**
@@ -20,57 +17,78 @@ export class BackgroundHandler {
      * @return {Promise<{address: string, name: string}>} a promise that resolves to the current account
      */
     async connect() {
-        const account = await this.storeHelper.getCurrentAccount()
-        if (!account) {
-            throw new Error('No account found')
+        const isStoreInitialized = this.store.isInitialized()
+        if (!isStoreInitialized) {
+            throw new Error('Please login to Hotwallet')
         }
 
-        await this.store.localStorage.setData({transactions: {}})
-
-        return {
-            name: account.name,
-            address: account.reference
+        const account = await this.storeHelper.getCurrentAccount()
+        if (!account) {
+            throw new Error('No account registered to Hotwallet')
+        } else if (!account.reference) {
+            throw new Error('Hotwallet cannot start transactions without a full account. The current account is only a key')
+        } else if (!account.logged) {
+            throw new Error('Please login to Hotwallet')
+        } else {
+            return {
+                name: account.name,
+                address: account.reference
+            }
         }
     }
 
     /**
-     * It starts a wallet transaction.
+     * It starts a wallet transaction for a client.
      * @param transaction the transaction data
      * @param pendingCallbackResponse the pending callback response
      * @return {Promise<void>} a promise that resolves to void
      */
     async startTransaction(transaction, pendingCallbackResponse) {
         transaction.uuid = uuidv4()
-        const transactions = await this.store.localStorage.getData('transactions')
-        if (!transactions) {
-            throw new Error('Cannot begin transaction')
-        }
-        transactions[transaction.uuid] = transaction
-        this.transactionMap.set(transaction.uuid, {sendResponse: pendingCallbackResponse})
-        await this.store.localStorage.setData({transactions: transactions})
 
-        browser.windows.create({
-            type: 'popup',
-            width: 360,
-            url: browser.runtime.getURL(
-                "app/popup.html#/transaction:" + transaction.uuid
-            )
-        })
+        try {
+            const transactions = await this.store.getStore('transactions')
+            transactions[transaction.uuid] = transaction
+            this.transactionMapResponse.set(transaction.uuid, {sendResponse: pendingCallbackResponse})
+
+            await this.store.setToStore('transactions', transactions)
+            await this.connect()
+            await browser.windows.create({
+                type: 'popup',
+                url: browser.runtime.getURL("app/popup.html#/transaction/" + transaction.uuid),
+                width: 371,
+                height: 640
+            })
+        } catch (e) {
+            await this.endTransaction({
+                uuid: transaction.uuid,
+                status: false,
+                error: e.message ? e.message : 'Cannot begin transaction'
+            })
+        }
     }
 
+    /**
+     * It ends the wallet transaction. It sends the transaction result to the client.
+     * @param transactionResult the transaction result
+     * @return {Promise<void>} a promise that resolves to void
+     */
     async endTransaction(transactionResult) {
         const uuid = transactionResult.uuid
-        this.transactionMap.get(uuid).sendResponse({
+
+        // send transaction response
+        this.transactionMapResponse.get(uuid).sendResponse({
             error: transactionResult.error,
             status: transactionResult.status,
             storageValue: transactionResult.storageValue
         })
-        this.transactionMap.delete(uuid)
 
-        const transactions = await this.store.localStorage.getData('transactions')
+        // delete transaction
+        this.transactionMapResponse.delete(uuid)
+        const transactions = await this.store.getStore('transactions')
         if (transactions && transactions.hasOwnProperty(uuid)) {
             delete transactions[uuid]
+            await this.store.setToStore('transactions', transactions)
         }
-        await this.store.localStorage.setData({transactions: transactions})
     }
 }
