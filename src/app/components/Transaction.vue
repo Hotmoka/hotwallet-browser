@@ -1,20 +1,7 @@
 <template>
   <div class="content">
-    <h6 class="mb-4">Transaction</h6>
-
-    <h5>Confirm transaction <span v-if="transaction.name">{{ transaction.name }} </span> ?</h5>
-    <p>Amount: <span v-if="transaction.amount">{{ transaction.amount }} Mokas </span></p>
-    <b-button variant="success" @click="onYesClick">Yes</b-button>
-    <b-button variant="danger" @click="onNoClick">No</b-button>
-
-    <div id="overlay" v-if="showOverlay">
-      <b-icon icon="check-circle-fill" variant="success" style="width: 86px; height: 86px; margin-top: 14rem"></b-icon>
-      <br/>
-      <h6 class="text-center" style="font-weight: bold; color: green; margin-top: 2rem;">Transaction successful</h6>
-    </div>
-
-    <b-modal v-model="showModal" centered :hideHeaderClose="true" title="Account">
-      <p>Please enter password to verify account</p>
+    <b-modal v-model="showModal" centered :hideHeaderClose="true" title="Account verify">
+      <p>Please enter password to verify account of {{accountName}}</p>
       <div class="text-left form-container">
         <b-form-group
             id="i-pwd"
@@ -34,7 +21,49 @@
 
     </b-modal>
 
+    <h6 class="mb-2 text-center">Transaction</h6>
 
+    <div class="text-center" v-if="transaction && account">
+      <h5 class="text-secondary mb-4">{{ transaction.name }} </h5>
+
+      <div class="d-flex justify-content-center">
+        <div class="text-left form-container">
+          <b-form-group>
+            <label>Amount</label>
+            <p class="txt-secondary">{{ transaction.amount }} Panarea </p>
+          </b-form-group>
+
+          <b-form-group>
+            <label>Transaction Gas</label>
+            <p class="txt-secondary">{{ this.transaction.gas }} Panarea </p>
+          </b-form-group>
+
+          <b-form-group>
+            <label>Payer {{account.name }}</label>
+            <p class="txt-secondary">{{ account.reference }} </p>
+          </b-form-group>
+
+        </div>
+      </div>
+
+      <h5 class="mt-3 mb-3">Confirm transaction ?</h5>
+      <b-button variant="success" @click="onYesClick">Yes</b-button>
+      <b-button variant="danger" @click="onNoClick">No</b-button>
+    </div>
+
+    <div id="overlay" v-if="showOverlay">
+      <div class="text-center" v-if="!failedTransaction">
+        <b-icon icon="check-circle-fill" variant="success" class="icon-overlay"></b-icon>
+        <br/>
+        <h6 class="text-center txt-successful">Transaction successful</h6>
+      </div>
+      <div class="text-center" v-if="failedTransaction">
+        <b-icon icon="x-circle-fill" variant="danger" class="icon-overlay"></b-icon>
+        <br/>
+        <h6 class="text-center txt-error" v-if="errorMessage">{{errorMessage}}</h6>
+        <br/>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -56,12 +85,13 @@ import {invalidPasswordFeedback, statePassword} from "../internal/validators";
 
 export default {
   name: "Transaction",
-  props: {
-    uuid: String
-  },
   data() {
     return {
       showOverlay: false,
+      showModal: false,
+      failedTransaction: false,
+      errorMessage: null,
+      uuid: null,
       transaction: {
         name: null,
         amount: null,
@@ -69,11 +99,13 @@ export default {
         smartContractAddress: null,
         methodSignature: null,
         receiver: null,
-        actuals: []
+        actuals: [],
+        gas: '30000'
       },
+      account: null,
+      accountName: '',
       password: null,
-      privateKey: null,
-      showModal: true
+      privateKey: null
     }
   },
   computed: {
@@ -85,12 +117,21 @@ export default {
     }
   },
   methods: {
+    showTransactionErrorView(message) {
+      this.showOverlay = true
+      this.failedTransaction = true
+      this.errorMessage = message ? message : 'Transaction failed'
+    },
     onModalActionClick(selection) {
+
       if (!selection) {
         this.sendTransactionResponse({
-          status: false
+          status: false,
+          error: 'Transaction rejected by payer'
         }, 0)
       } else {
+
+        // verify account
         WrapPromiseTask(async () => {
           const account = await this.$storageApi.getCurrentAccount(this.$network.get())
           const publicKeyVerified = AccountHelper.verifyPublicKey(
@@ -109,6 +150,7 @@ export default {
         }).then(privateKey => {
           this.privateKey = privateKey
           this.showModal = false
+          this.getTransactionDetails()
         }).catch(err => showErrorToast(this, 'Account', err.message ? err.message : 'Cannot verify account'))
       }
     },
@@ -124,14 +166,17 @@ export default {
           })
           .catch(err => {
             console.error(err)
+            this.showTransactionErrorView(err.message ? err.message : 'Transaction failed')
             this.sendTransactionResponse({
-              error: err.message
+              status: false,
+              error: err.message ? err.message : 'Transaction failed'
             })
       })
     },
     onNoClick() {
       this.sendTransactionResponse({
-        status: false
+        status: false,
+        error: 'Transaction reject by payer'
       }, 0)
     },
     sendTransactionResponse(result, timeout) {
@@ -154,24 +199,37 @@ export default {
       }, timeout)
     },
     getTransactionDetails() {
-      this.$browser.getFromStorage('transactionMap').then(result => {
-        if (result && result.transactionMap && result.transactionMap.hasOwnProperty(this.uuid)) {
-          const transaction = result.transactionMap[this.uuid]
-          this.transaction = {...transaction}
-        } else {
-          showErrorToast(this, 'Transaction', 'Cannot begin transaction')
-          this.sendTransactionResponse({
-            error: 'Cannot begin transaction'
-          })
+      WrapPromiseTask(async() => {
+
+        if (!this.uuid) {
+          throw new Error('Transaction non found')
         }
+        const account = await this.$storageApi.getCurrentAccount(this.$network.get())
+        const transactions = await this.$storageApi.getStore('transactions')
+
+        if (!transactions || !transactions.hasOwnProperty(this.uuid)) {
+          throw new Error('Transaction non found')
+        }
+
+        const transaction = transactions[this.uuid]
+        return {account, transaction}
+      }).then(result => {
+        this.account = result.account
+        this.transaction = result.transaction
+      }).catch(err => {
+        this.showTransactionErrorView(err.message ? err.message : 'Cannot start transaction')
+        this.sendTransactionResponse({
+          status: false,
+          error: err.message ? err.message : 'Cannot start transaction'
+        })
       })
     },
     addTransaction: async function() {
       const remoteNode = new RemoteNode(this.$network.get().url, new Signer(Algorithm.ED25519, this.privateKey));
 
-      const receiver = new StorageReferenceModel(new TransactionReferenceModel('local', this.transaction.receiver), '0')
-      const eoaCaller = new StorageReferenceModel(new TransactionReferenceModel('local', this.transaction.caller), '0')
-      const nonceOfEoa = await remoteNode.getNonceOf(eoaCaller)
+      const receiver = StorageReferenceModel.newStorageReference(this.transaction.receiver)
+      const caller = StorageReferenceModel.newStorageReference(this.account.reference)
+      const nonceOfEoa = await remoteNode.getNonceOf(caller)
       const gasPrice = await remoteNode.getGasPrice()
       const chainId = await remoteNode.getChainId()
 
@@ -179,11 +237,11 @@ export default {
           new VoidMethodSignatureModel(this.transaction.methodSignature.definingClass, this.transaction.methodSignature.methodName, this.transaction.methodSignature.formals) :
           new NonVoidMethodSignatureModel(this.transaction.methodSignature.definingClass, this.transaction.methodSignature.methodName, this.transaction.methodSignature.returnType, this.transaction.methodSignature.formals)
 
-      return await remoteNode.addInstanceMethodCallTransaction(new InstanceMethodCallTransactionRequestModel(
-              eoaCaller,
+      return remoteNode.addInstanceMethodCallTransaction(new InstanceMethodCallTransactionRequestModel(
+              caller,
               nonceOfEoa,
               chainId,
-              '30000',
+              this.transaction.gas,
               gasPrice,
               new TransactionReferenceModel('local', this.transaction.smartContractAddress),
               method,
@@ -195,7 +253,24 @@ export default {
     }
   },
   created() {
-    this.getTransactionDetails()
+    this.uuid = this.$route.params.uuid
+
+    WrapPromiseTask(async () => {
+      const account = await this.$storageApi.getStore('account')
+      if (!account) {
+        throw new Error('Cannot retrieve account')
+      }
+      return account
+    }).then(account => {
+      this.accountName = account.name
+      this.showModal = true
+    }).catch(err => {
+      this.showTransactionErrorView(err.message ? err.message : 'Cannot retrieve account')
+      this.sendTransactionResponse({
+        status: false,
+        error: err.message ? err.message : 'Cannot start transaction'
+      })
+    })
   }
 }
 </script>
@@ -209,8 +284,27 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: rgba(255, 255, 255, 0.85);
   z-index: 12;
   cursor: pointer;
+}
+
+.icon-overlay {
+  width: 86px;
+  height: 86px;
+  margin-top: 14rem;
+}
+
+.txt-successful {
+  font-weight: bold;
+  color: green;
+  margin-top: 2rem;
+}
+
+.txt-error {
+  font-weight: bold;
+  color: red;
+  margin-top: 2rem;
+  word-break: break-word;
 }
 </style>
