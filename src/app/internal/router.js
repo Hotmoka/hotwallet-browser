@@ -22,7 +22,7 @@ export const router = new VueRouter({
         { path: '/account', component: Account, props: {editAccount: false, isAccount: true} },
         { path: '/edit-account', name: 'edit-account', component: Account, props: true },
         { path: '/account-list', component: ListAccounts },
-        { path: '/transaction', name: 'transaction', component: Transaction, props: true },
+        { path: '/transaction/:uuid', component: Transaction },
         { path: '*', redirect: '/welcome' }
     ]
 })
@@ -51,6 +51,14 @@ router.beforeEach(async (to, from, next) => {
     const inSubpages = publicSubpages.includes(to.path);
     const authRequired = !publicPages.includes(to.path);
     const auth = await Vue.prototype.$storageApi.getAuthentication()
+
+    console.log('auth from', from)
+    console.log('auth to', to)
+
+    if (to.redirectedFrom && to.redirectedFrom === '/transaction') {
+        next()
+        return
+    }
 
     let route = null
     if (authRequired) {
