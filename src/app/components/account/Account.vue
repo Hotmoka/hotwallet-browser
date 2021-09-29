@@ -31,6 +31,16 @@
           <p class="txt-secondary"> {{account.publicKeyBase58}}</p>
         </b-form-group>
 
+        <b-form-group
+            id="i-reference"
+            label="Address of account"
+            label-for="i-reference"
+            :invalid-feedback="invalidFeedbackReference"
+            :state="stateReference"
+            v-if="!isAccount"
+        >
+          <b-form-input type="text" id="i-reference" v-model="account.reference" :state="stateReference" trim></b-form-input>
+        </b-form-group>
 
         <div v-if="words && words.length > 0">
           <label>Words<span class="copy-container"><b-icon width="18" variant="primary" icon="clipboard"
@@ -48,7 +58,7 @@
                   @click="onSaveAccountClick"
                   variant="primary"
                   style="margin-top: 1.5rem;"
-                  :disabled="!stateName">Save edits
+                  :disabled="!stateName || (!this.isAccount && !stateReference)">Save edits
         </b-button>
 
         <b-button v-if="!editAccount"
@@ -59,23 +69,29 @@
 
       </div>
     </div>
+
+    <VerifyPasswordModal ref="verifyPasswordComponent" @onPasswordVerified="onPasswordVerified"></VerifyPasswordModal>
+
   </div>
 </template>
 
 <script>
 import {showErrorToast, showInfoToast, WrapPromiseTask} from "../../internal/utils";
-import {AccountHelper, Bip39Dictionary} from "hotweb3";
+import {AccountHelper, Bip39Dictionary, RemoteNode, StorageReferenceModel} from "hotweb3";
 import {replaceRoute} from "../../internal/router";
 import {fieldNotEmptyFeedback, stateFieldNotEmpty} from "../../internal/validators";
+import VerifyPasswordModal from "./VerifyPasswordModal";
 
 export default {
   name: "Account",
+  components: {VerifyPasswordModal},
   props: {
     editAccount: Boolean,
     isAccount: Boolean
   },
   data() {
     return {
+      showModal: false,
       account: null,
       words: []
     }
@@ -86,6 +102,18 @@ export default {
     },
     invalidFeedbackName() {
       return fieldNotEmptyFeedback(this.account.name, 'Please enter the account\'s name')
+    },
+    stateReference() {
+      if (this.isAccount) {
+        return true
+      }
+      return stateFieldNotEmpty(this.account.reference)
+    },
+    invalidFeedbackReference() {
+      if (this.isAccount) {
+        return null
+      }
+      return fieldNotEmptyFeedback(this.account.name, 'Please enter the account\'s address')
     }
   },
   methods: {
@@ -93,15 +121,44 @@ export default {
       replaceRoute('/home')
     },
     onSaveAccountClick() {
-      WrapPromiseTask(() => this.$storageApi.updateAccount(this.account))
-          .then(() => replaceRoute("/home"))
-          .catch(err => showErrorToast(this, 'Account', err.message ? err.message : 'Cannot update account'))
+      if (this.isAccount) {
+        WrapPromiseTask(() => this.$storageApi.updateAccount(this.account))
+            .then(() => replaceRoute("/home"))
+            .catch(err => showErrorToast(this, 'Account', err.message ? err.message : 'Cannot update account'))
+      } else {
+        this.$refs.verifyPasswordComponent.showModal({
+          account: this.account,
+          title: 'Login',
+          subtitle: 'Insert password to verify account',
+          btnActionName: 'Verify'
+        })
+      }
     },
     onCopyContentClick() {
       const words = this.words.join(' ')
       navigator.clipboard.writeText(words).then(() => {
         showInfoToast(this, 'Info', 'Words copied to clipboard')
       })
+    },
+    onPasswordVerified(result) {
+      if (result.verified) {
+        WrapPromiseTask(async () => {
+
+          try {
+            const accountHelper = new AccountHelper(new RemoteNode(this.$network.get()))
+            const isVerified = await accountHelper.verifyAccount(StorageReferenceModel.newStorageReference(this.account.reference), this.account.publicKey)
+
+            if (!isVerified) {
+              throw new Error()
+            }
+          } catch (e) {
+            throw new Error('Invalid address of account')
+          }
+
+          await this.$storageApi.updateAccount(this.account)
+        }).then(() => replaceRoute("/home"))
+          .catch(err => showErrorToast(this, 'Account', err.message ? err.message : 'Cannot update account'))
+      }
     }
   },
   created() {

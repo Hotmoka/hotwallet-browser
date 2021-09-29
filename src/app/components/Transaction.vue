@@ -1,25 +1,6 @@
 <template>
   <div class="content">
-    <b-modal v-model="showModal" centered :hideHeaderClose="true" title="Account verify">
-      <p>Please enter password to verify account of {{accountName}}</p>
-      <div class="text-left form-container">
-        <b-form-group
-            id="i-pwd"
-            label="Password"
-            label-for="i-pwd"
-            :invalid-feedback="invalidFeedback"
-            :state="state"
-        >
-          <b-form-input type="password" id="i-pwd" v-model="password" :state="state" trim></b-form-input>
-        </b-form-group>
-      </div>
-
-      <template #modal-footer>
-        <b-button @click="onModalActionClick(false)" variant="secondary">Cancel</b-button>
-        <b-button @click="onModalActionClick(true)" variant="primary" :disabled="!state">Verify</b-button>
-      </template>
-
-    </b-modal>
+    <VerifyPasswordModal ref="verifyPasswordComponent" @onPasswordVerified="onPasswordVerified" @onCancel="onCancelPasswordCheck"></VerifyPasswordModal>
 
     <h6 class="mb-2 text-center">Transaction</h6>
 
@@ -69,7 +50,7 @@
 
 <script>
 import {showErrorToast, WrapPromiseTask} from "../internal/utils";
-
+import VerifyPasswordModal from "./account/VerifyPasswordModal";
 import {
   AccountHelper,
   Algorithm, Bip39Dictionary,
@@ -80,14 +61,14 @@ import {
   StorageReferenceModel,
   VoidMethodSignatureModel
 } from "hotweb3";
-import {invalidPasswordFeedback, statePassword} from "../internal/validators";
+
 
 export default {
   name: "Transaction",
+  components: {VerifyPasswordModal},
   data() {
     return {
       showOverlay: false,
-      showModal: false,
       failedTransaction: false,
       errorMessage: null,
       uuid: null,
@@ -102,17 +83,7 @@ export default {
         timer: 51
       },
       account: null,
-      accountName: '',
-      password: null,
       privateKey: null
-    }
-  },
-  computed: {
-    state() {
-      return statePassword(this.password)
-    },
-    invalidFeedback() {
-      return invalidPasswordFeedback(this.password)
     }
   },
   methods: {
@@ -121,37 +92,22 @@ export default {
       this.failedTransaction = true
       this.errorMessage = message ? message : 'Transaction failed'
     },
-    onModalActionClick(selection) {
-
-      if (!selection) {
-        this.sendTransactionResponse({
-          status: false,
-          error: 'Transaction rejected by payer'
-        }, 0)
-      } else {
-
-        // verify account
+    onPasswordVerified(result) {
+       if (result.verified) {
         WrapPromiseTask(async () => {
-          const account = await this.$storageApi.getCurrentAccount(this.$network.get())
-          const publicKeyVerified = AccountHelper.verifyPublicKey(
-              this.password,
-              account.entropy,
-              Bip39Dictionary.ENGLISH,
-              account.publicKey
-          )
-
-          if (publicKeyVerified) {
-            const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.password, Bip39Dictionary.ENGLISH, account.entropy)
+            const keyPair = AccountHelper.generateEd25519KeyPairFrom(result.password, Bip39Dictionary.ENGLISH, this.account.entropy)
             return keyPair.privateKey
-          } else {
-            throw new Error('Wrong password')
-          }
         }).then(privateKey => {
           this.privateKey = privateKey
-          this.showModal = false
           this.getTransactionDetails()
         }).catch(err => showErrorToast(this, 'Account', err.message ? err.message : 'Cannot verify account'))
       }
+    },
+    onCancelPasswordCheck() {
+      this.sendTransactionResponse({
+        status: false,
+        error: 'Transaction rejected by payer'
+      }, 0)
     },
     onYesClick() {
       WrapPromiseTask(() => this.addTransaction())
@@ -203,18 +159,14 @@ export default {
         if (!this.uuid) {
           throw new Error('Transaction non found')
         }
-        const account = await this.$storageApi.getCurrentAccount(this.$network.get())
         const transactions = await this.$storageApi.getStore('transactions')
-
         if (!transactions || !transactions.hasOwnProperty(this.uuid)) {
           throw new Error('Transaction non found')
         }
 
-        const transaction = transactions[this.uuid]
-        return {account, transaction}
+        return transactions[this.uuid]
       }).then(result => {
-        this.account = result.account
-        this.transaction = {...this.transaction, ...result.transaction}
+        this.transaction = {...this.transaction, ...result}
       }).catch(err => {
         this.showTransactionErrorView(err.message ? err.message : 'Cannot start transaction')
         this.sendTransactionResponse({
@@ -269,14 +221,16 @@ export default {
 
     this.setTransactionTimer()
     WrapPromiseTask(async () => {
-      const account = await this.$storageApi.getStore('account')
-      if (!account) {
-        throw new Error('Cannot retrieve account')
-      }
-      return account
+      return this.$storageApi.getCurrentAccount(this.$network.get())
     }).then(account => {
-      this.accountName = account.name
-      this.showModal = true
+      this.account = {...account}
+      this.$refs.verifyPasswordComponent.showModal({
+        account: this.account,
+        title: 'Account verification',
+        subtitle: 'Please enter password to verify account of ' + this.account.name,
+        btnActionName: 'Verify',
+        closeOnIncorrectPwd: false
+      })
     }).catch(err => {
       this.showTransactionErrorView(err.message ? err.message : 'Cannot retrieve account')
       this.sendTransactionResponse({
