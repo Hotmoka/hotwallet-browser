@@ -23,7 +23,7 @@ export const router = new VueRouter({
         { path: '/account', component: Account, props: {editAccount: false, isAccount: true} },
         { path: '/edit-account', name: 'edit-account', component: Account, props: true },
         { path: '/account-list', component: ListAccounts },
-        { path: '/send-coins', component: SendCoins },
+        { path: '/send-coins', name: 'send-coins', component: SendCoins, props: true },
         { path: '/transaction/:uuid', component: Transaction },
         { path: '*', redirect: '/welcome' }
     ]

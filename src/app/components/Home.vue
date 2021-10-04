@@ -85,8 +85,8 @@ export default {
         });
       } else if (option === '/edit-account') {
         pushRoute(option, {editAccount: true, isAccount: this.isAccount})
-      } else if (option === '/create-account') {
-        pushRoute(option, {allowsUnsignedFaucet: this.allowsFaucet, account: this.account})
+      } else if (option === '/create-account' || option === '/send-coins') {
+        pushRoute(option, {allowsUnsignedFaucet: this.allowsFaucet, payer: this.account})
       } else {
         pushRoute(option)
       }

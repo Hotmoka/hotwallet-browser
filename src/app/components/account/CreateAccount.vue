@@ -59,11 +59,11 @@
         </b-form-group>
 
         <b-form-group
-            v-if="account.reference && !fromFaucet"
+            v-if="payer.reference && !fromFaucet"
             id="i-address"
         >
           <label>Payer</label>
-          <p class="txt-secondary"> {{account.name}} - {{payerAddress}}</p>
+          <p class="txt-secondary"> {{ payer.name }} - {{ payerAddress }}</p>
         </b-form-group>
 
         <b-button @click="onCreateAccountClick" variant="primary" :disabled="stateFormDisabled">Create</b-button>
@@ -87,7 +87,7 @@ export default {
   name: "CreateAccount",
   props: {
     allowsUnsignedFaucet: Boolean,
-    account: Object
+    payer: Object
   },
   data() {
     return {
@@ -123,7 +123,7 @@ export default {
       return fieldNotEmptyFeedback(this.newAccount.name, 'Please enter the account\'s name')
     },
     payerAddress() {
-      return this.account ? trimAddress(this.account.reference) : ''
+      return this.payer ? trimAddress(this.payer.reference) : ''
     }
   },
   methods: {
@@ -157,30 +157,27 @@ export default {
               created: new Date().getTime()
             }
         )
-      }).then(() =>
-          replaceRoute('/account')
-      ).catch(err => showErrorToast(this, 'New account', err.message ? err.message : 'Error during account creation'))
-
+      }).then(() => replaceRoute('/account'))
+        .catch(err => showErrorToast(this, 'New account', err.message || 'Error during account creation'))
     },
     createAccountFromCurrentAccount(balance) {
       WrapPromiseTask(async () => {
 
         const remoteNode = new RemoteNode(this.$network.get().url)
-        const payer = this.account
-        const balanceOfPayer = await this.getBalanceOfAccount(payer.reference)
+        const balanceOfPayer = await this.getBalanceOfAccount(this.payer.reference)
 
         if ((balance - Number(balanceOfPayer)) > 0) {
-          throw new Error('Cannot transfer more than ' + balanceOfPayer + ' from payer ' + payer.name)
+          throw new Error('Cannot transfer more than ' + balanceOfPayer + ' from payer ' + this.payer.name)
         }
 
         // generate key pair of payer
-        const keyPairOfPayer = AccountHelper.generateEd25519KeyPairFrom(payer.password, Bip39Dictionary.ENGLISH, payer.entropy)
+        const keyPairOfPayer = AccountHelper.generateEd25519KeyPairFrom(this.payer.password, Bip39Dictionary.ENGLISH, this.payer.entropy)
 
         // generate key pair for the new account
         const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.newAccount.password, Bip39Dictionary.ENGLISH)
         const account = await new AccountHelper(remoteNode).createAccountFromPayer(
             Algorithm.ED25519,
-            StorageReferenceModel.newStorageReference(payer.reference),
+            StorageReferenceModel.newStorageReference(this.payer.reference),
             keyPairOfPayer,
             keyPair,
             balance.toString(),
@@ -204,7 +201,7 @@ export default {
             }
         )
       }).then(() => replaceRoute('/account'))
-        .catch(err => showErrorToast(this, 'New account', err.message ? err.message : 'Error during account creation'))
+        .catch(err => showErrorToast(this, 'New account', err.message || 'Error during account creation'))
     },
     onCreateAccountClick() {
       if (isNaN(this.newAccount.balance)) {
@@ -212,7 +209,7 @@ export default {
         return
       }
 
-      if (!this.account.reference && !this.fromFaucet) {
+      if (!this.payer.reference && !this.fromFaucet) {
         const message = 'Cannot use a key as a payer' + (this.allowsUnsignedFaucet ? '. Use faucet as payer' : '')
         showErrorToast(this, 'New account', message)
         return
