@@ -35,6 +35,13 @@ export const getNetworkByValue = (value, networks) => {
 	}
 }
 
+export const trimAddress = (address) => {
+	if (!address || address.length < 9) {
+		return ''
+	}
+	return address.substring(0, 8) + '...' + address.substring(address.length - 5)
+}
+
 /**
  * Helper method to wrap a promise task.
  * @param promiseTask the promise task

@@ -10,7 +10,7 @@
         <span style="color: #000; word-break: break-word">
             <b-icon v-if="!account.reference" width="18" icon="key" :variant="account.publicKey === currentAccount.publicKey ? 'text-dark' : 'primary'"></b-icon>
             <b-icon v-if="account.reference" width="18" icon="person" :variant="account.publicKey === currentAccount.publicKey ? 'text-dark' : 'primary'"></b-icon>
-          {{ account.name }}
+          {{ account.name }} {{ trimAccountAddress(account) }}
         </span>
         <br/>
         <span class="text-secondary font-small">{{ account.network.url }}</span>
@@ -24,7 +24,7 @@
 </template>
 
 <script>
-import {EventBus, showErrorToast, WrapPromiseTask} from "../../internal/utils";
+import {EventBus, showErrorToast, trimAddress, WrapPromiseTask} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
 import VerifyPasswordModal from "./VerifyPasswordModal";
 export default {
@@ -38,6 +38,9 @@ export default {
     }
   },
   methods: {
+    trimAccountAddress(account) {
+      return !account.reference ? "" : " - " + trimAddress(account.reference)
+    },
     onPasswordVerified(result) {
       if (result.verified) {
         WrapPromiseTask(async () => {

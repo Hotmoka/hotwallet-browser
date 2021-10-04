@@ -63,7 +63,7 @@
             id="i-address"
         >
           <label>Payer</label>
-          <p class="txt-secondary"> {{account.name}}</p>
+          <p class="txt-secondary"> {{account.name}} - {{payerAddress}}</p>
         </b-form-group>
 
         <b-button @click="onCreateAccountClick" variant="primary" :disabled="stateFormDisabled">Create</b-button>
@@ -74,7 +74,7 @@
 
 <script>
 import {RemoteNode, AccountHelper, Algorithm, Bip39Dictionary, StorageReferenceModel} from "hotweb3"
-import {showErrorToast, WrapPromiseTask} from "../../internal/utils";
+import {showErrorToast, trimAddress, WrapPromiseTask} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
 import {
   fieldNotEmptyFeedback,
@@ -121,6 +121,9 @@ export default {
     },
     invalidFeedbackName() {
       return fieldNotEmptyFeedback(this.newAccount.name, 'Please enter the account\'s name')
+    },
+    payerAddress() {
+      return this.account ? trimAddress(this.account.reference) : ''
     }
   },
   methods: {
