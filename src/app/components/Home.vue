@@ -10,6 +10,7 @@
           <b-list-group-item button @click="onOptionClick('/create-account')" v-if="isAccount || allowsFaucet">Create account</b-list-group-item>
           <b-list-group-item button @click="onOptionClick('/create-key')">Create key</b-list-group-item>
           <b-list-group-item button @click="onOptionClick('/account-list')">Account list</b-list-group-item>
+          <b-list-group-item button @click="onOptionClick('/send-coins')" v-if="isAccount">Send coins</b-list-group-item>
         </b-list-group>
       </b-popover>
 

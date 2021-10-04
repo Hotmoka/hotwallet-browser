@@ -9,6 +9,7 @@ import Transaction from "../components/Transaction";
 import Vue from "vue";
 import ListAccounts from "../components/account/ListAccounts";
 import CreateKey from "../components/account/CreateKey";
+import SendCoins from "../components/account/SendCoins";
 
 
 export const router = new VueRouter({
@@ -22,6 +23,7 @@ export const router = new VueRouter({
         { path: '/account', component: Account, props: {editAccount: false, isAccount: true} },
         { path: '/edit-account', name: 'edit-account', component: Account, props: true },
         { path: '/account-list', component: ListAccounts },
+        { path: '/send-coins', component: SendCoins },
         { path: '/transaction/:uuid', component: Transaction },
         { path: '*', redirect: '/welcome' }
     ]
