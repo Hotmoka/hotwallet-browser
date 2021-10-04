@@ -1,26 +1,23 @@
 import Vue from 'vue'
+import {Base58} from "hotweb3";
 
 export const EventBus = new Vue()
 
-export const showInfoToast = (vue, title, message) => {
+const showToast = (vue, title, message, type) => {
 	vue.$bvToast.toast(message, {
 		title: title,
-		variant: 'info',
+		variant: type,
 		solid: true,
 		autoHideDelay: 2000,
 		toaster: 'b-toaster-top-center'
 	})
 }
 
-export const showErrorToast = (vue, title, message) => {
-	vue.$bvToast.toast(message, {
-		title: title,
-		variant: 'danger',
-		solid: true,
-		autoHideDelay: 2000,
-		toaster: 'b-toaster-top-center'
-	})
-}
+export const showInfoToast = (vue, title, message) => showToast(vue, title, message, 'info')
+
+export const showSuccessToast = (vue, title, message) => showToast(vue, title, message, 'success')
+
+export const showErrorToast = (vue, title, message) => showToast(vue, title, message, 'danger')
 
 export const getNetworkByValue = (value, networks) => {
 	if (!networks) {
@@ -40,6 +37,26 @@ export const trimAddress = (address) => {
 		return ''
 	}
 	return address.substring(0, 8) + '...' + address.substring(address.length - 5)
+}
+
+export const isPublicKey = (reference) => {
+	try {
+		return Base58.decode(reference).length === 32
+	} catch (e) {
+		return false
+	}
+}
+
+export const isStorageReference = (reference) => {
+	try {
+		if (reference.indexOf('#') === -1) {
+			return reference.length === 64
+		} else {
+			return reference.split('#')[0].length === 64
+		}
+	} catch (e) {
+		return false
+	}
 }
 
 /**
