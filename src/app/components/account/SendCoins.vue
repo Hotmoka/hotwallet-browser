@@ -25,7 +25,22 @@
           <b-form-input type="number" id="i-amount" min="0" v-model="amount" :state="stateAmount" trim></b-form-input>
         </b-form-group>
 
-        <b-form-group id="i-payer">
+        <b-form-group
+            v-if="allowsUnsignedFaucet"
+            id="i-faucet"
+        >
+          <b-form-checkbox
+              id="checkbox-faucet"
+              v-model="fromFaucet"
+              name="checkbox-1"
+              :value="true"
+              :unchecked-value="false"
+          >
+            Use faucet as payer
+          </b-form-checkbox>
+        </b-form-group>
+
+        <b-form-group id="i-payer" v-if="!fromFaucet">
           <label>Payer</label>
           <p class="txt-secondary" v-if="payer"> {{payer.name}} - {{payerAddress}}</p>
         </b-form-group>
@@ -38,15 +53,29 @@
 
 <script>
 import {fieldNotEmptyFeedback, stateFieldNotEmpty} from "../../internal/validators";
-import {showErrorToast, WrapPromiseTask, trimAddress} from "../../internal/utils";
+import {
+  showErrorToast,
+  WrapPromiseTask,
+  trimAddress,
+  isStorageReference,
+  isPublicKey,
+  showInfoToast, showSuccessToast
+} from "../../internal/utils";
+import {AccountHelper, Bip39Dictionary, RemoteNode, SendCoinsHelper, StorageReferenceModel} from "hotweb3";
+import {replaceRoute} from "../../internal/router";
+
 
 export default {
   name: "SendCoins",
+  props: {
+    allowsUnsignedFaucet: Boolean,
+    payer: Object
+  },
   data() {
     return {
-      payer: null,
       destination: null,
-      amount: null
+      amount: null,
+      fromFaucet: false
     }
   },
   computed: {
@@ -71,13 +100,64 @@ export default {
   },
   methods: {
     onSendClick() {
+      WrapPromiseTask(async () => {
+
+        if (isNaN(this.amount)) {
+          throw new Error('Illegal amount. Please insert a valid number of coins')
+        }
+
+        const amountToSend = Math.round(Number(this.amount))
+        if (amountToSend < 1) {
+          throw new Error('Cannot send less than 1 Panarea')
+        }
+
+        const remoteNode = new RemoteNode(this.$network.get().url)
+        let payerReference
+
+        if (this.fromFaucet) {
+          const gamete = await remoteNode.getGamete()
+          payerReference = gamete.transaction.hash
+        } else {
+          payerReference = this.payer.reference
+        }
+
+        const balanceOfPayer = new AccountHelper(remoteNode).getBalance(StorageReferenceModel.newStorageReference(payerReference))
+        if ((amountToSend - Number(balanceOfPayer)) > 0) {
+          throw new Error('Cannot transfer more than ' + balanceOfPayer + ' from payer')
+        }
+
+        const sendCoinsHelper = new SendCoinsHelper(remoteNode)
+        if (isStorageReference(this.destination)) {
+          if (this.fromFaucet) {
+              await sendCoinsHelper.fromFaucet(StorageReferenceModel.newStorageReference(this.destination), this.amount, '0')
+          } else {
+            const keyPairOfPayer = AccountHelper.generateEd25519KeyPairFrom(this.payer.password, Bip39Dictionary.ENGLISH, this.payer.entropy)
+            await sendCoinsHelper.fromPayer(
+                StorageReferenceModel.newStorageReference(this.payer.reference),
+                keyPairOfPayer,
+                StorageReferenceModel.newStorageReference(this.destination),
+                this.amount,
+                '0')
+          }
+        } else if (isPublicKey(this.destination)) {
+          if (this.fromFaucet) {
+            throw new Error('Payment to key is currently not implemented for the faucet')
+          } else {
+            await this.sendCoinsToPublicKey()
+          }
+        } else {
+          throw new Error('The destination does not look like a storage reference nor like a Base58 encoded public key')
+        }
+
+      }).then(() => {
+        showSuccessToast(this, 'Send coins', 'Coins sent')
+        replaceRoute('/home')
+      })
+      .catch(err => showErrorToast(this, 'Send coins', err.message || 'Cannot send coins'))
+    },
+    sendCoinsToPublicKey: async function() {
       // TODO
     }
-  },
-  created() {
-    WrapPromiseTask(() => this.$storageApi.getCurrentAccount(this.$network.get()))
-        .then(account => this.payer = account)
-        .catch(() => showErrorToast(this, 'Account', 'Cannot retrieve account'))
   }
 }
 </script>
