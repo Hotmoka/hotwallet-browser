@@ -90,17 +90,17 @@ export default {
     showTransactionErrorView(message) {
       this.showOverlay = true
       this.failedTransaction = true
-      this.errorMessage = message ? message : 'Transaction failed'
+      this.errorMessage = message || 'Transaction failed'
     },
     onPasswordVerified(result) {
        if (result.verified) {
-        WrapPromiseTask(async () => {
+        WrapPromiseTask(() => {
             const keyPair = AccountHelper.generateEd25519KeyPairFrom(result.password, Bip39Dictionary.ENGLISH, this.account.entropy)
             return keyPair.privateKey
         }).then(privateKey => {
           this.privateKey = privateKey
           this.getTransactionDetails()
-        }).catch(err => showErrorToast(this, 'Account', err.message ? err.message : 'Cannot verify account'))
+        }).catch(err => showErrorToast(this, 'Account', err.message || 'Cannot verify account'))
       }
     },
     onCancelPasswordCheck() {
@@ -121,11 +121,11 @@ export default {
           })
           .catch(err => {
             console.error(err)
-            this.showTransactionErrorView(err.message ? err.message : 'Transaction failed')
+            this.showTransactionErrorView(err.message || 'Transaction failed')
             this.sendTransactionResponse({
               status: false,
-              error: err.message ? err.message : 'Transaction failed'
-            })
+              error: err.message || 'Transaction failed'
+          })
       })
     },
     onNoClick() {
@@ -168,10 +168,10 @@ export default {
       }).then(result => {
         this.transaction = {...this.transaction, ...result}
       }).catch(err => {
-        this.showTransactionErrorView(err.message ? err.message : 'Cannot start transaction')
+        this.showTransactionErrorView(err.message || 'Cannot start transaction')
         this.sendTransactionResponse({
           status: false,
-          error: err.message ? err.message : 'Cannot start transaction'
+          error: err.message || 'Cannot start transaction'
         })
       })
     },
@@ -227,15 +227,15 @@ export default {
       this.$refs.verifyPasswordComponent.showModal({
         account: this.account,
         title: 'Account verification',
-        subtitle: 'Please enter password to verify account of ' + this.account.name,
+        subtitle: 'Please enter password to verify the account of ' + this.account.name,
         btnActionName: 'Verify',
         closeOnIncorrectPwd: false
       })
     }).catch(err => {
-      this.showTransactionErrorView(err.message ? err.message : 'Cannot retrieve account')
+      this.showTransactionErrorView(err.message || 'Cannot retrieve account')
       this.sendTransactionResponse({
         status: false,
-        error: err.message ? err.message : 'Cannot start transaction'
+        error: err.message || 'Cannot start transaction'
       })
     })
   }

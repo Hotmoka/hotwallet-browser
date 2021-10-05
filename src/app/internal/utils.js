@@ -8,7 +8,7 @@ const showToast = (vue, title, message, type) => {
 		title: title,
 		variant: type,
 		solid: true,
-		autoHideDelay: 2000,
+		autoHideDelay: 6000,
 		toaster: 'b-toaster-top-center'
 	})
 }
