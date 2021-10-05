@@ -26,7 +26,6 @@
 import {EventBus, showErrorToast, WrapPromiseTask} from "../internal/utils";
 import Header from "./Header"
 import Navigation from "./Navigation";
-import {replaceRoute} from "../internal/router";
 
 export default {
   name: "App",

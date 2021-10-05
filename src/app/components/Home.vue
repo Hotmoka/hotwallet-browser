@@ -105,7 +105,7 @@ export default {
 
             this.$storageApi.updateAccount(this.account)
           })
-          .catch(error => showErrorToast(this, 'Account', error.message ? error.message : 'Cannot retrieve account details'))
+          .catch(error => showErrorToast(this, 'Account', error.message || 'Cannot retrieve account details'))
     },
     onLogoutClick() {
       WrapPromiseTask(() => this.$storageApi.setAccountAuth(this.account, false))
@@ -133,7 +133,7 @@ export default {
           this.getAccountInfo(this.account.reference)
         }
 
-      }).catch(error => showErrorToast(this, 'Account', error.message ? error.message : 'Cannot retrieve account'))
+      }).catch(error => showErrorToast(this, 'Account', error.message || 'Cannot retrieve account'))
     }
   },
   created() {

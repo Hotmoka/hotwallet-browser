@@ -133,7 +133,7 @@ export default {
       })
       .catch(error => {
         this.resetForm()
-        showErrorToast(this,'Custom network connection', error.message ? error.message : 'Cannot connect to custom network')
+        showErrorToast(this,'Custom network connection', error.message || 'Cannot connect to custom network')
 
         // restore previous network
         this.selectedNetwork = this.$network.get().value
