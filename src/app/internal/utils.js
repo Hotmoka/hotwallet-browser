@@ -61,7 +61,7 @@ export const isStorageReference = (reference) => {
 
 /**
  * Helper method to wrap a promise task.
- * @param promiseTask the promise task
+ * @param promiseTask the Promise task
  * @return {Promise<unknown>} a promise that resolves to the result of the promise task
  */
 export const WrapPromiseTask = (promiseTask) => {

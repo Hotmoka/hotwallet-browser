@@ -73,7 +73,7 @@ import {
   StorageReferenceModel
 } from "hotweb3";
 import {replaceRoute} from "../../internal/router";
-import VerifyPasswordModal from "./VerifyPasswordModal";
+import VerifyPasswordModal from "../account/VerifyPasswordModal";
 
 
 export default {
@@ -88,7 +88,8 @@ export default {
       destination: null,
       destinationIsStorageReference: true,
       amount: null,
-      fromFaucet: false
+      fromFaucet: false,
+      payerReference: null
     }
   },
   computed: {
@@ -145,16 +146,14 @@ export default {
         }
 
         const remoteNode = new RemoteNode(this.$network.get().url)
-        let payerReference
-
         if (this.fromFaucet) {
           const gamete = await remoteNode.getGamete()
-          payerReference = gamete.transaction.hash
+          this.payerReference = gamete.transaction.hash
         } else {
-          payerReference = this.payer.reference
+          this.payerReference = this.payer.reference
         }
 
-        const balanceOfPayer = new AccountHelper(remoteNode).getBalance(StorageReferenceModel.newStorageReference(payerReference))
+        const balanceOfPayer = new AccountHelper(remoteNode).getBalance(StorageReferenceModel.newStorageReference(this.payerReference))
         if ((amountToSend - Number(balanceOfPayer)) > 0) {
           throw new Error('Cannot transfer more than ' + balanceOfPayer + ' from payer')
         }
@@ -180,10 +179,10 @@ export default {
     askForPassword() {
       this.$refs.verifyPasswordComponent.showModal({account: this.payer, title: 'Account verification', subtitle: 'Please enter password to verify the account of ' + this.payer.name})
     },
-    onPasswordVerified(result) {
-      if (result.verified) {
+    onPasswordVerified(verificationResult) {
+      if (verificationResult.verified) {
         WrapPromiseTask(async () => {
-          const keyPairOfPayer = AccountHelper.generateEd25519KeyPairFrom(result.password, Bip39Dictionary.ENGLISH, this.payer.entropy)
+          const keyPairOfPayer = AccountHelper.generateEd25519KeyPairFrom(verificationResult.password, Bip39Dictionary.ENGLISH, this.payer.entropy)
 
           const result = { account: null }
           if (this.destinationIsStorageReference) {
@@ -204,16 +203,17 @@ export default {
           return result
 
         }).then(result => {
-          if (result.account) {
-            // TODO: go to receipt if paid to public key
-            replaceRoute('/home')
-          } else {
-            showSuccessToast(this, 'Send coins', 'Coins sent successfully')
-            replaceRoute('/home')
-          }
-        }).catch(err => {
-          showErrorToast(this, 'Send Coins', err.message || 'An error occurred while sending coins to the selected destination')
-        })
+          showSuccessToast(this, 'Send coins', 'Coins sent successfully')
+          replaceRoute('/coins-receipt', {
+                account: result.account,
+                from: this.payerReference,
+                to: this.destination,
+                destinationIsStorageReference: this.destinationIsStorageReference,
+                fromFaucet: this.fromFaucet,
+                amount: this.amount
+              }
+          )
+        }).catch(err => showErrorToast(this, 'Send Coins', err.message || 'An error occurred while sending coins to the selected destination'))
       }
     }
   }
