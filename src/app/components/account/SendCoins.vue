@@ -48,6 +48,8 @@
         <b-button @click="onSendClick" variant="primary" :disabled="!stateDestination || !stateAmount">Send</b-button>
       </div>
     </div>
+
+    <VerifyPasswordModal ref="verifyPasswordComponent" @onPasswordVerified="onPasswordVerified"></VerifyPasswordModal>
   </div>
 </template>
 
@@ -59,14 +61,24 @@ import {
   trimAddress,
   isStorageReference,
   isPublicKey,
-  showInfoToast, showSuccessToast
+  showSuccessToast
 } from "../../internal/utils";
-import {AccountHelper, Bip39Dictionary, RemoteNode, SendCoinsHelper, StorageReferenceModel} from "hotweb3";
+import {
+  AccountHelper,
+  Algorithm, Base58,
+  Bip39Dictionary,
+  KeyPair,
+  RemoteNode,
+  SendCoinsHelper,
+  StorageReferenceModel
+} from "hotweb3";
 import {replaceRoute} from "../../internal/router";
+import VerifyPasswordModal from "./VerifyPasswordModal";
 
 
 export default {
   name: "SendCoins",
+  components: {VerifyPasswordModal},
   props: {
     allowsUnsignedFaucet: Boolean,
     payer: Object
@@ -74,6 +86,7 @@ export default {
   data() {
     return {
       destination: null,
+      destinationIsStorageReference: true,
       amount: null,
       fromFaucet: false
     }
@@ -99,6 +112,26 @@ export default {
     }
   },
   methods: {
+    sendCoinsToPublicKey(keyPairOfPayer) {
+      return new AccountHelper(new RemoteNode(this.$network.get().url)).createAccountFromPayer(
+          Algorithm.ED25519,
+          StorageReferenceModel.newStorageReference(this.payer.reference),
+          keyPairOfPayer,
+          new KeyPair(null, Base58.decode(this.destination).toString('base64'), null),
+          this.amount,
+          "0",
+          false
+      )
+    },
+    sendCoinsToReference(keyPairOfPayer) {
+      return new SendCoinsHelper(new RemoteNode(this.$network.get().url)).fromPayer(
+          StorageReferenceModel.newStorageReference(this.payer.reference),
+          keyPairOfPayer,
+          StorageReferenceModel.newStorageReference(this.destination),
+          this.amount,
+          '0'
+      )
+    },
     onSendClick() {
       WrapPromiseTask(async () => {
 
@@ -126,37 +159,62 @@ export default {
           throw new Error('Cannot transfer more than ' + balanceOfPayer + ' from payer')
         }
 
-        const sendCoinsHelper = new SendCoinsHelper(remoteNode)
         if (isStorageReference(this.destination)) {
-          if (this.fromFaucet) {
-              await sendCoinsHelper.fromFaucet(StorageReferenceModel.newStorageReference(this.destination), this.amount, '0')
-          } else {
-            const keyPairOfPayer = AccountHelper.generateEd25519KeyPairFrom(this.payer.password, Bip39Dictionary.ENGLISH, this.payer.entropy)
-            await sendCoinsHelper.fromPayer(
-                StorageReferenceModel.newStorageReference(this.payer.reference),
-                keyPairOfPayer,
-                StorageReferenceModel.newStorageReference(this.destination),
-                this.amount,
-                '0')
+          this.destinationIsStorageReference = true
+
+          if (!this.fromFaucet) {
+            this.askForPassword()
           }
         } else if (isPublicKey(this.destination)) {
-          if (this.fromFaucet) {
-            throw new Error('Payment to key is currently not implemented for the faucet')
-          } else {
-            await this.sendCoinsToPublicKey()
+          this.destinationIsStorageReference = false
+
+          if (!this.fromFaucet) {
+            this.askForPassword()
           }
         } else {
           throw new Error('The destination does not look like a storage reference nor like a Base58 encoded public key')
         }
 
-      }).then(() => {
-        showSuccessToast(this, 'Send coins', 'Coins sent')
-        replaceRoute('/home')
-      })
-      .catch(err => showErrorToast(this, 'Send coins', err.message || 'Cannot send coins'))
+      }).catch(err => showErrorToast(this, 'Send coins', err.message || 'Cannot send coins to the selected destination'))
     },
-    sendCoinsToPublicKey: async function() {
-      // TODO
+    askForPassword() {
+      this.$refs.verifyPasswordComponent.showModal({account: this.payer, title: 'Account verification', subtitle: 'Please enter password to verify the account of ' + this.payer.name})
+    },
+    onPasswordVerified(result) {
+      if (result.verified) {
+        WrapPromiseTask(async () => {
+          const keyPairOfPayer = AccountHelper.generateEd25519KeyPairFrom(result.password, Bip39Dictionary.ENGLISH, this.payer.entropy)
+
+          const result = { account: null }
+          if (this.destinationIsStorageReference) {
+            if (this.fromFaucet) {
+              await new SendCoinsHelper(new RemoteNode(this.$network.get().url)).fromFaucet(StorageReferenceModel.newStorageReference(this.destination), this.amount, '0')
+            } else {
+              await this.sendCoinsToReference(keyPairOfPayer)
+            }
+
+          } else {
+            if (this.fromFaucet) {
+              throw new Error('Payment to key is currently not implemented for the faucet')
+            } else {
+              result.account = await this.sendCoinsToPublicKey(keyPairOfPayer)
+            }
+          }
+
+          return result
+
+        }).then(result => {
+          if (result.account) {
+            // TODO: go to receipt if paid to public key
+            replaceRoute('/home')
+          } else {
+            showSuccessToast(this, 'Send coins', 'Coins sent successfully')
+            replaceRoute('/home')
+          }
+        }).catch(err => {
+          showErrorToast(this, 'Send Coins', err.message || 'An error occurred while sending coins to the selected destination')
+        })
+      }
     }
   }
 }
