@@ -44,7 +44,8 @@ export default {
     from: String,
     to: String,
     fromFaucet: Boolean,
-    amount: String
+    amount: String,
+    anonymous: Boolean
   },
   data() {
     return {
@@ -58,9 +59,16 @@ export default {
     buildShareText() {
       const subject = 'Hotmoka send receipt'
 
-      const body = 'An amount of ' + this.amount + ' Panarea has been sent from ' + this.from + ' to a new account with storage reference '
-          + this.account.reference + ' and key ' + this.to + '.\nYou can find confirmation in @@@@@' +
-          '.\nWho holds the key can now bind it to that storage reference and control the account.'
+      let body = ''
+      if (this.anonymous) {
+        body = 'An amount of ' + this.amount + ' Panarea has been sent from ' + this.from + ' to a new account with storage reference '
+            + this.account.reference + ' and key ' + this.to + '.\nYou can find confirmation in @@@@@' +
+            '.\nSince the transfer was anonymous, who holds the key sees it bound now, automatically, to that storage reference and can already control the account.'
+      } else {
+        body = 'An amount of ' + this.amount + ' Panarea has been sent from ' + this.from + ' to a new account with storage reference '
+            + this.account.reference + ' and key ' + this.to + '.\nYou can find confirmation in @@@@@' +
+            '.\nWho holds the key can now bind it to that storage reference and control the account.'
+      }
 
       return 'mailto:?body=' + body + '&subject=' + subject
     }

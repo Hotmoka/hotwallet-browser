@@ -26,6 +26,26 @@
         </b-form-group>
 
         <b-form-group
+            id="i-anonymous"
+        >
+          <b-form-checkbox
+              id="checkbox-anonymous"
+              v-model="anonymous"
+              name="checkbox-2"
+              :value="true"
+              :unchecked-value="false"
+          >
+            Anonymous
+            <b-icon id="i-anonymous-help" width="18" icon="question-circle-fill" variant="info"></b-icon>
+          </b-form-checkbox>
+        </b-form-group>
+
+        <b-tooltip target="i-anonymous-help" triggers="hover">
+          If you are paying to a key, you can require an anonymous transaction.
+          It will cost up to {{ anonymousGas }} units of gas more, but the recipient will be automatically notified of the transfer
+        </b-tooltip>
+
+        <b-form-group
             v-if="allowsUnsignedFaucet"
             id="i-faucet"
         >
@@ -89,7 +109,9 @@ export default {
       destinationIsStorageReference: true,
       amount: null,
       fromFaucet: false,
-      payerReference: null
+      payerReference: null,
+      anonymous: false,
+      anonymousGas: AccountHelper.EXTRA_GAS_FOR_ANONYMOUS
     }
   },
   computed: {
@@ -121,7 +143,7 @@ export default {
           new KeyPair(null, Base58.decode(this.destination).toString('base64'), null),
           this.amount,
           "0",
-          false
+          this.anonymous
       )
     },
     sendCoinsToReference(keyPairOfPayer) {
@@ -209,7 +231,8 @@ export default {
                 from: this.payerReference,
                 to: this.destination,
                 fromFaucet: this.fromFaucet,
-                amount: this.amount
+                amount: this.amount,
+                anonymous: this.anonymous
               }
           )
         }).catch(err => showErrorToast(this, 'Send Coins', err.message || 'An error occurred while sending coins to the selected destination'))
