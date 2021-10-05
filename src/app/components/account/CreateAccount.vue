@@ -40,7 +40,7 @@
             label="Balance"
             label-for="i-balance"
         >
-          <b-form-input type="number" id="i-balance" v-model="newAccount.balance" trim></b-form-input>
+          <b-form-input type="number" id="i-balance" min="0" v-model="newAccount.balance" trim></b-form-input>
         </b-form-group>
 
         <b-form-group
@@ -204,23 +204,29 @@ export default {
         .catch(err => showErrorToast(this, 'New account', err.message || 'Error during account creation'))
     },
     onCreateAccountClick() {
-      if (isNaN(this.newAccount.balance)) {
-        showErrorToast(this, 'New account', 'Illegal balance. Please insert a valid number of coins')
-        return
-      }
+      WrapPromiseTask(async () => {
 
-      if (!this.payer.reference && !this.fromFaucet) {
-        const message = 'Cannot use a key as a payer' + (this.allowsUnsignedFaucet ? '. Use faucet as payer' : '')
-        showErrorToast(this, 'New account', message)
-        return
-      }
+        if (!this.newAccount.balance || isNaN(this.newAccount.balance)) {
+          throw new Error('Illegal balance. Please insert a valid number of Panrea coins')
+        }
 
-      const balance = Math.round(Number(this.newAccount.balance))
-      if (this.fromFaucet) {
-        this.createAccountFromFaucet(balance)
-      } else {
-        this.createAccountFromCurrentAccount(balance)
-      }
+        if (!this.payer.reference && !this.fromFaucet) {
+          throw new Error('Cannot use a key as a payer' + (this.allowsUnsignedFaucet ? '. Use faucet as payer' : ''))
+        }
+
+        const balance = Math.round(Number(this.newAccount.balance))
+        if (balance < 1) {
+          throw new Error('Balance cannot be less than 1 Panarea')
+        }
+
+        return balance
+      }).then(balance => {
+        if (this.fromFaucet) {
+          this.createAccountFromFaucet(balance)
+        } else {
+          this.createAccountFromCurrentAccount(balance)
+        }
+      }).catch(err => showErrorToast(this, 'New account', err.message || 'An error occurred while creating the account'))
     },
     getBalanceOfAccount: async function (hashOfStorageReference) {
       return new AccountHelper(new RemoteNode(this.$network.get().url))

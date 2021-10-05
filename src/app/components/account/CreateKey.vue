@@ -115,7 +115,7 @@ export default {
             }
         )
       }).then(() => replaceRoute('/home'))
-        .catch(err => showErrorToast(this, 'Create key', err.message ? err.message : 'Error during key creation'))
+        .catch(err => showErrorToast(this, 'Create key', err.message || 'Error during key creation'))
     }
   }
 }

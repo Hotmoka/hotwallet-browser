@@ -58,7 +58,7 @@ export default {
         }).then(() => replaceRoute('/home'))
           .catch(err => {
               this.resetAccountSelection()
-              showErrorToast(this, 'Accounts', err.message ? err.message : 'Cannot switch to the selected account')
+              showErrorToast(this, 'Accounts', err.message || 'Cannot switch to the selected account')
           })
       }
     },

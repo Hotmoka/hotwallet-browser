@@ -83,9 +83,7 @@ export default {
     }
   },
   methods: {
-
     onImportAccountClick() {
-
       WrapPromiseTask(async () => {
 
         for (let i = 0; i < 36; i++) {
@@ -116,7 +114,7 @@ export default {
         )
 
       }).then(() => replaceRoute('/home'))
-        .catch(error => showErrorToast(this, 'Import account', error.message ? error.message : 'Cannot import account'))
+        .catch(error => showErrorToast(this, 'Import account', error.message || 'Cannot import account'))
 
     }
   },

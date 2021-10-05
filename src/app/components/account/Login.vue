@@ -72,7 +72,7 @@ export default {
         }
 
       }).then(() => replaceRoute('/home'))
-        .catch(error => showErrorToast(this, 'Login', error.message ? error.message : 'Error during login'))
+        .catch(error => showErrorToast(this, 'Login', error.message || 'Error during login'))
     },
     getCurrentAccountName() {
       WrapPromiseTask(async () => {
@@ -83,7 +83,7 @@ export default {
         }
         return account
       }).then(account => this.account = account)
-        .catch(error => showErrorToast(this, 'Login', error.message ? error.message : 'Cannot retrieve account'))
+        .catch(error => showErrorToast(this, 'Login', error.message || 'Cannot retrieve account'))
     }
   },
   created() {

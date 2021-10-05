@@ -124,7 +124,7 @@ export default {
       if (this.isAccount) {
         WrapPromiseTask(() => this.$storageApi.updateAccount(this.account))
             .then(() => replaceRoute("/home"))
-            .catch(err => showErrorToast(this, 'Account', err.message ? err.message : 'Cannot update account'))
+            .catch(err => showErrorToast(this, 'Account', err.message || 'Cannot update account'))
       } else {
         this.$refs.verifyPasswordComponent.showModal({
           account: this.account,
@@ -157,7 +157,7 @@ export default {
 
           await this.$storageApi.updateAccount(this.account)
         }).then(() => replaceRoute("/home"))
-          .catch(err => showErrorToast(this, 'Account', err.message ? err.message : 'Cannot update account'))
+          .catch(err => showErrorToast(this, 'Account', err.message || 'Cannot update account'))
       }
     }
   },

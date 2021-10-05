@@ -95,10 +95,10 @@ export default {
           this.closeModal()
         }
       }).catch(err => {
-        showErrorToast(this, 'Login', err.message ? err.message : 'Cannot verify account')
+        showErrorToast(this, 'Login', err.message || 'Cannot verify account')
         this.closeModal()
         this.$emit('onPasswordVerified', {
-          error: err.message ? err.message : 'Cannot verify account'
+          error: err.message || 'Cannot verify account'
         })
       })
     }
