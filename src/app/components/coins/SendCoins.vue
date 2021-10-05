@@ -208,7 +208,6 @@ export default {
                 account: result.account,
                 from: this.payerReference,
                 to: this.destination,
-                destinationIsStorageReference: this.destinationIsStorageReference,
                 fromFaucet: this.fromFaucet,
                 amount: this.amount
               }
