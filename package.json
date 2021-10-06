@@ -15,6 +15,7 @@
     "hotwallet-api": "file:hotwallet-api-1.0.0.tgz",
     "hotweb3": "file:hotweb3-1.0.4.tgz",
     "portal-vue": "^2.1.7",
+    "qrious": "^4.0.2",
     "uuid": "^8.3.2",
     "vue": "^2.6.11",
     "vue-router": "^3.5.2",
