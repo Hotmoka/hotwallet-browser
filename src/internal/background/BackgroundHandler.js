@@ -89,7 +89,8 @@ export class BackgroundHandler {
             this.transactionMapResponse.get(uuid).sendResponse({
                 error: transactionResult.error,
                 status: transactionResult.status,
-                storageValue: transactionResult.storageValue
+                storageValue: transactionResult.storageValue,
+                transaction: transactionResult.transaction
             })
 
             // delete transaction

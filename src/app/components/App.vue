@@ -87,11 +87,11 @@ export default {
 .txt-secondary {
   color: theme-color('secondary');
   margin-bottom: 0;
-  word-break: break-all;
+  word-break: break-word;
 }
 
 .h-txt {
-  word-break: break-all;
+  word-break: break-word;
 }
 
 .b-popover .popover-body {

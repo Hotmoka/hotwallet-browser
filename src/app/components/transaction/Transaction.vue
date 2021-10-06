@@ -26,8 +26,8 @@
       </div>
 
       <h5 class="mt-3 mb-3">Confirm transaction ?</h5>
-      <b-button variant="success" @click="onYesClick">Yes</b-button>
-      <b-button variant="danger" @click="onNoClick">No</b-button>
+      <b-button variant="success" @click="onTransactionClick">Yes</b-button>
+      <b-button variant="danger" @click="onRejectTransactionClick">No</b-button>
     </div>
 
     <div id="overlay" v-if="showOverlay">
@@ -92,7 +92,7 @@ export default {
     },
     onPasswordVerified(result) {
        if (result.verified) {
-        WrapPromiseTask(() => {
+        WrapPromiseTask(async () => {
             const keyPair = AccountHelper.generateEd25519KeyPairFrom(result.password, Bip39Dictionary.ENGLISH, this.account.entropy)
             return keyPair.privateKey
         }).then(privateKey => {
@@ -107,26 +107,52 @@ export default {
         error: 'Transaction rejected by payer'
       }, 0)
     },
-    onYesClick() {
-      WrapPromiseTask(() => this.addTransaction())
-          .then(result => {
-            this.showOverlay = true
+    onTransactionClick() {
+      WrapPromiseTask(async () => {
+        const remoteNode = new RemoteNode(this.$network.get().url, new Signer(Algorithm.ED25519, this.privateKey));
 
-            this.sendTransactionResponse({
-              status: true,
-              storageValue: result
-            })
-          })
-          .catch(err => {
-            console.error(err)
-            this.showTransactionErrorView(err.message || 'Transaction failed')
-            this.sendTransactionResponse({
-              status: false,
-              error: err.message || 'Transaction failed'
-          })
+        const caller = StorageReferenceModel.newStorageReference(this.account.reference)
+        const nonceOfEoa = await remoteNode.getNonceOf(caller)
+        const gasPrice = await remoteNode.getGasPrice()
+        const chainId = await remoteNode.getChainId()
+
+        const method = this.transaction.methodSignature.voidMethod ?
+            new VoidMethodSignatureModel(this.transaction.methodSignature.definingClass, this.transaction.methodSignature.methodName, this.transaction.methodSignature.formals) :
+            new NonVoidMethodSignatureModel(this.transaction.methodSignature.definingClass, this.transaction.methodSignature.methodName, this.transaction.methodSignature.returnType, this.transaction.methodSignature.formals)
+
+        const request = new InstanceMethodCallTransactionRequestModel(
+            caller,
+            nonceOfEoa,
+            chainId,
+            this.transaction.gas,
+            gasPrice,
+            this.transaction.smartContractAddress,
+            method,
+            this.transaction.receiver,
+            this.transaction.actuals,
+            remoteNode.signer
+        )
+        const storageValue = await remoteNode.addInstanceMethodCallTransaction(request);
+
+        return {storageValue, transaction: request.getReference(request.signature)}
+      }).then(result => {
+        this.showOverlay = true
+
+        this.sendTransactionResponse({
+          status: true,
+          storageValue: result.storageValue,
+          transaction: result.transaction
+        })
+      }).catch(err => {
+        console.error(err)
+        this.showTransactionErrorView(err.message || 'Transaction failed')
+        this.sendTransactionResponse({
+          status: false,
+          error: err.message || 'Transaction failed'
+        })
       })
     },
-    onNoClick() {
+    onRejectTransactionClick() {
       this.sendTransactionResponse({
         status: false,
         error: 'Transaction reject by payer'
@@ -140,6 +166,7 @@ export default {
             uuid: this.uuid,
             status: result.status,
             storageValue: result.storageValue,
+            transaction: result.transaction,
             error: result.error
           }
         }
@@ -172,32 +199,6 @@ export default {
           error: err.message || 'Cannot start transaction'
         })
       })
-    },
-    addTransaction: async function() {
-      const remoteNode = new RemoteNode(this.$network.get().url, new Signer(Algorithm.ED25519, this.privateKey));
-
-      const caller = StorageReferenceModel.newStorageReference(this.account.reference)
-      const nonceOfEoa = await remoteNode.getNonceOf(caller)
-      const gasPrice = await remoteNode.getGasPrice()
-      const chainId = await remoteNode.getChainId()
-
-      const method = this.transaction.methodSignature.voidMethod ?
-          new VoidMethodSignatureModel(this.transaction.methodSignature.definingClass, this.transaction.methodSignature.methodName, this.transaction.methodSignature.formals) :
-          new NonVoidMethodSignatureModel(this.transaction.methodSignature.definingClass, this.transaction.methodSignature.methodName, this.transaction.methodSignature.returnType, this.transaction.methodSignature.formals)
-
-      return remoteNode.addInstanceMethodCallTransaction(new InstanceMethodCallTransactionRequestModel(
-              caller,
-              nonceOfEoa,
-              chainId,
-              this.transaction.gas,
-              gasPrice,
-              this.transaction.smartContractAddress,
-              method,
-              this.transaction.receiver,
-              this.transaction.actuals,
-              remoteNode.signer
-          )
-      );
     },
     setTransactionTimer() {
       const timer = setInterval(() => {
