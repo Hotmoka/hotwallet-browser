@@ -90,6 +90,10 @@ export default {
   word-break: break-all;
 }
 
+.h-txt {
+  word-break: break-all;
+}
+
 .b-popover .popover-body {
   padding: 0 !important;
 }

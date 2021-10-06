@@ -113,7 +113,7 @@ export default {
       pushRoute('/send-coins')
     },
     onReceiveCoinsClick() {
-
+      pushRoute('/receive-coins')
     },
     getAccountInfo(accountReference) {
       WrapPromiseTask(() => new RemoteNode(this.$network.get().url).getState(StorageReferenceModel.newStorageReference(accountReference)))
