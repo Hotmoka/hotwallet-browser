@@ -1,6 +1,5 @@
 <template>
   <div class="content">
-    <h6 class="mb-4 text-center">Account</h6>
 
     <div class="d-flex justify-content-center" v-if="account">
       <div class="text-left form-container">
@@ -43,8 +42,15 @@
         </b-form-group>
 
         <div v-if="words && words.length > 0">
-          <label>Words<span class="copy-container"><b-icon width="18" variant="primary" icon="clipboard"
-                                                           @click="onCopyContentClick"></b-icon></span></label>
+          <label>Words <b-icon id="i-words-help" width="18" icon="question-circle-fill" variant="info"></b-icon>
+            <span class="copy-container"><b-icon width="18" variant="primary" icon="clipboard" @click="onCopyContentClick"></b-icon></span>
+          </label>
+
+          <b-tooltip target="i-words-help" triggers="hover">
+            Please write down on paper the following mnemonic phrase of 36 words, in their sequential order (left to right).
+            You will need them if you want to (re)install the account in this or another application.
+            If you delete the account and lose these words, you will lose access to this account for ever!
+          </b-tooltip>
 
           <div class="row">
             <div class="col-3" v-for="(word,index) in words" :key="'word' + index">
@@ -76,7 +82,7 @@
 </template>
 
 <script>
-import {showErrorToast, showInfoToast, WrapPromiseTask} from "../../internal/utils";
+import {EventBus, showErrorToast, showInfoToast, WrapPromiseTask} from "../../internal/utils";
 import {AccountHelper, Bip39Dictionary, RemoteNode, StorageReferenceModel} from "hotweb3";
 import {replaceRoute} from "../../internal/router";
 import {fieldNotEmptyFeedback, stateFieldNotEmpty} from "../../internal/validators";
@@ -162,6 +168,7 @@ export default {
     }
   },
   created() {
+    EventBus.$emit('titleChange', 'Account')
     WrapPromiseTask(() => this.$storageApi.getCurrentAccount(this.$network.get()))
         .then(account => {
           this.account = account

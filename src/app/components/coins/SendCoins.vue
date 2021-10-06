@@ -1,6 +1,5 @@
 <template>
   <div class="content">
-    <h6 class="mb-4 text-center">Send coins</h6>
 
     <div class="d-flex justify-content-center">
       <div class="text-left form-container">
@@ -81,7 +80,7 @@ import {
   trimAddress,
   isStorageReference,
   isPublicKey,
-  showSuccessToast
+  showSuccessToast, EventBus
 } from "../../internal/utils";
 import {
   AccountHelper,
@@ -254,6 +253,9 @@ export default {
         }).catch(err => showErrorToast(this, 'Send Coins', err.message || 'An error occurred while sending coins to the selected destination'))
       }
     }
+  },
+  created() {
+    EventBus.$emit('titleChange', 'Send coins')
   }
 }
 </script>

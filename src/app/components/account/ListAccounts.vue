@@ -1,6 +1,9 @@
 <template>
   <div class="content">
-    <h6 class="mb-4 text-center">Account list</h6>
+
+    <p>
+      Switch to one of your accounts or keys
+    </p>
 
     <b-list-group>
       <b-list-group-item button
@@ -87,6 +90,7 @@ export default {
     }
   },
   created() {
+    EventBus.$emit('titleChange', 'Account list')
     this.getAccounts()
   }
 }

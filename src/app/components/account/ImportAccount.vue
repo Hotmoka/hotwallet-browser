@@ -1,6 +1,5 @@
 <template>
   <div class="content">
-    <h6 class="mb-4 text-center">Import account</h6>
 
     <div class="d-flex justify-content-center">
       <div class="text-left form-container">
@@ -25,11 +24,12 @@
           <b-form-input type="password" id="i-pwd" v-model="password" :state="statePassword" trim></b-form-input>
         </b-form-group>
 
-        <b-form-group
-            id="i-words"
-            label="Words"
-            label-for="i-words"
-        >
+        <b-form-group>
+          <label>Words  <b-icon id="i-words-help" width="18" icon="question-circle-fill" variant="info"></b-icon></label>
+          <b-tooltip target="i-words-help" triggers="hover">
+            Insert the 36 words that have been provided at time of creation of the account, in their sequential order
+          </b-tooltip>
+
           <div class="row">
             <div class="h-cell col-4" v-for="index in 36" :key="index">
               <b-form-input
@@ -50,7 +50,7 @@
 
 <script>
 import {AccountHelper, Bip39Dictionary, RemoteNode} from "hotweb3";
-import {showErrorToast, WrapPromiseTask} from "../../internal/utils";
+import {EventBus, showErrorToast, WrapPromiseTask} from "../../internal/utils";
 import {
   fieldNotEmptyFeedback,
   invalidPasswordFeedback,
@@ -119,6 +119,8 @@ export default {
     }
   },
   created() {
+    EventBus.$emit('titleChange', 'Import account')
+
     for (let i = 0; i < 36; i++) {
       this.words.push(null)
     }

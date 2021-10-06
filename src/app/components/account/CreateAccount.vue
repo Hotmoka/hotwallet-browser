@@ -1,6 +1,5 @@
 <template>
   <div class="content">
-    <h6 class="mb-4 text-center">Create account</h6>
 
     <div class="d-flex justify-content-center">
       <div class="text-left form-container">
@@ -16,13 +15,15 @@
         </b-form-group>
 
         <b-form-group
-            id="i-pwd"
-            label="Password"
-            label-for="i-pwd"
             :invalid-feedback="invalidFeedbackPassword"
             :state="statePassword"
         >
+          <label for="i-pwd">Password  <b-icon id="i-pwd-help" width="18" icon="question-circle-fill" variant="info"></b-icon></label>
           <b-form-input type="password" id="i-pwd" v-model="newAccount.password" :state="statePassword" trim></b-form-input>
+
+          <b-tooltip target="i-pwd-help" triggers="hover">
+            Keep note of the password, since there is no way to recover it later
+          </b-tooltip>
         </b-form-group>
 
         <b-form-group
@@ -74,7 +75,7 @@
 
 <script>
 import {RemoteNode, AccountHelper, Algorithm, Bip39Dictionary, StorageReferenceModel} from "hotweb3"
-import {showErrorToast, trimAddress, WrapPromiseTask} from "../../internal/utils";
+import {EventBus, showErrorToast, trimAddress, WrapPromiseTask} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
 import {
   fieldNotEmptyFeedback,
@@ -232,6 +233,9 @@ export default {
       return new AccountHelper(new RemoteNode(this.$network.get().url))
           .getBalance(StorageReferenceModel.newStorageReference(hashOfStorageReference))
     }
+  },
+  created() {
+    EventBus.$emit('titleChange', 'Create account')
   }
 }
 </script>

@@ -6,14 +6,17 @@
         Back
       </b-link>
 
-      <b-link class="float-right" v-if="isPopup" @click="onExpandAppClick">
-        <b-icon width="18" icon="arrows-angle-expand" variant="primary"></b-icon>
+      <h6 class="text-center" v-if="title">{{ title }}</h6>
+      <b-link class="float-right" style="width: 18px;">
+        <b-icon width="18" icon="arrows-angle-expand" variant="primary" v-if="isPopup" @click="onExpandAppClick"></b-icon>
       </b-link>
     </div>
   </div>
 </template>
 
 <script>
+import {EventBus} from "../internal/utils";
+
 export default {
   name: "Navigation",
   props: {
@@ -22,7 +25,8 @@ export default {
   data() {
     return {
       showNavigation: false,
-      showNavigationContainer: true
+      showNavigationContainer: true,
+      title: null
     }
   },
   watch: {
@@ -53,6 +57,7 @@ export default {
     }
   },
   created() {
+    EventBus.$on('titleChange', title => this.title = title)
     this.setNavigationVisibility(this.$route.path)
   }
 }
@@ -68,9 +73,20 @@ export default {
 .navigation {
   width: 100%;
   height: 50px;
-  padding-top: 0.8rem;
-  padding-right: 1rem;
-  padding-left: 1rem;
+  padding-right: 0.8rem;
+  padding-left: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navigation h6 {
+  margin: 0 0 0 -22px;
+  padding: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 224px;
 }
 
 .navigation a:hover {

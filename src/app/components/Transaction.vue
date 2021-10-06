@@ -2,8 +2,6 @@
   <div class="content">
     <VerifyPasswordModal ref="verifyPasswordComponent" @onPasswordVerified="onPasswordVerified" @onCancel="onCancelPasswordCheck"></VerifyPasswordModal>
 
-    <h6 class="mb-2 text-center">Transaction</h6>
-
     <div class="text-center" v-if="transaction && account">
       <h5 class="text-secondary mb-4">{{ transaction.name }} </h5>
 
@@ -49,7 +47,7 @@
 </template>
 
 <script>
-import {showErrorToast, WrapPromiseTask} from "../internal/utils";
+import {EventBus, showErrorToast, WrapPromiseTask} from "../internal/utils";
 import VerifyPasswordModal from "./account/VerifyPasswordModal";
 import {
   AccountHelper,
@@ -217,9 +215,11 @@ export default {
     }
   },
   created() {
-    this.uuid = this.$route.params.uuid
+    EventBus.$emit('titleChange', 'Transaction')
 
+    this.uuid = this.$route.params.uuid
     this.setTransactionTimer()
+
     WrapPromiseTask(async () => {
       return this.$storageApi.getCurrentAccount(this.$network.get())
     }).then(account => {

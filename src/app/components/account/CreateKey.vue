@@ -1,10 +1,8 @@
 <template>
   <div class="content">
-    <h6 class="mb-4 text-center">Create key</h6>
 
-    <p>Once you (or somebody else) pay to that key, it will become an account,
-      that you can control through the password specified below. Keep note of that password,
-      since there is no way to recover it later
+    <p>Here you can create a key. Once you (or somebody else) pay to that key, it will become an account,
+      that you can control through the password specified below
     </p>
 
     <div class="d-flex justify-content-center">
@@ -21,13 +19,15 @@
         </b-form-group>
 
         <b-form-group
-            id="i-pwd"
-            label="Password"
-            label-for="i-pwd"
             :invalid-feedback="invalidFeedbackPassword"
             :state="statePassword"
         >
+          <label for="i-pwd">Password  <b-icon id="i-pwd-help" width="18" icon="question-circle-fill" variant="info"></b-icon></label>
           <b-form-input type="password" id="i-pwd" v-model="password" :state="statePassword" trim></b-form-input>
+
+          <b-tooltip target="i-pwd-help" triggers="hover">
+            Keep note of the password, since there is no way to recover it later
+          </b-tooltip>
         </b-form-group>
 
         <b-form-group
@@ -55,7 +55,7 @@ import {
   stateFieldNotEmpty,
   statePassword
 } from "../../internal/validators";
-import {showErrorToast, WrapPromiseTask} from "../../internal/utils";
+import {EventBus, showErrorToast, WrapPromiseTask} from "../../internal/utils";
 import {AccountHelper, Bip39Dictionary} from "hotweb3";
 import {replaceRoute} from "../../internal/router";
 
@@ -117,6 +117,9 @@ export default {
       }).then(() => replaceRoute('/home'))
         .catch(err => showErrorToast(this, 'Create key', err.message || 'Error during key creation'))
     }
+  },
+  created() {
+    EventBus.$emit('titleChange', 'Create key')
   }
 }
 </script>

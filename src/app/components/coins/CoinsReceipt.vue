@@ -43,7 +43,7 @@
 </template>
 
 <script>
-import {trimAddress} from "../../internal/utils";
+import {EventBus, trimAddress} from "../../internal/utils";
 
 export default {
   name: "CoinsReceipt",
@@ -89,6 +89,7 @@ export default {
     }
   },
   created() {
+    EventBus.$emit('titleChange', 'Send coins receipt')
     this.shareHref = this.buildShareText()
   }
 }
