@@ -35,17 +35,30 @@
       </p>
       <hr/>
 
-      <div v-if="isAccount && account.balance">
-        <p class="text-dark">Balance</p>
+      <div>
+        <h6 class="text-dark" style="margin-bottom: 2rem">Balance</h6>
         <h4 class="text-success">{{ account.balance }} Panarea </h4>
-        <h4 class="text-danger">{{ account.balanceRed ? account.balanceRed : '0' }} Panarea </h4>
+        <h4 class="text-danger">{{ account.balanceRed }} Panarea </h4>
+
+        <div class="container-actions">
+          <div class="action-btn" :class="(account.balance < 1 || !isAccount) ? 'disabled' : ''" @click="onSendCoinsClick">
+            <b-icon id="i-pwd-help" width="36" height="36" icon="arrow-up-right-circle" variant="primary"></b-icon>
+            <br/><span class="text-primary">Send</span>
+          </div>
+
+          <div class="action-btn" @click="onReceiveCoinsClick">
+            <b-icon id="i-pwd-help" width="36" height="36" icon="arrow-down-right-circle" variant="primary"></b-icon>
+            <br/><span class="text-primary">Receive</span>
+          </div>
+        </div>
+
       </div>
+
+      <hr/>
 
       <div v-if="!isAccount">
         <p class="text-dark">Waiting for payment for this key</p>
       </div>
-
-      <hr/>
 
       <div class="btn-logout">
         <div class="d-flex justify-content-center">
@@ -67,7 +80,11 @@ export default {
   data() {
     return {
       showOptionsMenu: false,
-      account: null,
+      account: {
+        balance: 0,
+        balanceRed: 0,
+        nonce: 0
+      },
       isAccount: false,
       allowsFaucet: false
     }
@@ -88,6 +105,15 @@ export default {
       } else {
         pushRoute(option)
       }
+    },
+    onSendCoinsClick() {
+      if (this.account.balance < 1 || !this.isAccount) {
+        return
+      }
+      pushRoute('/send-coins')
+    },
+    onReceiveCoinsClick() {
+
     },
     getAccountInfo(accountReference) {
       WrapPromiseTask(() => new RemoteNode(this.$network.get().url).getState(StorageReferenceModel.newStorageReference(accountReference)))
@@ -120,9 +146,7 @@ export default {
         this.allowsFaucet = result.allowsFaucet
 
         this.account = {
-          balance: 0,
-          balanceRed: 0,
-          nonce: 0,
+          ...this.account,
           ...result.account
         }
 
@@ -169,6 +193,24 @@ export default {
 .navigation a {
   place-self: end;
   align-self: center;
+}
+
+.container-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.action-btn {
+  padding: 8px 16px 8px 16px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.disabled {
+  opacity: .55;
+  cursor: no-drop;
 }
 
 </style>
