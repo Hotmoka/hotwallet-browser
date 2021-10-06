@@ -24,8 +24,8 @@
 <script>
 
 import {EventBus, showErrorToast, WrapPromiseTask} from "../internal/utils";
-import Header from "./Header"
-import Navigation from "./Navigation";
+import Header from "./header/Header"
+import Navigation from "./header/Navigation";
 
 export default {
   name: "App",

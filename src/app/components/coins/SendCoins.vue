@@ -98,10 +98,6 @@ import VerifyPasswordModal from "../account/VerifyPasswordModal";
 export default {
   name: "SendCoins",
   components: {VerifyPasswordModal},
-  props: {
-    allowsUnsignedFaucet: Boolean,
-    payer: Object
-  },
   data() {
     return {
       destination: null,
@@ -110,7 +106,9 @@ export default {
       fromFaucet: false,
       payerReference: null,
       anonymous: false,
-      anonymousGas: AccountHelper.EXTRA_GAS_FOR_ANONYMOUS
+      anonymousGas: AccountHelper.EXTRA_GAS_FOR_ANONYMOUS,
+      allowsUnsignedFaucet: false,
+      payer: null
     }
   },
   computed: {
@@ -256,6 +254,15 @@ export default {
   },
   created() {
     EventBus.$emit('titleChange', 'Send coins')
+
+    WrapPromiseTask(async () => {
+      const account = await this.$storageApi.getCurrentAccount(this.$network.get())
+      const allowsUnsignedFaucet = await new RemoteNode(this.$network.get().url).allowsUnsignedFaucet()
+      return { account, allowsUnsignedFaucet }
+    }).then(result => {
+      this.allowsUnsignedFaucet = result.allowsUnsignedFaucet
+      this.payer = result.account
+    }).catch(error => showErrorToast(this, 'Account', error.message || 'Cannot retrieve account'))
   }
 }
 </script>

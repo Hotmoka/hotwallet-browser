@@ -84,9 +84,7 @@ export default {
           url: this.$browser.runtime.getURL("app/index.html")
         });
       } else if (option === '/edit-account') {
-        pushRoute(option, {editAccount: true, isAccount: this.isAccount})
-      } else if (option === '/create-account' || option === '/send-coins') {
-        pushRoute(option, {allowsUnsignedFaucet: this.allowsFaucet, payer: this.account})
+        pushRoute(option, { editAccount: true })
       } else {
         pushRoute(option)
       }

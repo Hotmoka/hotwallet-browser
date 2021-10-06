@@ -15,7 +15,7 @@
 </template>
 
 <script>
-import {EventBus} from "../internal/utils";
+import {EventBus} from "../../internal/utils";
 
 export default {
   name: "Navigation",

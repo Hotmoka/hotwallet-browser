@@ -60,7 +60,7 @@
         </b-form-group>
 
         <b-form-group
-            v-if="payer.reference && !fromFaucet"
+            v-if="payer && payer.reference && !fromFaucet"
             id="i-address"
         >
           <label>Payer</label>
@@ -86,10 +86,6 @@ import {
 
 export default {
   name: "CreateAccount",
-  props: {
-    allowsUnsignedFaucet: Boolean,
-    payer: Object
-  },
   data() {
     return {
       fromFaucet: false,
@@ -98,7 +94,9 @@ export default {
         confirmPassword: null,
         password: null,
         balance: null
-      }
+      },
+      allowsUnsignedFaucet: false,
+      payer: null
     }
   },
   computed: {
@@ -236,6 +234,15 @@ export default {
   },
   created() {
     EventBus.$emit('titleChange', 'Create account')
+
+    WrapPromiseTask(async () => {
+      const account = await this.$storageApi.getCurrentAccount(this.$network.get())
+      const allowsUnsignedFaucet = await new RemoteNode(this.$network.get().url).allowsUnsignedFaucet()
+      return { account, allowsUnsignedFaucet }
+    }).then(result => {
+      this.allowsUnsignedFaucet = result.allowsUnsignedFaucet
+      this.payer = result.account
+    }).catch(error => showErrorToast(this, 'Account', error.message || 'Cannot retrieve account'))
   }
 }
 </script>

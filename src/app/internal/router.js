@@ -5,7 +5,7 @@ import Login from "../components/account/Login";
 import ImportAccount from "../components/account/ImportAccount";
 import CreateAccount from "../components/account/CreateAccount";
 import Account from "../components/account/Account";
-import Transaction from "../components/Transaction";
+import Transaction from "../components/transaction/Transaction";
 import Vue from "vue";
 import ListAccounts from "../components/account/ListAccounts";
 import CreateKey from "../components/account/CreateKey";
@@ -20,11 +20,11 @@ export const router = new VueRouter({
         { path: '/login', component: Login },
         { path: '/create-key', component: CreateKey },
         { path: '/import-account', component: ImportAccount },
-        { path: '/create-account', name: 'create-account', component: CreateAccount, props: true },
-        { path: '/account', component: Account, props: {editAccount: false, isAccount: true} },
+        { path: '/create-account', name: 'create-account', component: CreateAccount },
+        { path: '/account', component: Account, props: {editAccount: false} },
         { path: '/edit-account', name: 'edit-account', component: Account, props: true },
         { path: '/account-list', component: ListAccounts },
-        { path: '/send-coins', name: 'send-coins', component: SendCoins, props: true },
+        { path: '/send-coins', name: 'send-coins', component: SendCoins },
         { path: '/coins-receipt', name: 'coins-receipt', component: CoinsReceipt, props: true },
         { path: '/transaction/:uuid', component: Transaction },
         { path: '*', redirect: '/welcome' }

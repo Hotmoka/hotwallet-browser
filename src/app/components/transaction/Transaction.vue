@@ -47,8 +47,8 @@
 </template>
 
 <script>
-import {EventBus, showErrorToast, WrapPromiseTask} from "../internal/utils";
-import VerifyPasswordModal from "./account/VerifyPasswordModal";
+import {EventBus, showErrorToast, WrapPromiseTask} from "../../internal/utils";
+import VerifyPasswordModal from "../account/VerifyPasswordModal";
 import {
   AccountHelper,
   Algorithm, Bip39Dictionary,

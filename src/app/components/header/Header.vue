@@ -1,6 +1,6 @@
 <template>
   <div class="header">
-      <img src="../assets/img/hotmoka_logo.png" height="32" width="32" alt="hotmoka" @click="onHeaderImageClick">
+      <img src="../../assets/img/hotmoka_logo.png" height="32" width="32" alt="hotmoka" @click="onHeaderImageClick">
       <h6 class="hotwallet-title text-secondary">Hotwallet</h6>
       <b-form-select
           v-model="selectedNetwork"
@@ -41,9 +41,9 @@
 </template>
 
 <script>
-import {EventBus, showErrorToast, WrapPromiseTask, getNetworkByValue} from "../internal/utils";
-import {stateFieldNotEmpty} from "../internal/validators";
-import {replaceRoute} from "../internal/router";
+import {EventBus, showErrorToast, WrapPromiseTask, getNetworkByValue} from "../../internal/utils";
+import {stateFieldNotEmpty} from "../../internal/validators";
+import {replaceRoute} from "../../internal/router";
 import {RemoteNode} from "hotweb3";
 
 export default {

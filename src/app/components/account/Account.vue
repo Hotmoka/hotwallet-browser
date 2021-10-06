@@ -15,7 +15,7 @@
         </b-form-group>
 
         <b-form-group
-            v-if="isAccount && account.reference"
+            v-if="isAccount"
             id="i-address"
         >
           <label>Address</label>
@@ -92,13 +92,13 @@ export default {
   name: "Account",
   components: {VerifyPasswordModal},
   props: {
-    editAccount: Boolean,
-    isAccount: Boolean
+    editAccount: Boolean
   },
   data() {
     return {
       showModal: false,
       account: null,
+      isAccount: true,
       words: []
     }
   },
@@ -134,8 +134,8 @@ export default {
       } else {
         this.$refs.verifyPasswordComponent.showModal({
           account: this.account,
-          title: 'Login',
-          subtitle: 'Insert password to verify account',
+          title: 'Key verification',
+          subtitle: 'Insert password to verify key',
           btnActionName: 'Verify'
         })
       }
@@ -172,6 +172,7 @@ export default {
     WrapPromiseTask(() => this.$storageApi.getCurrentAccount(this.$network.get()))
         .then(account => {
           this.account = account
+          this.isAccount = account.reference !== null && account.reference !== undefined
 
           if (this.isAccount) {
             this.words = AccountHelper.generateMnemonicWordsFrom(account.entropy, account.reference, Bip39Dictionary.ENGLISH)
