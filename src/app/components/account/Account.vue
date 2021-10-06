@@ -31,14 +31,16 @@
         </b-form-group>
 
         <b-form-group
-            id="i-reference"
-            label="Address of account"
-            label-for="i-reference"
             :invalid-feedback="invalidFeedbackReference"
             :state="stateReference"
             v-if="!isAccount"
         >
+          <label for="i-reference">Address of account  <b-icon id="i-reference-help" width="18" icon="question-circle-fill" variant="info"></b-icon></label>
           <b-form-input type="text" id="i-reference" v-model="account.reference" :state="stateReference" trim></b-form-input>
+
+          <b-tooltip target="i-reference-help" triggers="hover">
+            You can bind a Hotmoka account address if you (or somebody else) payed to this key
+          </b-tooltip>
         </b-form-group>
 
         <div v-if="words && words.length > 0">
