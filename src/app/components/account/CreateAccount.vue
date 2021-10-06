@@ -1,5 +1,6 @@
 <template>
   <div class="content">
+    <VerifyPasswordModal ref="verifyPasswordComponent" @onPasswordVerified="onPasswordVerified"></VerifyPasswordModal>
 
     <div class="d-flex justify-content-center">
       <div class="text-left form-container">
@@ -126,6 +127,11 @@ export default {
     }
   },
   methods: {
+    onPasswordVerified(verificationResult) {
+      if (verificationResult.password) {
+        this.createAccountFromCurrentAccount(verificationResult.password)
+      }
+    },
     createAccountFromFaucet(balance) {
       WrapPromiseTask(async () => {
 
@@ -159,8 +165,9 @@ export default {
       }).then(() => replaceRoute('/account'))
         .catch(err => showErrorToast(this, 'New account', err.message || 'Error during account creation'))
     },
-    createAccountFromCurrentAccount(balance) {
+    createAccountFromCurrentAccount(passwordOfPayer) {
       WrapPromiseTask(async () => {
+        const balance = Math.round(Number(this.newAccount.balance))
 
         const remoteNode = new RemoteNode(this.$network.get().url)
         const balanceOfPayer = await this.getBalanceOfAccount(this.payer.reference)
@@ -170,7 +177,7 @@ export default {
         }
 
         // generate key pair of payer
-        const keyPairOfPayer = AccountHelper.generateEd25519KeyPairFrom(this.payer.password, Bip39Dictionary.ENGLISH, this.payer.entropy)
+        const keyPairOfPayer = AccountHelper.generateEd25519KeyPairFrom(passwordOfPayer, Bip39Dictionary.ENGLISH, this.payer.entropy)
 
         // generate key pair for the new account
         const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.newAccount.password, Bip39Dictionary.ENGLISH)
@@ -223,14 +230,22 @@ export default {
         if (this.fromFaucet) {
           this.createAccountFromFaucet(balance)
         } else {
-          this.createAccountFromCurrentAccount(balance)
+          this.askForPassword()
         }
       }).catch(err => showErrorToast(this, 'New account', err.message || 'An error occurred while creating the account'))
     },
     getBalanceOfAccount: async function (hashOfStorageReference) {
       return new AccountHelper(new RemoteNode(this.$network.get().url))
           .getBalance(StorageReferenceModel.newStorageReference(hashOfStorageReference))
-    }
+    },
+    askForPassword() {
+      this.$refs.verifyPasswordComponent.showModal({
+        account: this.payer,
+        title: 'Account verification',
+        subtitle: 'Please enter password to verify the account of ' + this.payer.name,
+        closeOnIncorrectPwd: false
+      })
+    },
   },
   created() {
     EventBus.$emit('titleChange', 'Create account')

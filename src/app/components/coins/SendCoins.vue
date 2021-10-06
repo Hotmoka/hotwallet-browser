@@ -206,7 +206,12 @@ export default {
       }).catch(err => showErrorToast(this, 'Send coins', err.message || 'Cannot send coins to the selected destination'))
     },
     askForPassword() {
-      this.$refs.verifyPasswordComponent.showModal({account: this.payer, title: 'Account verification', subtitle: 'Please enter password to verify the account of ' + this.payer.name})
+      this.$refs.verifyPasswordComponent.showModal({
+        account: this.payer,
+        title: 'Account verification',
+        subtitle: 'Please enter password to verify the account of ' + this.payer.name,
+        closeOnIncorrectPwd: false
+      })
     },
     onPasswordVerified(verificationResult) {
       if (verificationResult.verified) {
