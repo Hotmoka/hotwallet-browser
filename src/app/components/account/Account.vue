@@ -88,7 +88,7 @@ import {EventBus, showErrorToast, showInfoToast, WrapPromiseTask} from "../../in
 import {AccountHelper, Bip39Dictionary, RemoteNode, StorageReferenceModel} from "hotweb3";
 import {replaceRoute} from "../../internal/router";
 import {fieldNotEmptyFeedback, stateFieldNotEmpty} from "../../internal/validators";
-import VerifyPasswordModal from "./VerifyPasswordModal";
+import VerifyPasswordModal from "../features/VerifyPasswordModal";
 
 export default {
   name: "Account",

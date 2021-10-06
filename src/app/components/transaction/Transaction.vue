@@ -48,7 +48,7 @@
 
 <script>
 import {EventBus, showErrorToast, WrapPromiseTask} from "../../internal/utils";
-import VerifyPasswordModal from "../account/VerifyPasswordModal";
+import VerifyPasswordModal from "../features/VerifyPasswordModal";
 import {
   AccountHelper,
   Algorithm, Bip39Dictionary,

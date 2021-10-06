@@ -21,7 +21,7 @@
             :invalid-feedback="invalidFeedbackAmount"
             :state="stateAmount"
         >
-          <b-form-input type="number" id="i-amount" min="0" v-model="amount" :state="stateAmount" trim></b-form-input>
+          <b-form-input type="number" id="i-amount" min="0" v-model="amount" :state="stateAmount" placeholder="Panarea" trim></b-form-input>
         </b-form-group>
 
         <b-form-group
@@ -37,12 +37,12 @@
             Anonymous
             <b-icon id="i-anonymous-help" width="18" icon="question-circle-fill" variant="info"></b-icon>
           </b-form-checkbox>
-        </b-form-group>
 
-        <b-tooltip target="i-anonymous-help" triggers="hover">
-          If you are paying to a key, you can require an anonymous transaction.
-          It will cost up to {{ anonymousGas }} units of gas more, but the recipient will be automatically notified of the transfer
-        </b-tooltip>
+          <b-tooltip target="i-anonymous-help" triggers="hover">
+            If you are paying to a key, you can require an anonymous transaction.
+            It will cost up to {{ anonymousGas }} units of gas more, but the recipient will be automatically notified of the transfer
+          </b-tooltip>
+        </b-form-group>
 
         <b-form-group
             v-if="allowsUnsignedFaucet"
@@ -92,7 +92,7 @@ import {
   StorageReferenceModel
 } from "hotweb3";
 import {replaceRoute} from "../../internal/router";
-import VerifyPasswordModal from "../account/VerifyPasswordModal";
+import VerifyPasswordModal from "../features/VerifyPasswordModal";
 
 
 export default {

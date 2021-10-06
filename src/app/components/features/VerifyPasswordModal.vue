@@ -1,6 +1,6 @@
 <template>
   <b-modal v-model="modal.showModal" centered :hideHeaderClose="true" :title="modal.title">
-    <p>{{ modal.subtitle }}</p>
+    <p class="h-txt">{{ modal.subtitle }}</p>
     <div class="text-left form-container">
       <b-form-group
           id="i-pwd"

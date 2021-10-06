@@ -29,7 +29,7 @@
 <script>
 import {EventBus, showErrorToast, trimAddress, WrapPromiseTask} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
-import VerifyPasswordModal from "./VerifyPasswordModal";
+import VerifyPasswordModal from "../features/VerifyPasswordModal";
 export default {
   name: "ListAccounts",
   components: {VerifyPasswordModal},

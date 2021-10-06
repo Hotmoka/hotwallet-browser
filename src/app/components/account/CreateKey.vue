@@ -1,7 +1,7 @@
 <template>
   <div class="content">
 
-    <p>Here you can create a key. Once you (or somebody else) pay to that key, it will become an account,
+    <p class="h-txt">Here you can create a key. Once you (or somebody else) pay to that key, it will become an account,
       that you can control through the password specified below
     </p>
 
