@@ -16,9 +16,9 @@
           <p class="txt-secondary">{{ to }} </p>
         </b-form-group>
 
-        <b-form-group v-if="account && account.reference">
+        <b-form-group v-if="account && account.reference && account.reference.transaction">
           <label>Storage reference of new account <b-icon id="i-new-account-help" width="18" icon="question-circle-fill" variant="info"></b-icon></label>
-          <p class="txt-secondary">{{ account.reference }}</p>
+          <p class="txt-secondary">{{ account.reference.transaction.hash }}</p>
 
           <b-tooltip target="i-new-account-help" triggers="hover">
             Who holds the key {{ to }} can now bind it to that storage reference and control the account
@@ -69,16 +69,17 @@ export default {
       const subject = 'Hotmoka send receipt'
       let body = ''
       const transactionReference = this.transaction ? this.transaction.hash : ''
+      const accountReference = this.account && this.account.reference ? this.account.reference.transaction.hash : ''
 
       if (this.account) {
         // we've sent coins to a key
         if (this.anonymous) {
           body = 'An amount of ' + this.amount + ' Panarea has been sent from ' + this.from + ' to a new account with storage reference '
-              + this.account.reference + ' and key ' + this.to + '. You can find confirmation in ' + transactionReference +
+              + accountReference + ' and key ' + this.to + '. You can find confirmation in ' + transactionReference +
               '. Since the transfer was anonymous, who holds the key sees it bound now, automatically, to that storage reference and can already control the account.'
         } else {
           body = 'An amount of ' + this.amount + ' Panarea has been sent from ' + this.from + ' to a new account with storage reference '
-              + this.account.reference + ' and key ' + this.to + '. You can find confirmation in ' + transactionReference +
+              + accountReference + ' and key ' + this.to + '. You can find confirmation in ' + transactionReference +
               '. Who holds the key can now bind it to that storage reference and control the account.'
         }
       } else {

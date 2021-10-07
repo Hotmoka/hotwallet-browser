@@ -1,5 +1,4 @@
 import Vue from 'vue'
-import {Base58} from "hotweb3";
 import {networks} from "../../internal/constants";
 
 
@@ -59,25 +58,6 @@ export const trimAddress = (address) => {
 	return address.substring(0, 8) + '...' + address.substring(address.length - 5)
 }
 
-export const isPublicKey = (reference) => {
-	try {
-		return Base58.decode(reference).length === 32
-	} catch (e) {
-		return false
-	}
-}
-
-export const isStorageReference = (reference) => {
-	try {
-		if (reference.indexOf('#') === -1) {
-			return reference.length === 64
-		} else {
-			return reference.split('#')[0].length === 64
-		}
-	} catch (e) {
-		return false
-	}
-}
 
 /**
  * Helper method to wrap a promise task.

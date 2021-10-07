@@ -78,8 +78,6 @@ import {
   showErrorToast,
   WrapPromiseTask,
   trimAddress,
-  isStorageReference,
-  isPublicKey,
   showSuccessToast, EventBus
 } from "../../internal/utils";
 import {
@@ -137,7 +135,7 @@ export default {
           Algorithm.ED25519,
           StorageReferenceModel.newStorageReference(this.payer.reference),
           keyPairOfPayer,
-          new KeyPair(null, Base58.decode(this.destination).toString('base64'), null),
+          new KeyPair(null, Base58.decode(this.destination).toString(), null),
           this.amount,
           "0",
           this.anonymous,
@@ -187,13 +185,13 @@ export default {
           throw new Error('Cannot transfer more than ' + balanceOfPayer + ' from payer')
         }
 
-        if (isStorageReference(this.destination)) {
+        if (StorageReferenceModel.isStorageReference(this.destination)) {
           this.destinationIsStorageReference = true
 
           if (!this.fromFaucet) {
             this.askForPassword()
           }
-        } else if (isPublicKey(this.destination)) {
+        } else if (AccountHelper.isEd25519PublicKey(this.destination)) {
           this.destinationIsStorageReference = false
 
           if (!this.fromFaucet) {

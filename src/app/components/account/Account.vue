@@ -19,7 +19,7 @@
             id="i-address"
         >
           <label>Address</label>
-          <p class="txt-secondary"> {{account.reference}}#{{ parseInt(account.nonce).toString(16) }}</p>
+          <p class="txt-secondary">{{account.reference}}#{{ parseInt(account.nonce).toString(16) }}</p>
         </b-form-group>
 
         <b-form-group
@@ -137,7 +137,7 @@ export default {
         this.$refs.verifyPasswordComponent.showModal({
           account: this.account,
           title: 'Key verification',
-          subtitle: 'Insert password to verify key',
+          subtitle: 'Insert password to verify key ' + this.account.publicKeyBase58,
           btnActionName: 'Verify'
         })
       }
@@ -153,7 +153,7 @@ export default {
         WrapPromiseTask(async () => {
 
           try {
-            const accountHelper = new AccountHelper(new RemoteNode(this.$network.get()))
+            const accountHelper = new AccountHelper(new RemoteNode(this.$network.get().url))
             const isVerified = await accountHelper.verifyAccount(StorageReferenceModel.newStorageReference(this.account.reference), this.account.publicKey)
 
             if (!isVerified) {
