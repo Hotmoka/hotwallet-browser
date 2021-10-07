@@ -12,8 +12,8 @@ export class BackgroundHandler {
         this.store.setToStore('transactions', {})
         this.width = 374
         this.height = 640
-        this.left = (screen.width/2)-(this.width/2);
-        this.top = (screen.height/2)-(this.height/2) - 20;
+        this.top = 100
+        this.left = screen.width - screen.width / 3
     }
 
     /**
