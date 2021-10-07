@@ -78,7 +78,7 @@ export default {
         receiver: null,
         actuals: [],
         gas: '30000',
-        timer: 51
+        timer: 111
       },
       account: null,
       privateKey: null
