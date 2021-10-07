@@ -41,7 +41,7 @@
 </template>
 
 <script>
-import {EventBus, showErrorToast, WrapPromiseTask, getNetworkByValue} from "../../internal/utils";
+import {EventBus, showErrorToast, WrapPromiseTask, getNetworkByValue, sortNetworks} from "../../internal/utils";
 import {stateFieldNotEmpty} from "../../internal/validators";
 import {replaceRoute} from "../../internal/router";
 import {RemoteNode} from "hotweb3";
@@ -128,6 +128,7 @@ export default {
         this.resetForm()
         this.$network.set(network)
         this.networks.push(network)
+        this.networks = sortNetworks(this.networks)
         this.selectedNetwork = network.value
         replaceRoute('/')
       })
@@ -197,7 +198,7 @@ export default {
     },
     setNetworks: async function() {
       const _networks = await this.$storageApi.getNetworks()
-      this.networks = [..._networks]
+      this.networks = sortNetworks(_networks)
       const currentNetwork = await this.$storageApi.getCurrentNetwork()
       this.$network.set(currentNetwork)
       this.selectedNetwork = currentNetwork.value

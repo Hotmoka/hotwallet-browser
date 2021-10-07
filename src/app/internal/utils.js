@@ -1,5 +1,7 @@
 import Vue from 'vue'
 import {Base58} from "hotweb3";
+import {networks} from "../../internal/constants";
+
 
 export const EventBus = new Vue()
 
@@ -30,6 +32,24 @@ export const getNetworkByValue = (value, networks) => {
 	} else {
 		return null
 	}
+}
+
+export const sortNetworks = unsortedNetworks => {
+
+	if (!unsortedNetworks) {
+		return []
+	}
+
+	const _networks = unsortedNetworks.filter(network => network.value !== 'customNetwork')
+	_networks.sort((a, b) => {
+		const valueA = a.value.toUpperCase();
+		const valueB = b.value.toUpperCase();
+		return valueA.localeCompare(valueB)
+	})
+
+	// adding the customNetwork as last
+	_networks.push(networks[1])
+	return _networks
 }
 
 export const trimAddress = (address) => {
