@@ -112,7 +112,7 @@ export default {
         const remoteNode = new RemoteNode(this.$network.get().url, new Signer(Algorithm.ED25519, this.privateKey));
 
         const caller = StorageReferenceModel.newStorageReference(this.account.reference)
-        const nonceOfEoa = await remoteNode.getNonceOf(caller)
+        const nonceOfCaller = await remoteNode.getNonceOf(caller)
         const gasPrice = await remoteNode.getGasPrice()
         const chainId = await remoteNode.getChainId()
 
@@ -122,7 +122,7 @@ export default {
 
         const request = new InstanceMethodCallTransactionRequestModel(
             caller,
-            nonceOfEoa,
+            nonceOfCaller,
             chainId,
             this.transaction.gas,
             gasPrice,

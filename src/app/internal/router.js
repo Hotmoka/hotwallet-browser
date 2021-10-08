@@ -36,7 +36,7 @@ export const router = new VueRouter({
 export const replaceRoute = (route, params) => {
     if (router.currentRoute.path !== route) {
         if (params && typeof params === 'object') {
-            router.push({ name: route.substring(1), params: params}).catch(() => {})
+            router.replace({ name: route.substring(1), params: params}).catch(() => {})
         } else {
             router.replace(route).catch(() => {})
         }
