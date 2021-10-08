@@ -26,14 +26,14 @@
         </b-link>
       </div>
 
-      <p class="txt-secondary address-txt" id="i-address-help" v-if="isAccount && account.reference" @click="onCopyToClipboardClick(account.reference)">
+      <p class="txt-secondary address-txt" id="i-address-help" v-if="isAccount && account.reference" @click="onCopyToClipboardClick('reference')">
         {{ account.reference }}#{{ parseInt(account.nonce).toString(16) }}
         <b-tooltip target="i-address-help" triggers="hover" delay="400">
           Click to copy the address to clipboard
         </b-tooltip>
       </p>
 
-      <p class="txt-secondary address-txt" id="i-key-help" v-if="!isAccount && account.publicKeyBase58" @click="onCopyToClipboardClick(account.publicKeyBase58)">
+      <p class="txt-secondary address-txt" id="i-key-help" v-if="!isAccount && account.publicKeyBase58" @click="onCopyToClipboardClick('key')">
         {{ account.publicKeyBase58 }}
         <b-tooltip target="i-key-help" triggers="hover" delay="400">
           Click to copy the public key to clipboard
@@ -122,7 +122,8 @@ export default {
     onReceiveCoinsClick() {
       pushRoute('/receive-coins')
     },
-    onCopyToClipboardClick(text) {
+    onCopyToClipboardClick(type) {
+      const text = type === 'reference' ? (this.account.reference + '#' + parseInt(this.account.nonce).toString(16)) : this.account.publicKeyBase58
       navigator.clipboard.writeText(text).then(() => {
         showInfoToast(this, 'Info', 'Content copied to clipboard', 1600)
       })
