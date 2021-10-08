@@ -4,21 +4,21 @@ import {networks} from "../../internal/constants";
 
 export const EventBus = new Vue()
 
-const showToast = (vue, title, message, type) => {
+const showToast = (vue, title, message, type, timeout) => {
 	vue.$bvToast.toast(message, {
 		title: title,
 		variant: type,
 		solid: true,
-		autoHideDelay: 6000,
+		autoHideDelay: timeout || 6000,
 		toaster: 'b-toaster-top-center'
 	})
 }
 
-export const showInfoToast = (vue, title, message) => showToast(vue, title, message, 'info')
+export const showInfoToast = (vue, title, message, timeout) => showToast(vue, title, message, 'info', timeout)
 
-export const showSuccessToast = (vue, title, message) => showToast(vue, title, message, 'success')
+export const showSuccessToast = (vue, title, message, timeout) => showToast(vue, title, message, 'success', timeout)
 
-export const showErrorToast = (vue, title, message) => showToast(vue, title, message, 'danger')
+export const showErrorToast = (vue, title, message, timeout) => showToast(vue, title, message, 'danger', timeout)
 
 export const getNetworkByValue = (value, networks) => {
 	if (!networks) {

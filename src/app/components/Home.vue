@@ -26,12 +26,20 @@
         </b-link>
       </div>
 
-      <p class="txt-secondary" v-if="isAccount && account.reference">
-        {{ account.reference }}#{{ parseInt(account.nonce).toString(16) }}</p>
-
-      <p class="txt-secondary" v-if="!isAccount && account.publicKeyBase58">
-        {{ account.publicKeyBase58 }}
+      <p class="txt-secondary address-txt" id="i-address-help" v-if="isAccount && account.reference" @click="onCopyToClipboardClick(account.reference)">
+        {{ account.reference }}#{{ parseInt(account.nonce).toString(16) }}
+        <b-tooltip target="i-address-help" triggers="hover" delay="400">
+          Click to copy the address to clipboard
+        </b-tooltip>
       </p>
+
+      <p class="txt-secondary address-txt" id="i-key-help" v-if="!isAccount && account.publicKeyBase58" @click="onCopyToClipboardClick(account.publicKeyBase58)">
+        {{ account.publicKeyBase58 }}
+        <b-tooltip target="i-key-help" triggers="hover" delay="400">
+          Click to copy the public key to clipboard
+        </b-tooltip>
+      </p>
+
       <hr/>
 
       <div>
@@ -71,7 +79,7 @@
 
 <script>
 import {RemoteNode, StorageReferenceModel} from "hotweb3";
-import {WrapPromiseTask, showErrorToast, EventBus} from "../internal/utils";
+import {WrapPromiseTask, showErrorToast, EventBus, showInfoToast} from "../internal/utils";
 import {pushRoute, replaceRoute} from "../internal/router";
 
 export default {
@@ -113,6 +121,11 @@ export default {
     },
     onReceiveCoinsClick() {
       pushRoute('/receive-coins')
+    },
+    onCopyToClipboardClick(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showInfoToast(this, 'Info', 'Content copied to clipboard', 1600)
+      })
     },
     getAccountInfo(accountReference) {
       WrapPromiseTask(() => new RemoteNode(this.$network.get().url).getState(StorageReferenceModel.newStorageReference(accountReference)))
@@ -210,6 +223,10 @@ export default {
 .disabled {
   opacity: .55;
   cursor: no-drop;
+}
+
+.address-txt {
+  cursor: pointer;
 }
 
 </style>
