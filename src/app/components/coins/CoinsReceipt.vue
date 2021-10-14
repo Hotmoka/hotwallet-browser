@@ -7,7 +7,7 @@
 
         <b-form-group>
           <label>From</label>
-          <p class="txt-secondary" v-if="fromFaucet">Faucet - {{ trimAccountAddress(from) }} </p>
+          <p class="txt-secondary" v-if="fromFaucet">Faucet - {{ trimAccountAddress }} </p>
           <p class="txt-secondary" v-if="!fromFaucet">{{ from }} </p>
         </b-form-group>
 
@@ -18,7 +18,7 @@
 
         <b-form-group v-if="account && account.reference && account.reference.transaction">
           <label>Storage reference of new account <b-icon id="i-new-account-help" width="18" icon="question-circle-fill" variant="info"></b-icon></label>
-          <p class="txt-secondary">{{ account.reference.transaction.hash }}</p>
+          <p class="txt-secondary">{{ toStringNewAccount }}</p>
 
           <b-tooltip target="i-new-account-help" triggers="hover">
             Who holds the key {{ to }} can now bind it to that storage reference and control the account
@@ -43,7 +43,7 @@
 </template>
 
 <script>
-import {EventBus, trimAddress} from "../../internal/utils";
+import {EventBus, storageReferenceToString, trimAddress} from "../../internal/utils";
 
 export default {
   name: "CoinsReceipt",
@@ -61,15 +61,20 @@ export default {
       shareHref: ''
     }
   },
-  methods: {
-    trimAccountAddress(address) {
-      return trimAddress(address)
+  computed: {
+      toStringNewAccount() {
+        return this.account && this.account.reference ? storageReferenceToString(this.account.reference) : ''
     },
+    trimAccountAddress() {
+      return trimAddress(this.from)
+    },
+  },
+  methods: {
     buildShareText() {
       const subject = 'Hotmoka send receipt'
       let body = ''
       const transactionReference = this.transaction ? this.transaction.hash : ''
-      const accountReference = this.account && this.account.reference ? this.account.reference.transaction.hash : ''
+      const accountReference = this.account && this.account.reference ? storageReferenceToString(this.account.reference) : ''
 
       if (this.account) {
         // we've sent coins to a key

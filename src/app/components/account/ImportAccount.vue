@@ -50,7 +50,7 @@
 
 <script>
 import {AccountHelper, Bip39Dictionary, RemoteNode} from "hotweb3";
-import {EventBus, showErrorToast, WrapPromiseTask} from "../../internal/utils";
+import {EventBus, showErrorToast, storageReferenceToString, WrapPromiseTask} from "../../internal/utils";
 import {
   fieldNotEmptyFeedback,
   invalidPasswordFeedback,
@@ -101,8 +101,7 @@ export default {
         await this.$storageApi.addAccount(
             {
               name: this.name,
-              reference: account.reference.transaction.hash,
-              nonce: account.reference.progressive,
+              reference: storageReferenceToString(account.reference),
               entropy: account.entropy,
               publicKey: account.publicKey,
               balance: account.balance,

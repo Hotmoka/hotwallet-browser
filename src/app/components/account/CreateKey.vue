@@ -103,7 +103,6 @@ export default {
             {
               name: this.name,
               reference: null,
-              nonce: 0,
               entropy: account.entropy,
               publicKey: account.publicKey,
               publicKeyBase58: account.name,

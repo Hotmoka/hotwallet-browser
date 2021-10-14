@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import {networks} from "../../internal/constants";
+import {StorageReferenceModel} from "hotweb3";
 
 
 export const EventBus = new Vue()
@@ -58,6 +59,24 @@ export const trimAddress = (address) => {
 	return address.substring(0, 8) + '...' + address.substring(address.length - 5)
 }
 
+export const storageReferenceFrom = reference => {
+	if (!StorageReferenceModel.isStorageReference(reference)) {
+		throw new Error('Invalid storage reference')
+	}
+	const splitted = reference.split("#")
+	const hash = splitted[0].trim()
+	const progressive = splitted[1].trim()
+
+	return StorageReferenceModel.newStorageReference(hash, progressive)
+}
+
+export const storageReferenceToString = storageReference => {
+	return storageReference.transaction.hash + '#' + parseInt(storageReference.progressive, 16).toString()
+}
+
+export const getHashOfStorageReference = storageReference => {
+	return storageReference.split("#")[0]
+}
 
 /**
  * Helper method to wrap a promise task.

@@ -48,7 +48,7 @@
 </template>
 
 <script>
-import {EventBus, showErrorToast, trimAddress, WrapPromiseTask} from "../../internal/utils";
+import {EventBus, showErrorToast, WrapPromiseTask} from "../../internal/utils";
 import {AccountHelper} from "hotweb3";
 import QrCodeModal from "../features/QrCodeModal";
 
@@ -72,14 +72,12 @@ export default {
         return null
       }
       return !this.amount ? 'Please enter a valid amount' : null
-    },
-    payerAddress() {
-      return this.payer ? trimAddress(this.payer.reference) : ''
     }
   },
   methods: {
     onGenerateQrCodeClick() {
-      const qrCodeValue = (this.account.reference || this.account.publicKeyBase58) + '&'+ this.amount + '&' + this.anonymous
+      const payerAddress = this.account && this.account.reference ? this.account.reference : this.account.publicKeyBase58
+      const qrCodeValue = payerAddress + '&'+ this.amount + '&' + this.anonymous
       this.$refs.qrCodeComponent.generateQrCode({
         value: qrCodeValue
       })

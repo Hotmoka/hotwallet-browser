@@ -19,7 +19,7 @@
             id="i-address"
         >
           <label>Address</label>
-          <p class="txt-secondary">{{account.reference}}#{{ parseInt(account.nonce).toString(16) }}</p>
+          <p class="txt-secondary">{{ account.reference }}</p>
         </b-form-group>
 
         <b-form-group
@@ -84,8 +84,15 @@
 </template>
 
 <script>
-import {EventBus, showErrorToast, showInfoToast, WrapPromiseTask} from "../../internal/utils";
-import {AccountHelper, Bip39Dictionary, RemoteNode, StorageReferenceModel} from "hotweb3";
+import {
+  EventBus,
+  getHashOfStorageReference,
+  showErrorToast,
+  showInfoToast,
+  storageReferenceFrom,
+  WrapPromiseTask
+} from "../../internal/utils";
+import {AccountHelper, Bip39Dictionary, RemoteNode} from "hotweb3";
 import {replaceRoute} from "../../internal/router";
 import {fieldNotEmptyFeedback, stateFieldNotEmpty} from "../../internal/validators";
 import VerifyPasswordModal from "../features/VerifyPasswordModal";
@@ -154,7 +161,7 @@ export default {
 
           try {
             const accountHelper = new AccountHelper(new RemoteNode(this.$network.get().url))
-            const isVerified = await accountHelper.verifyAccount(StorageReferenceModel.newStorageReference(this.account.reference), this.account.publicKey)
+            const isVerified = await accountHelper.verifyAccount(storageReferenceFrom(this.account.reference), this.account.publicKey)
 
             if (!isVerified) {
               throw new Error()
@@ -177,7 +184,7 @@ export default {
           this.isAccount = account.reference !== null && account.reference !== undefined
 
           if (this.isAccount) {
-            this.words = AccountHelper.generateMnemonicWordsFrom(account.entropy, account.reference, Bip39Dictionary.ENGLISH)
+            this.words = AccountHelper.generateMnemonicWordsFrom(account.entropy, getHashOfStorageReference(account.reference), Bip39Dictionary.ENGLISH)
           }
         })
         .catch(() => showErrorToast(this, 'Account', 'Cannot retrieve account'))

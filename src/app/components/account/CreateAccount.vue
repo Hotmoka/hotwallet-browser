@@ -75,8 +75,15 @@
 </template>
 
 <script>
-import {RemoteNode, AccountHelper, Algorithm, Bip39Dictionary, StorageReferenceModel} from "hotweb3"
-import {EventBus, showErrorToast, trimAddress, WrapPromiseTask} from "../../internal/utils";
+import {RemoteNode, AccountHelper, Algorithm, Bip39Dictionary} from "hotweb3"
+import {
+  EventBus,
+  showErrorToast,
+  storageReferenceFrom,
+  storageReferenceToString,
+  trimAddress,
+  WrapPromiseTask
+} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
 import {
   fieldNotEmptyFeedback,
@@ -84,9 +91,11 @@ import {
   stateFieldNotEmpty,
   statePassword
 } from "../../internal/validators";
+import VerifyPasswordModal from "../features/VerifyPasswordModal";
 
 export default {
   name: "CreateAccount",
+  components: { VerifyPasswordModal },
   data() {
     return {
       fromFaucet: false,
@@ -137,7 +146,7 @@ export default {
 
         const remoteNode = new RemoteNode(this.$network.get().url)
         const gamete = await remoteNode.getGamete()
-        const balanceOfFaucet = await this.getBalanceOfAccount(gamete.transaction.hash)
+        const balanceOfFaucet = await this.getBalanceOfAccount(gamete)
 
         if ((balance - Number(balanceOfFaucet)) > 0) {
           throw new Error('Cannot transfer more than ' + balanceOfFaucet + ' from faucet')
@@ -152,8 +161,7 @@ export default {
         await this.$storageApi.addAccount(
             {
               name: this.newAccount.name,
-              reference: account.reference.transaction.hash,
-              nonce: account.reference.progressive,
+              reference: storageReferenceToString(account.reference),
               entropy: keyPair.entropy,
               publicKey: keyPair.publicKey,
               selected: true,
@@ -170,7 +178,8 @@ export default {
         const balance = Math.round(Number(this.newAccount.balance))
 
         const remoteNode = new RemoteNode(this.$network.get().url)
-        const balanceOfPayer = await this.getBalanceOfAccount(this.payer.reference)
+        const storageReferenceOfPayer = storageReferenceFrom(this.payer.reference)
+        const balanceOfPayer = await this.getBalanceOfAccount(storageReferenceOfPayer)
 
         if ((balance - Number(balanceOfPayer)) > 0) {
           throw new Error('Cannot transfer more than ' + balanceOfPayer + ' from payer ' + this.payer.name)
@@ -183,7 +192,7 @@ export default {
         const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.newAccount.password, Bip39Dictionary.ENGLISH)
         const account = await new AccountHelper(remoteNode).createAccountFromPayer(
             Algorithm.ED25519,
-            StorageReferenceModel.newStorageReference(this.payer.reference),
+            storageReferenceOfPayer,
             keyPairOfPayer,
             keyPair,
             balance.toString(),
@@ -196,8 +205,7 @@ export default {
         await this.$storageApi.addAccount(
             {
               name: this.newAccount.name,
-              reference: account.reference.transaction.hash,
-              nonce: account.reference.progressive,
+              reference: storageReferenceToString(account.reference),
               entropy: keyPair.entropy,
               publicKey: keyPair.publicKey,
               selected: true,
@@ -234,9 +242,8 @@ export default {
         }
       }).catch(err => showErrorToast(this, 'New account', err.message || 'An error occurred while creating the account'))
     },
-    getBalanceOfAccount: async function (hashOfStorageReference) {
-      return new AccountHelper(new RemoteNode(this.$network.get().url))
-          .getBalance(StorageReferenceModel.newStorageReference(hashOfStorageReference))
+    getBalanceOfAccount: async function (storageReference) {
+      return new AccountHelper(new RemoteNode(this.$network.get().url)).getBalance(storageReference)
     },
     askForPassword() {
       this.$refs.verifyPasswordComponent.showModal({

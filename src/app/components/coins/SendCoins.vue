@@ -78,7 +78,7 @@ import {
   showErrorToast,
   WrapPromiseTask,
   trimAddress,
-  showSuccessToast, EventBus
+  showSuccessToast, EventBus, storageReferenceFrom, storageReferenceToString
 } from "../../internal/utils";
 import {
   AccountHelper,
@@ -133,7 +133,7 @@ export default {
     sendCoinsToPublicKey(keyPairOfPayer, resultTransactionCallback) {
       return new AccountHelper(new RemoteNode(this.$network.get().url)).createAccountFromPayer(
           Algorithm.ED25519,
-          StorageReferenceModel.newStorageReference(this.payer.reference),
+          storageReferenceFrom(this.payer.reference),
           keyPairOfPayer,
           new KeyPair(null, Base58.decode(this.destination).toString(), null),
           this.amount,
@@ -148,9 +148,9 @@ export default {
     },
     sendCoinsToReference(keyPairOfPayer, resultTransactionCallback) {
       return new SendCoinsHelper(new RemoteNode(this.$network.get().url)).fromPayer(
-          StorageReferenceModel.newStorageReference(this.payer.reference),
+          storageReferenceFrom(this.payer.reference),
           keyPairOfPayer,
-          StorageReferenceModel.newStorageReference(this.destination),
+          storageReferenceFrom(this.destination),
           this.amount,
           '0',
           transactions => {
@@ -175,12 +175,12 @@ export default {
         const remoteNode = new RemoteNode(this.$network.get().url)
         if (this.fromFaucet) {
           const gamete = await remoteNode.getGamete()
-          this.payerReference = gamete.transaction.hash
+          this.payerReference = storageReferenceToString(gamete)
         } else {
           this.payerReference = this.payer.reference
         }
 
-        const balanceOfPayer = new AccountHelper(remoteNode).getBalance(StorageReferenceModel.newStorageReference(this.payerReference))
+        const balanceOfPayer = new AccountHelper(remoteNode).getBalance(storageReferenceFrom(this.payerReference))
         if ((amountToSend - Number(balanceOfPayer)) > 0) {
           throw new Error('Cannot transfer more than ' + balanceOfPayer + ' from payer')
         }
@@ -220,7 +220,7 @@ export default {
           if (this.destinationIsStorageReference) {
             if (this.fromFaucet) {
               await new SendCoinsHelper(new RemoteNode(this.$network.get().url)).fromFaucet(
-                  StorageReferenceModel.newStorageReference(this.destination),
+                  storageReferenceFrom(this.destination),
                   this.amount,
                   '0',
                   transaction => result.transaction = transaction

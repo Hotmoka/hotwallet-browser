@@ -26,14 +26,14 @@
         </b-link>
       </div>
 
-      <p class="txt-secondary address-txt" id="i-address-help" v-if="isAccount && account.reference" @click="onCopyToClipboardClick('reference')">
-        {{ account.reference }}#{{ parseInt(account.nonce).toString(16) }}
+      <p class="txt-secondary address-txt" id="i-address-help" v-if="isAccount && account.reference" @click="onCopyToClipboardClick">
+        {{ account.reference }}
         <b-tooltip target="i-address-help" triggers="hover" delay="400">
           Click to copy the address to clipboard
         </b-tooltip>
       </p>
 
-      <p class="txt-secondary address-txt" id="i-key-help" v-if="!isAccount && account.publicKeyBase58" @click="onCopyToClipboardClick('key')">
+      <p class="txt-secondary address-txt" id="i-key-help" v-if="!isAccount && account.publicKeyBase58" @click="onCopyToClipboardClick">
         {{ account.publicKeyBase58 }}
         <b-tooltip target="i-key-help" triggers="hover" delay="400">
           Click to copy the public key to clipboard
@@ -78,8 +78,8 @@
 </template>
 
 <script>
-import {RemoteNode, StorageReferenceModel} from "hotweb3";
-import {WrapPromiseTask, showErrorToast, EventBus, showInfoToast} from "../internal/utils";
+import {RemoteNode} from "hotweb3";
+import {WrapPromiseTask, showErrorToast, EventBus, showInfoToast, storageReferenceFrom} from "../internal/utils";
 import {pushRoute, replaceRoute} from "../internal/router";
 
 export default {
@@ -89,8 +89,7 @@ export default {
       showOptionsMenu: false,
       account: {
         balance: 0,
-        balanceRed: 0,
-        nonce: 0
+        balanceRed: 0
       },
       isAccount: false,
       allowsFaucet: false
@@ -123,13 +122,11 @@ export default {
       pushRoute('/receive-coins')
     },
     onCopyToClipboardClick(type) {
-      const text = type === 'reference' ? (this.account.reference + '#' + parseInt(this.account.nonce).toString(16)) : this.account.publicKeyBase58
-      navigator.clipboard.writeText(text).then(() => {
-        showInfoToast(this, 'Info', 'Content copied to clipboard', 1600)
-      })
+      const text = this.isAccount ? this.account.reference : this.account.publicKeyBase58
+      navigator.clipboard.writeText(text).then(() => showInfoToast(this, 'Info', 'Content copied to clipboard', 1600))
     },
     getAccountInfo(accountReference) {
-      WrapPromiseTask(() => new RemoteNode(this.$network.get().url).getState(StorageReferenceModel.newStorageReference(accountReference)))
+      WrapPromiseTask(async () => new RemoteNode(this.$network.get().url).getState(storageReferenceFrom(accountReference)))
           .then(result => {
             const updates = result.updates
             updates.forEach(update => {

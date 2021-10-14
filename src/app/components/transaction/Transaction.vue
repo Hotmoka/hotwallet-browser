@@ -47,7 +47,7 @@
 </template>
 
 <script>
-import {EventBus, showErrorToast, WrapPromiseTask} from "../../internal/utils";
+import {EventBus, showErrorToast, storageReferenceFrom, WrapPromiseTask} from "../../internal/utils";
 import VerifyPasswordModal from "../features/VerifyPasswordModal";
 import {
   AccountHelper,
@@ -56,7 +56,6 @@ import {
   NonVoidMethodSignatureModel,
   RemoteNode,
   Signer,
-  StorageReferenceModel,
   VoidMethodSignatureModel
 } from "hotweb3";
 
@@ -111,7 +110,7 @@ export default {
       WrapPromiseTask(async () => {
         const remoteNode = new RemoteNode(this.$network.get().url, new Signer(Algorithm.ED25519, this.privateKey));
 
-        const caller = StorageReferenceModel.newStorageReference(this.account.reference)
+        const caller = storageReferenceFrom(this.account.reference)
         const nonceOfCaller = await remoteNode.getNonceOf(caller)
         const gasPrice = await remoteNode.getGasPrice()
         const chainId = await remoteNode.getChainId()
@@ -221,24 +220,24 @@ export default {
     this.uuid = this.$route.params.uuid
     this.setTransactionTimer()
 
-    WrapPromiseTask(async () => {
-      return this.$storageApi.getCurrentAccount(this.$network.get())
-    }).then(account => {
-      this.account = {...account}
-      this.$refs.verifyPasswordComponent.showModal({
-        account: this.account,
-        title: 'Account verification',
-        subtitle: 'Please enter password to verify the account of ' + this.account.name,
-        btnActionName: 'Verify',
-        closeOnIncorrectPwd: false
-      })
-    }).catch(err => {
-      this.showTransactionErrorView(err.message || 'Cannot retrieve account')
-      this.sendTransactionResponse({
-        status: false,
-        error: err.message || 'Cannot start transaction'
-      })
-    })
+    WrapPromiseTask(() => this.$storageApi.getCurrentAccount(this.$network.get()))
+        .then(account => {
+          this.account = {...account}
+          this.$refs.verifyPasswordComponent.showModal({
+            account: this.account,
+            title: 'Account verification',
+            subtitle: 'Please enter password to verify the account of ' + this.account.name,
+            btnActionName: 'Verify',
+            closeOnIncorrectPwd: false
+          })
+        })
+        .catch(err => {
+          this.showTransactionErrorView(err.message || 'Cannot retrieve account')
+          this.sendTransactionResponse({
+            status: false,
+            error: err.message || 'Cannot start transaction'
+          })
+        })
   }
 }
 </script>

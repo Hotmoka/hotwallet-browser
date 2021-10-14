@@ -1,7 +1,9 @@
 <template>
   <div class="navigation-container" v-if="showNavigationContainer">
     <div class="navigation">
-      <b-link class="float-left text-primary" v-if="showNavigation" @click="onBackClick">
+
+      <div v-if="!showBackNavigation"></div>
+      <b-link class="float-left text-primary" v-if="showBackNavigation" @click="onBackClick">
         <b-icon width="18" icon="arrow-left" variant="primary"></b-icon>
         Back
       </b-link>
@@ -24,7 +26,7 @@ export default {
   },
   data() {
     return {
-      showNavigation: false,
+      showBackNavigation: false,
       showNavigationContainer: true,
       title: null
     }
@@ -38,14 +40,17 @@ export default {
   },
   methods: {
     setNavigationVisibility(path) {
-      this.showNavigation = this.isPathForNavigation(path)
-      this.showNavigationContainer = path !== '/welcome' && this.showNavigation
+      this.showBackNavigation = this.isPathForBackNavigation(path)
+      this.showNavigationContainer = this.isPathForNavigation(path)
     },
     isPathForNavigation(path) {
       if (path.indexOf("/transaction") !== -1) {
         return false
       }
-      return !['/login', '/home', '/account'].includes(path)
+      return !['/login', '/home', '/welcome'].includes(path)
+    },
+    isPathForBackNavigation(path) {
+      return this.isPathForNavigation(path) && path !== '/account'
     },
     onExpandAppClick() {
       this.$browser.tabs.create({
