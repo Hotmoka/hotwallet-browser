@@ -1,14 +1,17 @@
 const browser = require("webextension-polyfill")
 const {Channel} = require('hotwallet-api')
 
-let channel
-
 /**
  * It initializes a communication channel between
  * the content script and the current web page.
  */
-const initCommunicationChannel = () => {
-    channel = new Channel('hotwallet-content-script', 'hotwallet-web-page', location.origin)
+const channel = new Channel('hotwallet-content-script', 'hotwallet-web-page', location.origin)
+
+/**
+ * It listens to channel events and it dispatches the events to background.
+ */
+const listenToChannelEvents = () => {
+
     channel.onData = data => {
 
         if (data.eventName === 'HotwalletTransaction') {
@@ -63,7 +66,26 @@ const dispatchToBackground = (message, data) => {
     })
 }
 
+/**
+ * It initializes a listener that listens to events from the background script.
+ */
+const listenToBackgroundScriptEvents = () => {
 
-initCommunicationChannel()
+    const port = browser.runtime.connect({name:"content-script-port"});
+    port.onMessage.addListener(message => {
+        if (message && message.hotmoka && message.hotmoka.type === 'event' && message.hotmoka.eventName) {
+            const eventName = message.hotmoka.eventName
+            const data = message.hotmoka.data
+
+            channel.sendMessage({
+                type: 'event',
+                eventName: eventName,
+                result: data
+            })
+        }
+    });
+}
+
+listenToChannelEvents()
 injectHotwalletApi()
-
+listenToBackgroundScriptEvents()

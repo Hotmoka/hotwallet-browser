@@ -51,9 +51,9 @@ export class BackgroundHandler {
         transaction.uuid = uuidv4()
 
         try {
+            this.transactionMapResponse.set(transaction.uuid, {sendResponse: pendingCallbackResponse})
             const transactions = await this.store.getStore('transactions')
             transactions[transaction.uuid] = transaction
-            this.transactionMapResponse.set(transaction.uuid, {sendResponse: pendingCallbackResponse})
 
             await this.store.setToStore('transactions', transactions)
             await this.connect()

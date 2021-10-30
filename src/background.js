@@ -4,6 +4,10 @@ const {publicStoreObjectKeys, privateStoreObjectKeys, networks} = require("./int
 
 (async() => {
     const backgroundHandler = new BackgroundHandler()
+    let contentScriptPort
+
+    // initializes the communication port with the content script
+    browser.runtime.onConnect.addListener(port => contentScriptPort = port);
 
     /**
      * The runtime message listener of the browser which
@@ -12,6 +16,10 @@ const {publicStoreObjectKeys, privateStoreObjectKeys, networks} = require("./int
     browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         if (message && message.hotmoka) {
+            if (message.hotmoka.type === 'event') {
+                contentScriptPort.postMessage(message);
+                return false
+            }
 
             if (message.hotmoka.type === 'connect') {
                 return backgroundHandler.connect()
