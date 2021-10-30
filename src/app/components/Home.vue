@@ -81,6 +81,7 @@
 import {RemoteNode} from "hotweb3";
 import {WrapPromiseTask, showErrorToast, EventBus, showInfoToast, storageReferenceFrom} from "../internal/utils";
 import {pushRoute, replaceRoute} from "../internal/router";
+import {DISCONNECTED} from "../internal/EventsApi";
 
 export default {
   name: "Home",
@@ -121,7 +122,7 @@ export default {
     onReceiveCoinsClick() {
       pushRoute('/receive-coins')
     },
-    onCopyToClipboardClick(type) {
+    onCopyToClipboardClick() {
       const text = this.isAccount ? this.account.reference : this.account.publicKeyBase58
       navigator.clipboard.writeText(text).then(() => showInfoToast(this, 'Info', 'Content copied to clipboard', 1600))
     },
@@ -142,9 +143,11 @@ export default {
           .catch(error => showErrorToast(this, 'Account', error.message || 'Cannot retrieve account details'))
     },
     onLogoutClick() {
-      WrapPromiseTask(() => this.$storageApi.setAccountAuth(this.account, false))
-          .then(() => replaceRoute('/login'))
-          .catch(() => showErrorToast(this, 'Account','Unable to logout'))
+      WrapPromiseTask(async () => {
+        await this.$storageApi.setAccountAuth(this.account, false)
+        this.$eventsApi.emit(DISCONNECTED)
+      }).then(() => replaceRoute('/login'))
+        .catch(() => showErrorToast(this, 'Account','Unable to logout'))
     },
     displayAccount() {
       WrapPromiseTask(async () => {

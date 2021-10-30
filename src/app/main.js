@@ -7,6 +7,7 @@ import VueRouter from 'vue-router'
 import App from './components/App'
 import {router} from "./internal/router";
 import {StorageApi} from "./internal/StorageApi";
+import {EventsApi} from "./internal/EventsApi";
 import {NetworkHolder} from "./internal/NetworkHolder";
 const browser = require('webextension-polyfill')
 
@@ -18,6 +19,7 @@ Vue.config.productionTip = false
 
 Vue.prototype.$browser = browser
 Vue.prototype.$storageApi = new StorageApi(browser)
+Vue.prototype.$eventsApi = new EventsApi(browser)
 Vue.prototype.$network = new NetworkHolder(Vue.prototype.$storageApi)
 
 const root = document.getElementById('app')
