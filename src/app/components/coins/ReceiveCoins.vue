@@ -48,9 +48,10 @@
 </template>
 
 <script>
-import {EventBus, showErrorToast, WrapPromiseTask} from "../../internal/utils";
+import {EventBus} from "../../internal/utils";
 import {AccountHelper} from "hotweb3";
 import QrCodeModal from "../features/QrCodeModal";
+import {Service} from "../../internal/Service";
 
 export default {
   name: "ReceiveCoins",
@@ -85,10 +86,7 @@ export default {
   },
   created() {
     EventBus.$emit('titleChange', 'Receive coins')
-
-    WrapPromiseTask(() => this.$storageApi.getCurrentAccount(this.$network.get()))
-        .then(account => this.account = account)
-        .catch(error => showErrorToast(this, 'Error', error.message || 'Cannot retrieve account'))
+    new Service().getCurrentAccount().then(account => this.account = account)
   }
 }
 </script>

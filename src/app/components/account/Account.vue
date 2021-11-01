@@ -96,6 +96,7 @@ import {AccountHelper, Bip39Dictionary, RemoteNode} from "hotweb3";
 import {replaceRoute} from "../../internal/router";
 import {fieldNotEmptyFeedback, stateFieldNotEmpty} from "../../internal/validators";
 import VerifyPasswordModal from "../features/VerifyPasswordModal";
+import {Service} from "../../internal/Service";
 
 export default {
   name: "Account",
@@ -178,16 +179,14 @@ export default {
   },
   created() {
     EventBus.$emit('titleChange', 'Account')
-    WrapPromiseTask(() => this.$storageApi.getCurrentAccount(this.$network.get()))
-        .then(account => {
-          this.account = account
-          this.isAccount = account.reference !== null && account.reference !== undefined
+    new Service().getCurrentAccount().then(account => {
+      this.account = account
+      this.isAccount = account.reference !== null && account.reference !== undefined
 
-          if (this.isAccount) {
-            this.words = AccountHelper.generateMnemonicWordsFrom(account.entropy, getHashOfStorageReference(account.reference), Bip39Dictionary.ENGLISH)
-          }
-        })
-        .catch(() => showErrorToast(this, 'Account', 'Cannot retrieve account'))
+      if (this.isAccount) {
+        this.words = AccountHelper.generateMnemonicWordsFrom(account.entropy, getHashOfStorageReference(account.reference), Bip39Dictionary.ENGLISH)
+      }
+    })
   }
 }
 </script>

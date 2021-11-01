@@ -81,7 +81,7 @@
 import {RemoteNode} from "hotweb3";
 import {WrapPromiseTask, showErrorToast, EventBus, showInfoToast, storageReferenceFrom} from "../internal/utils";
 import {pushRoute, replaceRoute} from "../internal/router";
-import {DISCONNECTED} from "../internal/EventsApi";
+import {Service} from "../internal/Service";
 
 export default {
   name: "Home",
@@ -143,11 +143,7 @@ export default {
           .catch(error => showErrorToast(this, 'Account', error.message || 'Cannot retrieve account details'))
     },
     onLogoutClick() {
-      WrapPromiseTask(async () => {
-        await this.$storageApi.setAccountAuth(this.account, false)
-        this.$eventsApi.emit(DISCONNECTED)
-      }).then(() => replaceRoute('/login'))
-        .catch(() => showErrorToast(this, 'Account','Unable to logout'))
+      new Service().logout(this.account).then(() => replaceRoute('/login'))
     },
     displayAccount() {
       WrapPromiseTask(async () => {

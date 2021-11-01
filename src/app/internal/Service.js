@@ -1,6 +1,8 @@
 import Vue from "vue";
 import {showErrorToast, WrapPromiseTask} from "./utils";
 import {AccountHelper, Bip39Dictionary} from "hotweb3";
+import {DISCONNECTED} from "./EventsApi";
+
 
 /**
  * Service class that wraps common tasks.
@@ -8,14 +10,14 @@ import {AccountHelper, Bip39Dictionary} from "hotweb3";
 export class Service extends Vue {
 
     /**
-     * Method to log in to Hotwallet.
+     * It performs a login to Hotwallet.
      * @param password the password
      * @return {Promise<void>} a promise that resolves to void
      */
     login(password) {
         return new Promise((resolve, reject) => {
             WrapPromiseTask(async () => {
-
+                console.error(this.$network.get())
                 // set password and init store
                 await this.$storageApi.setPassword(password)
                 await this.$storageApi.initPrivateStore()
@@ -44,6 +46,24 @@ export class Service extends Vue {
     }
 
     /**
+     * It performs a logout from Hotwallet.
+     * @param account the current account
+     * @return {Promise<void>} a promise that resolves to void
+     */
+    logout(account) {
+        return new Promise((resolve, reject) => {
+            WrapPromiseTask(async () => {
+                await this.$storageApi.setAccountAuth(account, false)
+                this.$eventsApi.emit(DISCONNECTED)
+            }).then(() => resolve())
+              .catch(() => {
+                    showErrorToast(this, 'Account', 'Unable to logout')
+                    reject()
+              })
+        })
+    }
+
+    /**
      * Returns the current public selected account.
      * @return {Promise<{name, publicKey}>} a promise that resolves to an account object
      */
@@ -60,6 +80,21 @@ export class Service extends Vue {
                   showErrorToast(this, 'Account', error.message || 'Cannot retrieve account')
                   reject()
               })
+        })
+    }
+
+    /**
+     * Returns the current logged account.
+     * @return {Promise<{Object}>} a promise that resolves to an account object
+     */
+    getCurrentAccount() {
+        return new Promise((resolve, reject) => {
+            WrapPromiseTask(() => this.$storageApi.getCurrentAccount(this.$network.get()))
+                .then(account => resolve(account))
+                .catch(error => {
+                    showErrorToast(this, 'Account', error.message || 'Cannot retrieve account')
+                    reject()
+                })
         })
     }
 }
