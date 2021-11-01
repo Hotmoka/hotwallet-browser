@@ -16,7 +16,7 @@ const {publicStoreObjectKeys, privateStoreObjectKeys, networks} = require("./int
     browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         if (message && message.hotmoka) {
-            if (message.hotmoka.type === 'event') {
+            if (message.hotmoka.type === 'event' && contentScriptPort) {
                 contentScriptPort.postMessage(message);
                 return false
             }
