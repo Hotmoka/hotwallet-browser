@@ -23,10 +23,9 @@
 </template>
 
 <script>
-import {AccountHelper, Bip39Dictionary} from "hotweb3";
-import {showErrorToast, WrapPromiseTask} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
 import {statePassword, invalidPasswordFeedback} from "../../internal/validators";
+import {Service} from "../../internal/Service"
 
 export default {
   name: "Login",
@@ -50,44 +49,15 @@ export default {
         return
       }
 
-      WrapPromiseTask(async () => {
-
-        // set password and init store
-        await this.$storageApi.setPassword(this.password)
-        await this.$storageApi.initPrivateStore()
-        const account = await this.$storageApi.getCurrentAccount(this.$network.get())
-
-        // verify public key
-        const publicKeyVerified = AccountHelper.verifyPublicKey(
-            this.password,
-            account.entropy,
-            Bip39Dictionary.ENGLISH,
-            account.publicKey
-        )
-
-        if (publicKeyVerified) {
-          await this.$storageApi.setAccountAuth(account, true)
-        } else {
-          throw new Error('Wrong password')
-        }
-
-      }).then(() => replaceRoute('/home'))
-        .catch(error => showErrorToast(this, 'Login', error.message || 'Error during login'))
-    },
-    getCurrentAccountName() {
-      WrapPromiseTask(async () => {
-
-        const account = await this.$storageApi.getStore('account')
-        if (!account) {
-          throw new Error('Cannot retrieve account')
-        }
-        return account
-      }).then(account => this.account = account)
-        .catch(error => showErrorToast(this, 'Login', error.message || 'Cannot retrieve account'))
+      new Service()
+          .login(this.password)
+          .then(() => replaceRoute('/home'))
     }
   },
   created() {
-    this.getCurrentAccountName()
+    new Service()
+        .getCurrentPublicAccount()
+        .then(account => this.account = account)
   }
 }
 </script>
