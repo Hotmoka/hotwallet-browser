@@ -77,6 +77,7 @@ export default {
         receiver: null,
         actuals: [],
         gas: '30000',
+        base64DataToSign: null,
         timer: 111
       },
       account: null,
@@ -114,6 +115,15 @@ export default {
         const nonceOfCaller = await remoteNode.getNonceOf(caller)
         const gasPrice = await remoteNode.getGasPrice()
         const chainId = await remoteNode.getChainId()
+
+        if (this.transaction.base64DataToSign) {
+          const signedData = remoteNode.signer.sign(Buffer.from(this.transaction.base64DataToSign))
+          this.transaction.actuals.push({
+            type: 'java.lang.String',
+            value: signedData
+          })
+          this.transaction.methodSignature.formals.push('java.lang.String')
+        }
 
         const method = this.transaction.methodSignature.voidMethod ?
             new VoidMethodSignatureModel(this.transaction.methodSignature.definingClass, this.transaction.methodSignature.methodName, this.transaction.methodSignature.formals) :
