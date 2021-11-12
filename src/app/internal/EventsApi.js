@@ -18,6 +18,7 @@ export class EventsApi {
     }
 }
 
-export const CONNECTED = 'onConnnected'
-export const DISCONNECTED = 'onDisconnnected'
+export const CONNECTED = 'onConnected'
+export const DISCONNECTED = 'onDisconnected'
 export const NETWORK_CHANGED = 'onNetworkChanged'
+export const ACCOUNT_CHANGED = 'onAccountChanged'

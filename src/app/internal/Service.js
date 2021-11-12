@@ -1,7 +1,8 @@
 import Vue from "vue";
-import {getNetworkByValue, showErrorToast, WrapPromiseTask} from "./utils";
+import {EventBus, getNetworkByValue, showErrorToast, WrapPromiseTask} from "./utils";
 import {AccountHelper, Bip39Dictionary, RemoteNode} from "hotweb3";
-import {CONNECTED, DISCONNECTED, NETWORK_CHANGED} from "./EventsApi";
+import {ACCOUNT_CHANGED, CONNECTED, DISCONNECTED, NETWORK_CHANGED} from "./EventsApi";
+import {replaceRoute} from "./router";
 
 
 /**
@@ -185,5 +186,36 @@ export class Service extends Vue {
         } catch (e) {
             return false
         }
+    }
+
+    /**
+     * It switches to a new account.
+     * @param account the new account
+     * @param password the password of the new account
+     * @return {Promise<void>} a promise that resolves to void
+     */
+    switchToAccount(account, password) {
+        return new Promise((resolve, reject) => {
+            WrapPromiseTask(async () => {
+
+                // set new password
+                await this.$storageApi.setPassword(password)
+                await this.$storageApi.setAccountAuth(account, true)
+                await this.$storageApi.selectNetwork(account.network)
+                const currentNetwork = await this.$storageApi.getCurrentNetwork()
+                this.$network.set(currentNetwork)
+
+                // notify network change
+                EventBus.$emit('networkChange', currentNetwork)
+
+            }).then(() => {
+                resolve()
+                console.log(account)
+                this.$eventsApi.emit(ACCOUNT_CHANGED, account)
+            }).catch(err => {
+                showErrorToast(this, 'Accounts', err.message || 'Cannot switch to the selected account')
+                reject()
+            })
+        })
     }
 }

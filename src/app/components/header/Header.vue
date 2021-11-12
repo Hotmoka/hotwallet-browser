@@ -45,6 +45,7 @@ import {EventBus, showErrorToast, sortNetworks} from "../../internal/utils";
 import {stateFieldNotEmpty} from "../../internal/validators";
 import {replaceRoute} from "../../internal/router";
 import {Service} from "../../internal/Service";
+import {NETWORK_CHANGED} from "../../internal/EventsApi";
 
 export default {
   name: "Header",
@@ -168,7 +169,10 @@ export default {
     }
   },
   created() {
-    EventBus.$on('networkChange', (network) => this.selectedNetwork = network.value)
+    EventBus.$on('networkChange', network => {
+      this.selectedNetwork = network.value
+      this.$eventsApi.emit(NETWORK_CHANGED, network)
+    })
     this.networkSelectionDisabled = this.$route.path !== '/home' && this.$route.path !== '/welcome'
     this.setNetworks()
   }

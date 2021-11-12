@@ -30,6 +30,8 @@
 import {EventBus, showErrorToast, trimAddress, WrapPromiseTask} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
 import VerifyPasswordModal from "../features/VerifyPasswordModal";
+import {Service} from "../../internal/Service";
+
 export default {
   name: "ListAccounts",
   components: {VerifyPasswordModal},
@@ -46,23 +48,10 @@ export default {
     },
     onPasswordVerified(result) {
       if (result.verified) {
-        WrapPromiseTask(async () => {
-
-          // set new password
-          await this.$storageApi.setPassword(result.password)
-          await this.$storageApi.setAccountAuth(this.selectedAccount, true)
-          await this.$storageApi.selectNetwork(this.selectedAccount.network)
-          const currentNetwork = await this.$storageApi.getCurrentNetwork()
-          this.$network.set(currentNetwork)
-
-          // notify network change
-          EventBus.$emit('networkChange', currentNetwork)
-
-        }).then(() => replaceRoute('/home'))
-          .catch(err => {
-              this.resetAccountSelection()
-              showErrorToast(this, 'Accounts', err.message || 'Cannot switch to the selected account')
-          })
+        new Service()
+          .switchToAccount(this.selectedAccount, result.password)
+          .then(() => replaceRoute('/home'))
+          .catch(() => this.resetAccountSelection())
       }
     },
     resetAccountSelection() {
