@@ -18,4 +18,6 @@ export class EventsApi {
     }
 }
 
+export const CONNECTED = 'onConnnected'
 export const DISCONNECTED = 'onDisconnnected'
+export const NETWORK_CHANGED = 'onNetworkChanged'

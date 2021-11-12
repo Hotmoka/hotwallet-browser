@@ -1,7 +1,7 @@
 import Vue from "vue";
-import {showErrorToast, WrapPromiseTask} from "./utils";
-import {AccountHelper, Bip39Dictionary} from "hotweb3";
-import {DISCONNECTED} from "./EventsApi";
+import {getNetworkByValue, showErrorToast, WrapPromiseTask} from "./utils";
+import {AccountHelper, Bip39Dictionary, RemoteNode} from "hotweb3";
+import {CONNECTED, DISCONNECTED, NETWORK_CHANGED} from "./EventsApi";
 
 
 /**
@@ -17,7 +17,7 @@ export class Service extends Vue {
     login(password) {
         return new Promise((resolve, reject) => {
             WrapPromiseTask(async () => {
-                console.error(this.$network.get())
+
                 // set password and init store
                 await this.$storageApi.setPassword(password)
                 await this.$storageApi.initPrivateStore()
@@ -37,11 +37,13 @@ export class Service extends Vue {
                     throw new Error('Wrong password')
                 }
 
-            }).then(() => resolve())
-              .catch(error => {
-                  showErrorToast(this, 'Login', error.message || 'Error during login')
-                  reject()
-              })
+            }).then(() => {
+                resolve()
+                this.$eventsApi.emit(CONNECTED)
+            }).catch(error => {
+                showErrorToast(this, 'Login', error.message || 'Error during login')
+                reject()
+            })
         })
     }
 
@@ -96,5 +98,92 @@ export class Service extends Vue {
                     reject()
                 })
         })
+    }
+
+    /**
+     * It changes the current network to a new network.
+     * @param selectedNetwork the new network
+     * @param networks the networks
+     * @return {Promise<unknown>} a promises that resolves to the new network
+     */
+    changeNetwork(selectedNetwork, networks) {
+        return new Promise((resolve, reject) => {
+            WrapPromiseTask(async () => {
+                const network = getNetworkByValue(selectedNetwork, networks)
+                if (!network) {
+                    throw new Error('Network not found')
+                }
+
+                await this.$storageApi.selectNetwork(network)
+                const accountsForNetwork = await this.$storageApi.getAccountsForNetwork(network)
+
+                if (accountsForNetwork.length === 0) {
+                    return {network, newAccount: true}
+                } else {
+                    await this.$storageApi.setAccountAuth(accountsForNetwork[0], true)
+                    return {network, newAccount: false}
+                }
+            }).then(result => {
+                resolve(result)
+                this.$eventsApi.emit(NETWORK_CHANGED, result.network)
+            }).catch(e => {
+                showErrorToast(this, 'Network', e.message || 'Cannot set network')
+                reject()
+            })
+        })
+    }
+
+    /**
+     * It connects to a new network.
+     * @param url the url of the network
+     * @param name the name of the network
+     * @return {Promise<unknown>} a promise that resolves to the network object
+     */
+    connectToNetwork(url, name) {
+        return new Promise((resolve, reject) => {
+            WrapPromiseTask(async () => {
+                const splittedUrl = url.split("://")
+                const networkName = name && name.length > 0 ? name : null
+
+                const network = {
+                    url: url,
+                    protocol: splittedUrl[0],
+                    text: networkName ? networkName : splittedUrl[1],
+                    value: networkName ? networkName + '_' + splittedUrl[1] : splittedUrl[1],
+                    selected: true
+                }
+
+                const validNetwork = await this.testNetwork(network)
+                if (!validNetwork) {
+                    throw new Error('Cannot connect to network')
+                }
+
+                // add and set network as selected
+                await this.$storageApi.addNetwork(network)
+                await this.$storageApi.selectNetwork(network)
+                await this.$storageApi.logoutAllAccounts()
+
+                return network
+            }).then(network => {
+                resolve(network)
+                this.$eventsApi.emit(NETWORK_CHANGED, network)
+            }).catch(error => {
+                reject(error)
+            })
+        })
+    }
+
+    /**
+     * Helper method to test if a network is a valid network.
+     * @param network the network to test
+     * @return {Promise<boolean>} a promise that resolves to true if the network is valid, false otherwise
+     */
+    async testNetwork(network) {
+        try {
+            const takamakaCode = await new RemoteNode(network.url).getTakamakaCode()
+            return takamakaCode && takamakaCode.hash
+        } catch (e) {
+            return false
+        }
     }
 }

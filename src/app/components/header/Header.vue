@@ -41,10 +41,10 @@
 </template>
 
 <script>
-import {EventBus, showErrorToast, WrapPromiseTask, getNetworkByValue, sortNetworks} from "../../internal/utils";
+import {EventBus, showErrorToast, sortNetworks} from "../../internal/utils";
 import {stateFieldNotEmpty} from "../../internal/validators";
 import {replaceRoute} from "../../internal/router";
-import {RemoteNode} from "hotweb3";
+import {Service} from "../../internal/Service";
 
 export default {
   name: "Header",
@@ -100,89 +100,48 @@ export default {
     onConnectToCustomNetworkClick() {
       this.customNetwork.showModal = false
 
-      WrapPromiseTask(async () => {
-        const splittedUrl = this.customNetwork.form.url.split("://")
-        const networkName = this.customNetwork.form.name && this.customNetwork.form.name.length > 0 ? this.customNetwork.form.name : null
+      new Service()
+          .connectToNetwork(this.customNetwork.form.url, this.customNetwork.form.name)
+          .then(network => {
+            this.resetForm()
+            this.$network.set(network)
+            this.networks.push(network)
+            this.networks = sortNetworks(this.networks)
+            this.selectedNetwork = network.value
+            replaceRoute('/')
+          })
+          .catch(error => {
+            this.resetForm()
+            showErrorToast(this, 'Custom network connection', error.message || 'Cannot connect to custom network')
 
-        const network = {
-          url: this.customNetwork.form.url,
-          protocol: splittedUrl[0],
-          text: networkName ? networkName : splittedUrl[1],
-          value: networkName ? networkName + '_' + splittedUrl[1] : splittedUrl[1],
-          selected: true
-        }
-
-        const validNetwork = await this.testNetwork(network)
-        if (!validNetwork) {
-          throw new Error('Cannot connect to network')
-        }
-
-        // add and set network as selected
-        await this.$storageApi.addNetwork(network)
-        await this.$storageApi.selectNetwork(network)
-        await this.$storageApi.logoutAllAccounts()
-
-        return network
-      })
-      .then(network => {
-        this.resetForm()
-        this.$network.set(network)
-        this.networks.push(network)
-        this.networks = sortNetworks(this.networks)
-        this.selectedNetwork = network.value
-        replaceRoute('/')
-      })
-      .catch(error => {
-        this.resetForm()
-        showErrorToast(this,'Custom network connection', error.message || 'Cannot connect to custom network')
-
-        // restore previous network
-        this.selectedNetwork = this.$network.get().value
-        if (this.$route.path === '/home') {
-          EventBus.$emit('reloadAccount')
-        }
-      })
+            // restore previous network
+            this.selectedNetwork = this.$network.get().value
+            if (this.$route.path === '/home') {
+              EventBus.$emit('reloadAccount')
+            }
+          })
     },
     onNetworkChange(selectedNetwork) {
       if (this.networkSelectionDisabled) {
-        showErrorToast(this,'Network', 'Option disabled')
+        showErrorToast(this, 'Network', 'Option disabled')
         return
       }
 
       if (selectedNetwork === 'customNetwork') {
         this.customNetwork.showModal = true
-
       } else {
+        new Service()
+            .changeNetwork(selectedNetwork, this.networks)
+            .then(result => {
+              this.$network.set(result.network)
+              this.selectedNetwork = result.network.value
 
-        const network = getNetworkByValue(selectedNetwork, this.networks)
-        if (!network) {
-          showErrorToast(this,'Network', 'Network not found')
-        } else {
-
-          WrapPromiseTask(async () => {
-            await this.$storageApi.selectNetwork(network)
-            const accountsForNetwork = await this.$storageApi.getAccountsForNetwork(network)
-
-            if (accountsForNetwork.length === 0) {
-              return {network, newAccount: true}
-            } else {
-              await this.$storageApi.setAccountAuth(accountsForNetwork[0], true)
-              return {network, newAccount: false}
-            }
-
-          })
-          .then(result => {
-            this.$network.set(result.network)
-            this.selectedNetwork = result.network.value
-
-            if (result.newAccount) {
-              replaceRoute('/')
-            } else if (this.$route.path === '/home') {
-              EventBus.$emit('reloadAccount')
-            }
-          })
-          .catch(() => showErrorToast(this,'Network', 'Cannot set network'))
-        }
+              if (result.newAccount) {
+                replaceRoute('/')
+              } else if (this.$route.path === '/home') {
+                EventBus.$emit('reloadAccount')
+              }
+            })
       }
     },
     onHeaderImageClick() {
@@ -196,19 +155,15 @@ export default {
         replaceRoute('/home')
       }
     },
-    setNetworks: async function() {
-      const _networks = await this.$storageApi.getNetworks()
-      this.networks = sortNetworks(_networks)
-      const currentNetwork = await this.$storageApi.getCurrentNetwork()
-      this.$network.set(currentNetwork)
-      this.selectedNetwork = currentNetwork.value
-    },
-    testNetwork: async function(network) {
+    setNetworks: async function () {
       try {
-        const takamakaCode = await new RemoteNode(network.url).getTakamakaCode()
-        return takamakaCode && takamakaCode.hash
+        const _networks = await this.$storageApi.getNetworks()
+        this.networks = sortNetworks(_networks)
+        const currentNetwork = await this.$storageApi.getCurrentNetwork()
+        this.$network.set(currentNetwork)
+        this.selectedNetwork = currentNetwork.value
       } catch (e) {
-        return false
+        showErrorToast(this, 'Network', 'Network error')
       }
     }
   },
