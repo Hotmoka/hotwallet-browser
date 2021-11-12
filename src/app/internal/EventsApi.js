@@ -1,5 +1,5 @@
 /**
- * Class to send events to Hotwallet.
+ * Class to send events from Hotwallet to a client.
  */
 export class EventsApi {
 

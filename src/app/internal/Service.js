@@ -1,8 +1,8 @@
 import Vue from "vue";
-import {EventBus, getNetworkByValue, showErrorToast, WrapPromiseTask} from "./utils";
+import {EventBus, filterAccount, filterNetwork, getNetworkByValue, showErrorToast, WrapPromiseTask} from "./utils";
 import {AccountHelper, Bip39Dictionary, RemoteNode} from "hotweb3";
 import {ACCOUNT_CHANGED, CONNECTED, DISCONNECTED, NETWORK_CHANGED} from "./EventsApi";
-import {replaceRoute} from "./router";
+
 
 
 /**
@@ -38,9 +38,10 @@ export class Service extends Vue {
                     throw new Error('Wrong password')
                 }
 
-            }).then(() => {
+                return account
+            }).then(account => {
                 resolve()
-                this.$eventsApi.emit(CONNECTED)
+                this.$eventsApi.emit(CONNECTED, filterAccount(account))
             }).catch(error => {
                 showErrorToast(this, 'Login', error.message || 'Error during login')
                 reject()
@@ -102,15 +103,16 @@ export class Service extends Vue {
     }
 
     /**
-     * It changes the current network to a new network.
-     * @param selectedNetwork the new network
+     * It changes the current network with a new network.
+     * If the network holds an account, the current account will be changed with the first account of the network.
+     * @param network the new network
      * @param networks the networks
      * @return {Promise<unknown>} a promises that resolves to the new network
      */
-    changeNetwork(selectedNetwork, networks) {
+    changeNetwork(network, networks) {
         return new Promise((resolve, reject) => {
             WrapPromiseTask(async () => {
-                const network = getNetworkByValue(selectedNetwork, networks)
+                const network = getNetworkByValue(network, networks)
                 if (!network) {
                     throw new Error('Network not found')
                 }
@@ -122,11 +124,12 @@ export class Service extends Vue {
                     return {network, newAccount: true}
                 } else {
                     await this.$storageApi.setAccountAuth(accountsForNetwork[0], true)
-                    return {network, newAccount: false}
+                    return {network, newAccount: false, account: accountsForNetwork[0]}
                 }
             }).then(result => {
                 resolve(result)
-                this.$eventsApi.emit(NETWORK_CHANGED, result.network)
+                this.$eventsApi.emit(NETWORK_CHANGED, filterNetwork(result.network))
+                this.$eventsApi.emit(ACCOUNT_CHANGED, result.newAccount ? null : result.account)
             }).catch(e => {
                 showErrorToast(this, 'Network', e.message || 'Cannot set network')
                 reject()
@@ -135,7 +138,7 @@ export class Service extends Vue {
     }
 
     /**
-     * It connects to a new network.
+     * It connects to a new network and logs out from the current account.
      * @param url the url of the network
      * @param name the name of the network
      * @return {Promise<unknown>} a promise that resolves to the network object
@@ -167,7 +170,8 @@ export class Service extends Vue {
                 return network
             }).then(network => {
                 resolve(network)
-                this.$eventsApi.emit(NETWORK_CHANGED, network)
+                this.$eventsApi.emit(NETWORK_CHANGED, filterNetwork(network))
+                this.$eventsApi.emit(ACCOUNT_CHANGED, null)
             }).catch(error => {
                 reject(error)
             })
@@ -210,8 +214,8 @@ export class Service extends Vue {
 
             }).then(() => {
                 resolve()
-                console.log(account)
-                this.$eventsApi.emit(ACCOUNT_CHANGED, account)
+                this.$eventsApi.emit(ACCOUNT_CHANGED, filterAccount(account))
+                this.$eventsApi.emit(NETWORK_CHANGED, filterNetwork(account.network))
             }).catch(err => {
                 showErrorToast(this, 'Accounts', err.message || 'Cannot switch to the selected account')
                 reject()

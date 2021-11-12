@@ -98,3 +98,22 @@ export const WrapPromiseTask = (promiseTask) => {
 			})
 	})
 }
+
+
+export const filterNetwork = network => {
+	return {
+		url: network.url,
+		value: network.value
+	}
+}
+
+export const filterAccount = account => {
+	return {
+		name: account.name,
+		balance: account.balance,
+		balanceRed: account.balanceRed,
+		reference: account.reference,
+		publicKey: account.publicKey,
+		network: account.network
+	}
+}

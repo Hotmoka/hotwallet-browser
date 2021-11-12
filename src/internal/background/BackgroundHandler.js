@@ -1,5 +1,6 @@
 import {StoreHelper} from "../store/StoreHelper";
 import {Store} from "../store/Store";
+import {filterAccount} from "../../app/internal/utils";
 const { v4: uuidv4 } = require('uuid')
 const browser = require("webextension-polyfill")
 
@@ -18,7 +19,7 @@ export class BackgroundHandler {
 
     /**
      * It connects to the wallet and returns the current account.
-     * @return {Promise<{address: string, name: string}>} a promise that resolves to the current account
+     * @return {Promise<{Account}>} a promise that resolves to the current account
      */
     async connect() {
         const isStoreInitialized = this.store.isInitialized()
@@ -34,10 +35,7 @@ export class BackgroundHandler {
         } else if (!account.logged) {
             throw new Error('Please login to Hotwallet')
         } else {
-            return {
-                name: account.name,
-                address: account.reference
-            }
+            return filterAccount(account)
         }
     }
 
