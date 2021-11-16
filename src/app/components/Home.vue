@@ -44,8 +44,8 @@
 
       <div>
         <h6 class="text-dark" style="margin-bottom: 2rem">Balance</h6>
-        <h4 class="text-success">{{ account.balance }} Panarea </h4>
-        <h4 class="text-danger">{{ account.balanceRed }} Panarea </h4>
+        <h4 class="text-success">{{ formattedBalance }} Panarea </h4>
+        <h4 class="text-danger">{{ formattedBalanceRed }} Panarea </h4>
 
         <div class="container-actions">
           <div class="action-btn" :class="(account.balance < 1 || !isAccount) ? 'disabled' : ''" @click="onSendCoinsClick">
@@ -79,7 +79,14 @@
 
 <script>
 import {RemoteNode} from "hotweb3";
-import {WrapPromiseTask, showErrorToast, EventBus, showInfoToast, storageReferenceFrom} from "../internal/utils";
+import {
+  WrapPromiseTask,
+  showErrorToast,
+  EventBus,
+  showInfoToast,
+  storageReferenceFrom,
+  formatCoins
+} from "../internal/utils";
 import {pushRoute, replaceRoute} from "../internal/router";
 import {Service} from "../internal/Service";
 
@@ -99,6 +106,12 @@ export default {
   computed: {
     isPopup() {
       return this.$isPopup
+    },
+    formattedBalance() {
+      return formatCoins(this.account.balance)
+    },
+    formattedBalanceRed() {
+      return formatCoins(this.account.balanceRed)
     }
   },
   methods: {

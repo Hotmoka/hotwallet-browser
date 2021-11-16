@@ -27,7 +27,7 @@
 
         <b-form-group>
           <label>Amount</label>
-          <p class="txt-secondary">{{ amount }} Panarea </p>
+          <p class="txt-secondary">{{ formattedAmount }} Panarea </p>
         </b-form-group>
 
         <b-form-group v-if="transaction">
@@ -43,7 +43,7 @@
 </template>
 
 <script>
-import {EventBus, storageReferenceToString, trimAddress} from "../../internal/utils";
+import {EventBus, formatCoins, storageReferenceToString, trimAddress} from "../../internal/utils";
 
 export default {
   name: "CoinsReceipt",
@@ -68,6 +68,9 @@ export default {
     trimAccountAddress() {
       return trimAddress(this.from)
     },
+    formattedAmount() {
+        return formatCoins(this.amount)
+    }
   },
   methods: {
     buildShareText() {
@@ -76,19 +79,20 @@ export default {
       const transactionReference = this.transaction ? this.transaction.hash : ''
       const accountReference = this.account && this.account.reference ? storageReferenceToString(this.account.reference) : ''
 
+      const amount = formatCoins(this.amount)
       if (this.account) {
         // we've sent coins to a key
         if (this.anonymous) {
-          body = 'An amount of ' + this.amount + ' Panarea has been sent from ' + this.from + ' to a new account with storage reference '
+          body = 'An amount of ' + amount + ' Panarea has been sent from ' + this.from + ' to a new account with storage reference '
               + accountReference + ' and key ' + this.to + '. You can find confirmation in ' + transactionReference +
               '. Since the transfer was anonymous, who holds the key sees it bound now, automatically, to that storage reference and can already control the account.'
         } else {
-          body = 'An amount of ' + this.amount + ' Panarea has been sent from ' + this.from + ' to a new account with storage reference '
+          body = 'An amount of ' + amount + ' Panarea has been sent from ' + this.from + ' to a new account with storage reference '
               + accountReference + ' and key ' + this.to + '. You can find confirmation in ' + transactionReference +
               '. Who holds the key can now bind it to that storage reference and control the account.'
         }
       } else {
-        body = 'An amount of ' + this.amount + ' Panarea has been sent from ' + this.from + ' to ' + this.to + '. You can find confirmation in ' + transactionReference
+        body = 'An amount of ' + amount + ' Panarea has been sent from ' + this.from + ' to ' + this.to + '. You can find confirmation in ' + transactionReference
       }
 
       return 'mailto:?body=' + body + '&subject=' + subject

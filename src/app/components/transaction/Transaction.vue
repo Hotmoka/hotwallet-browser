@@ -9,7 +9,7 @@
         <div class="text-left form-container">
           <b-form-group>
             <label>Amount</label>
-            <p class="txt-secondary">{{ transaction.amount }} Panarea </p>
+            <p class="txt-secondary">{{ formattedPremium }} Panarea </p>
           </b-form-group>
 
           <b-form-group>
@@ -47,7 +47,7 @@
 </template>
 
 <script>
-import {EventBus, showErrorToast, storageReferenceFrom, WrapPromiseTask} from "../../internal/utils";
+import {EventBus, formatCoins, showErrorToast, storageReferenceFrom, WrapPromiseTask} from "../../internal/utils";
 import VerifyPasswordModal from "../features/VerifyPasswordModal";
 import {
   AccountHelper,
@@ -76,12 +76,17 @@ export default {
         methodSignature: null,
         receiver: null,
         actuals: [],
-        gas: '30000',
+        gas: formatCoins('30000'),
         base64DataToSign: null,
         timer: 111
       },
       account: null,
       privateKey: null
+    }
+  },
+  computed: {
+    formattedPremium() {
+      return formatCoins(this.transaction.amount)
     }
   },
   methods: {

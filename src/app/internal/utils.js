@@ -117,3 +117,11 @@ export const filterAccount = account => {
 		network: account.network
 	}
 }
+
+export const formatCoins = coins => {
+	try {
+		return new Intl.NumberFormat('de-DE').format(coins)
+	} catch (e) {
+		return "0"
+	}
+}
