@@ -44,8 +44,8 @@
 
       <div>
         <h6 class="text-dark" style="margin-bottom: 2rem">Balance</h6>
-        <h4 class="text-success">{{ formattedBalance }} Panarea </h4>
-        <h4 class="text-danger">{{ formattedBalanceRed }} Panarea </h4>
+        <h4 class="text-success">{{ formatCoins(this.account.balance) }} Panarea </h4>
+        <h4 class="text-danger">{{ formatCoins(this.account.balanceRed) }} Panarea </h4>
 
         <div class="container-actions">
           <div class="action-btn" :class="(account.balance < 1 || !isAccount) ? 'disabled' : ''" @click="onSendCoinsClick">
@@ -84,14 +84,15 @@ import {
   showErrorToast,
   EventBus,
   showInfoToast,
-  storageReferenceFrom,
-  formatCoins
+  storageReferenceFrom
 } from "../internal/utils";
 import {pushRoute, replaceRoute} from "../internal/router";
 import {Service} from "../internal/Service";
+import {coinFormatter} from "../internal/mixins";
 
 export default {
   name: "Home",
+  mixins: [coinFormatter],
   data() {
     return {
       showOptionsMenu: false,
@@ -106,12 +107,6 @@ export default {
   computed: {
     isPopup() {
       return this.$isPopup
-    },
-    formattedBalance() {
-      return formatCoins(this.account.balance)
-    },
-    formattedBalanceRed() {
-      return formatCoins(this.account.balanceRed)
     }
   },
   methods: {

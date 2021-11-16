@@ -27,7 +27,7 @@
 
         <b-form-group>
           <label>Amount</label>
-          <p class="txt-secondary">{{ formattedAmount }} Panarea </p>
+          <p class="txt-secondary">{{ formatCoins(this.amount) }} Panarea </p>
         </b-form-group>
 
         <b-form-group v-if="transaction">
@@ -43,10 +43,12 @@
 </template>
 
 <script>
-import {EventBus, formatCoins, storageReferenceToString, trimAddress} from "../../internal/utils";
+import {EventBus, storageReferenceToString, trimAddress} from "../../internal/utils";
+import {coinFormatter} from "../../internal/mixins";
 
 export default {
   name: "CoinsReceipt",
+  mixins: [coinFormatter],
   props: {
     account: Object,
     from: String,
@@ -62,14 +64,11 @@ export default {
     }
   },
   computed: {
-      toStringNewAccount() {
+     toStringNewAccount() {
         return this.account && this.account.reference ? storageReferenceToString(this.account.reference) : ''
     },
     trimAccountAddress() {
       return trimAddress(this.from)
-    },
-    formattedAmount() {
-        return formatCoins(this.amount)
     }
   },
   methods: {
@@ -79,7 +78,7 @@ export default {
       const transactionReference = this.transaction ? this.transaction.hash : ''
       const accountReference = this.account && this.account.reference ? storageReferenceToString(this.account.reference) : ''
 
-      const amount = formatCoins(this.amount)
+      const amount = this.formatCoins(this.amount)
       if (this.account) {
         // we've sent coins to a key
         if (this.anonymous) {

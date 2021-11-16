@@ -9,12 +9,12 @@
         <div class="text-left form-container">
           <b-form-group>
             <label>Amount</label>
-            <p class="txt-secondary">{{ formattedPremium }} Panarea </p>
+            <p class="txt-secondary">{{ formatCoins(this.transaction.amount) }} Panarea </p>
           </b-form-group>
 
           <b-form-group>
             <label>Transaction Gas</label>
-            <p class="txt-secondary">{{ formattedGas }} Panarea </p>
+            <p class="txt-secondary">{{ formatCoins(this.transaction.gas) }} Panarea </p>
           </b-form-group>
 
           <b-form-group>
@@ -47,16 +47,18 @@
 </template>
 
 <script>
-import {EventBus, formatCoins, showErrorToast, WrapPromiseTask} from "../../internal/utils";
+import {EventBus, showErrorToast, WrapPromiseTask} from "../../internal/utils";
 import VerifyPasswordModal from "../features/VerifyPasswordModal";
 import {
   AccountHelper,
    Bip39Dictionary,
 } from "hotweb3";
 import {Service} from "../../internal/Service";
+import {coinFormatter} from "../../internal/mixins";
 
 export default {
   name: "Transaction",
+  mixins: [coinFormatter],
   components: {VerifyPasswordModal},
   data() {
     return {
@@ -77,14 +79,6 @@ export default {
       },
       account: null,
       privateKey: null
-    }
-  },
-  computed: {
-    formattedPremium() {
-      return formatCoins(this.transaction.amount)
-    },
-    formattedGas() {
-      return formatCoins(this.transaction.gas)
     }
   },
   methods: {
