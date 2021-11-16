@@ -65,7 +65,7 @@
             id="i-address"
         >
           <label>Payer</label>
-          <p class="txt-secondary"> {{ payer.name }} - {{ payerAddress }}</p>
+          <p class="txt-secondary"> {{ payer.name }} - {{ trimAccountAddress(payer.reference) }}</p>
         </b-form-group>
 
         <b-button @click="onCreateAccountClick" variant="primary" :disabled="stateFormDisabled">Create</b-button>
@@ -81,7 +81,6 @@ import {
   showErrorToast,
   storageReferenceFrom,
   storageReferenceToString,
-  trimAddress,
   WrapPromiseTask
 } from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
@@ -92,9 +91,11 @@ import {
   statePassword
 } from "../../internal/validators";
 import VerifyPasswordModal from "../features/VerifyPasswordModal";
+import {accountUtils} from "../../internal/mixins";
 
 export default {
   name: "CreateAccount",
+  mixins: [accountUtils],
   components: { VerifyPasswordModal },
   data() {
     return {
@@ -130,9 +131,6 @@ export default {
     },
     invalidFeedbackName() {
       return fieldNotEmptyFeedback(this.newAccount.name, 'Please enter the account\'s name')
-    },
-    payerAddress() {
-      return this.payer ? trimAddress(this.payer.reference) : ''
     }
   },
   methods: {
