@@ -7,7 +7,7 @@
 
         <b-form-group>
           <label>From</label>
-          <p class="txt-secondary" v-if="fromFaucet">Faucet - {{ trimAccountAddress }} </p>
+          <p class="txt-secondary" v-if="fromFaucet">Faucet - {{ trimAccountAddress(from) }} </p>
           <p class="txt-secondary" v-if="!fromFaucet">{{ from }} </p>
         </b-form-group>
 
@@ -18,7 +18,7 @@
 
         <b-form-group v-if="account && account.reference && account.reference.transaction">
           <label>Storage reference of new account <b-icon id="i-new-account-help" width="18" icon="question-circle-fill" variant="info"></b-icon></label>
-          <p class="txt-secondary">{{ toStringNewAccount }}</p>
+          <p class="txt-secondary">{{ toStringAccount(account) }}</p>
 
           <b-tooltip target="i-new-account-help" triggers="hover">
             Who holds the key {{ to }} can now bind it to that storage reference and control the account
@@ -43,12 +43,12 @@
 </template>
 
 <script>
-import {EventBus, storageReferenceToString, trimAddress} from "../../internal/utils";
-import {coinFormatter} from "../../internal/mixins";
+import {EventBus} from "../../internal/utils";
+import {accountUtils, coinFormatter} from "../../internal/mixins";
 
 export default {
   name: "CoinsReceipt",
-  mixins: [coinFormatter],
+  mixins: [coinFormatter, accountUtils],
   props: {
     account: Object,
     from: String,
@@ -63,20 +63,12 @@ export default {
       shareHref: ''
     }
   },
-  computed: {
-     toStringNewAccount() {
-        return this.account && this.account.reference ? storageReferenceToString(this.account.reference) : ''
-    },
-    trimAccountAddress() {
-      return trimAddress(this.from)
-    }
-  },
   methods: {
     buildShareText() {
       const subject = 'Hotmoka send receipt'
       let body = ''
       const transactionReference = this.transaction ? this.transaction.hash : ''
-      const accountReference = this.account && this.account.reference ? storageReferenceToString(this.account.reference) : ''
+      const accountReference = this.toStringAccount(this.account)
 
       const amount = this.formatCoins(this.amount)
       if (this.account) {

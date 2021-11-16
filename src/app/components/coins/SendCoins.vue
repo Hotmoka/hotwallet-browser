@@ -61,7 +61,7 @@
 
         <b-form-group id="i-payer" v-if="!fromFaucet">
           <label>Payer</label>
-          <p class="txt-secondary" v-if="payer"> {{payer.name}} - {{payerAddress}}</p>
+          <p class="txt-secondary" v-if="payer"> {{payer.name}} - {{trimAccountAddress(payer.reference)}}</p>
         </b-form-group>
 
         <b-button @click="onSendClick" variant="primary" :disabled="!stateDestination || !stateAmount">Send</b-button>
@@ -77,7 +77,6 @@ import {fieldNotEmptyFeedback, stateFieldNotEmpty} from "../../internal/validato
 import {
   showErrorToast,
   WrapPromiseTask,
-  trimAddress,
   showSuccessToast, EventBus, storageReferenceFrom, storageReferenceToString
 } from "../../internal/utils";
 import {
@@ -91,10 +90,12 @@ import {
 } from "hotweb3";
 import {replaceRoute} from "../../internal/router";
 import VerifyPasswordModal from "../features/VerifyPasswordModal";
+import {accountUtils} from "../../internal/mixins";
 
 
 export default {
   name: "SendCoins",
+  mixins: [accountUtils],
   components: {VerifyPasswordModal},
   data() {
     return {
@@ -124,9 +125,6 @@ export default {
         return null
       }
       return !this.amount ? 'Please enter a valid amount' : null
-    },
-    payerAddress() {
-      return this.payer ? trimAddress(this.payer.reference) : ''
     }
   },
   methods: {
