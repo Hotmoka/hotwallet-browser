@@ -14,7 +14,7 @@
 
           <b-form-group>
             <label>Transaction Gas</label>
-            <p class="txt-secondary">{{ this.transaction.gas }} Panarea </p>
+            <p class="txt-secondary">{{ formattedGas }} Panarea </p>
           </b-form-group>
 
           <b-form-group>
@@ -47,18 +47,13 @@
 </template>
 
 <script>
-import {EventBus, formatCoins, showErrorToast, storageReferenceFrom, WrapPromiseTask} from "../../internal/utils";
+import {EventBus, formatCoins, showErrorToast, WrapPromiseTask} from "../../internal/utils";
 import VerifyPasswordModal from "../features/VerifyPasswordModal";
 import {
   AccountHelper,
-  Algorithm, Bip39Dictionary,
-  InstanceMethodCallTransactionRequestModel,
-  NonVoidMethodSignatureModel,
-  RemoteNode,
-  Signer,
-  VoidMethodSignatureModel
+   Bip39Dictionary,
 } from "hotweb3";
-
+import {Service} from "../../internal/Service";
 
 export default {
   name: "Transaction",
@@ -76,7 +71,7 @@ export default {
         methodSignature: null,
         receiver: null,
         actuals: [],
-        gas: formatCoins('30000'),
+        gas: '30000',
         base64DataToSign: null,
         timer: 111
       },
@@ -87,6 +82,9 @@ export default {
   computed: {
     formattedPremium() {
       return formatCoins(this.transaction.amount)
+    },
+    formattedGas() {
+      return formatCoins(this.transaction.gas)
     }
   },
   methods: {
@@ -94,6 +92,21 @@ export default {
       this.showOverlay = true
       this.failedTransaction = true
       this.errorMessage = message || 'Transaction failed'
+    },
+    handleTransactionError(message) {
+      this.showTransactionErrorView(message)
+      this.sendTransactionResponse({
+        status: false,
+        error: message
+      })
+    },
+    handleTransactionSuccess(result) {
+      this.showOverlay = true
+      this.sendTransactionResponse({
+        status: true,
+        storageValue: result.storageValue,
+        transaction: result.transaction
+      })
     },
     onPasswordVerified(result) {
        if (result.verified) {
@@ -113,64 +126,52 @@ export default {
       }, 0)
     },
     onTransactionClick() {
-      WrapPromiseTask(async () => {
-        const remoteNode = new RemoteNode(this.$network.get().url, new Signer(Algorithm.ED25519, this.privateKey));
-
-        const caller = storageReferenceFrom(this.account.reference)
-        const nonceOfCaller = await remoteNode.getNonceOf(caller)
-        const gasPrice = await remoteNode.getGasPrice()
-        const chainId = await remoteNode.getChainId()
-
-        if (this.transaction.base64DataToSign) {
-          const signedData = remoteNode.signer.sign(Buffer.from(this.transaction.base64DataToSign))
-          this.transaction.actuals.push({
-            type: 'java.lang.String',
-            value: signedData
-          })
-          this.transaction.methodSignature.formals.push('java.lang.String')
-        }
-
-        const method = this.transaction.methodSignature.voidMethod ?
-            new VoidMethodSignatureModel(this.transaction.methodSignature.definingClass, this.transaction.methodSignature.methodName, this.transaction.methodSignature.formals) :
-            new NonVoidMethodSignatureModel(this.transaction.methodSignature.definingClass, this.transaction.methodSignature.methodName, this.transaction.methodSignature.returnType, this.transaction.methodSignature.formals)
-
-        const request = new InstanceMethodCallTransactionRequestModel(
-            caller,
-            nonceOfCaller,
-            chainId,
-            this.transaction.gas,
-            gasPrice,
-            this.transaction.smartContractAddress,
-            method,
-            this.transaction.receiver,
-            this.transaction.actuals,
-            remoteNode.signer
-        )
-        const storageValue = await remoteNode.addInstanceMethodCallTransaction(request);
-
-        return {storageValue, transaction: request.getReference(request.signature)}
-      }).then(result => {
-        this.showOverlay = true
-
-        this.sendTransactionResponse({
-          status: true,
-          storageValue: result.storageValue,
-          transaction: result.transaction
-        })
-      }).catch(err => {
-        console.error(err)
-        this.showTransactionErrorView(err.message || 'Transaction failed')
-        this.sendTransactionResponse({
-          status: false,
-          error: err.message || 'Transaction failed'
-        })
-      })
+      new Service()
+          .performTransaction(this.transaction, this.account, this.privateKey)
+          .then(result => this.handleTransactionSuccess(result))
+          .catch(err => this.handleTransactionError(err.message || 'Transaction failed'))
     },
     onRejectTransactionClick() {
       this.sendTransactionResponse({
         status: false,
         error: 'Transaction reject by payer'
       })
+    },
+    getTransactionDetails() {
+      new Service()
+          .getTransactionDetails(this.uuid)
+          .then(result => this.transaction = {...this.transaction, ...result})
+          .catch(err => {
+            this.showTransactionErrorView(err.message || 'Cannot start transaction')
+            this.sendTransactionResponse({
+              status: false,
+              error: err.message || 'Cannot start transaction'
+            })
+          })
+    },
+    getAccount() {
+      WrapPromiseTask(async () => this.$storageApi.getCurrentAccount(this.$network.get()))
+          .then(account => {
+            this.account = {...account}
+            this.$refs.verifyPasswordComponent.showModal({
+              account: this.account,
+              title: 'Account verification',
+              subtitle: 'Please enter password to verify the account of ' + this.account.name,
+              btnActionName: 'Verify',
+              closeOnIncorrectPwd: false
+            })
+          })
+          .catch(err => this.handleTransactionError(err.message || 'Cannot retrieve account'))
+    },
+    setTransactionTimer() {
+      const timer = setInterval(() => {
+        this.transaction.timer--
+
+        if (this.transaction.timer === 0) {
+          clearInterval(timer)
+          this.handleTransactionError('Transaction cancelled for timeout')
+        }
+      }, 1000);
     },
     sendTransactionResponse(result, timeout = 4000) {
       this.$browser.runtime.sendMessage({
@@ -191,42 +192,6 @@ export default {
           this.$browser.tabs.remove(tab.id);
         })
       }, timeout)
-    },
-    getTransactionDetails() {
-      WrapPromiseTask(async() => {
-
-        if (!this.uuid) {
-          throw new Error('Transaction non found')
-        }
-        const transactions = await this.$storageApi.getStore('transactions')
-        if (!transactions || !transactions.hasOwnProperty(this.uuid)) {
-          throw new Error('Transaction non found')
-        }
-
-        return transactions[this.uuid]
-      }).then(result => {
-        this.transaction = {...this.transaction, ...result}
-      }).catch(err => {
-        this.showTransactionErrorView(err.message || 'Cannot start transaction')
-        this.sendTransactionResponse({
-          status: false,
-          error: err.message || 'Cannot start transaction'
-        })
-      })
-    },
-    setTransactionTimer() {
-      const timer = setInterval(() => {
-        this.transaction.timer--
-
-        if (this.transaction.timer === 0) {
-          clearInterval(timer)
-          this.showTransactionErrorView('Transaction cancelled for timeout')
-          this.sendTransactionResponse({
-            status: false,
-            error: 'Transaction cancelled for timeout'
-          })
-        }
-      }, 1000);
     }
   },
   created() {
@@ -234,25 +199,7 @@ export default {
 
     this.uuid = this.$route.params.uuid
     this.setTransactionTimer()
-
-    WrapPromiseTask(() => this.$storageApi.getCurrentAccount(this.$network.get()))
-        .then(account => {
-          this.account = {...account}
-          this.$refs.verifyPasswordComponent.showModal({
-            account: this.account,
-            title: 'Account verification',
-            subtitle: 'Please enter password to verify the account of ' + this.account.name,
-            btnActionName: 'Verify',
-            closeOnIncorrectPwd: false
-          })
-        })
-        .catch(err => {
-          this.showTransactionErrorView(err.message || 'Cannot retrieve account')
-          this.sendTransactionResponse({
-            status: false,
-            error: err.message || 'Cannot start transaction'
-          })
-        })
+    this.getAccount()
   }
 }
 </script>

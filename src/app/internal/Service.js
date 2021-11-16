@@ -1,9 +1,23 @@
 import Vue from "vue";
-import {EventBus, filterAccount, filterNetwork, getNetworkByValue, showErrorToast, WrapPromiseTask} from "./utils";
-import {AccountHelper, Bip39Dictionary, RemoteNode} from "hotweb3";
+import {
+    EventBus,
+    filterAccount,
+    filterNetwork,
+    getNetworkByValue,
+    showErrorToast,
+    storageReferenceFrom,
+    WrapPromiseTask
+} from "./utils";
+import {
+    AccountHelper,
+    Algorithm,
+    Bip39Dictionary, InstanceMethodCallTransactionRequestModel,
+    NonVoidMethodSignatureModel,
+    RemoteNode,
+    Signer,
+    VoidMethodSignatureModel
+} from "hotweb3";
 import {ACCOUNT_CHANGED, CONNECTED, DISCONNECTED, NETWORK_CHANGED} from "./EventsApi";
-
-
 
 /**
  * Service class that wraps common tasks.
@@ -220,6 +234,83 @@ export class Service extends Vue {
                 showErrorToast(this, 'Accounts', err.message || 'Cannot switch to the selected account')
                 reject()
             })
+        })
+    }
+
+    /**
+     * It returns the transaction details from the store.
+     * @param uuid the uuid of the transaction
+     * @return {Promise<unknown>} a promise that resolves to the transaction
+     */
+    getTransactionDetails(uuid) {
+        return new Promise((resolve, reject) => {
+            WrapPromiseTask(async() => {
+
+                if (!uuid) {
+                    throw new Error('Transaction id non valid')
+                }
+
+                const transactions = await this.$storageApi.getStore('transactions')
+                if (!transactions || !transactions.hasOwnProperty(uuid)) {
+                    throw new Error('Transaction non found')
+                }
+
+                return transactions[uuid]
+            }).then(result => resolve(result))
+              .catch(err => reject(err))
+        })
+    }
+
+    /**
+     * It performs the transaction on behalf of the current account.
+     * @param transaction the transaction object
+     * @param account the account
+     * @param privateKey the private key of the account to sign the transaction
+     * @return {Promise<{storageValue: StorageValueModel, transaction: TransactionReferenceModel}>} a promise that resolves to a result object
+     */
+    performTransaction(transaction, account, privateKey) {
+        return new Promise((resolve, reject) => {
+
+            WrapPromiseTask(async () => {
+                const remoteNode = new RemoteNode(this.$network.get().url, new Signer(Algorithm.ED25519, privateKey))
+
+                const caller = storageReferenceFrom(account.reference)
+                const nonceOfCaller = await remoteNode.getNonceOf(caller)
+                const gasPrice = await remoteNode.getGasPrice()
+                const chainId = await remoteNode.getChainId()
+
+                // we sign the optional base64 data
+                if (transaction.base64DataToSign) {
+                    const signedData = remoteNode.signer.sign(Buffer.from(transaction.base64DataToSign))
+                    transaction.actuals.push({
+                        type: 'java.lang.String',
+                        value: signedData
+                    })
+                    transaction.methodSignature.formals.push('java.lang.String')
+                }
+
+                const method = transaction.methodSignature.voidMethod ?
+                    new VoidMethodSignatureModel(transaction.methodSignature.definingClass, transaction.methodSignature.methodName, transaction.methodSignature.formals) :
+                    new NonVoidMethodSignatureModel(transaction.methodSignature.definingClass, transaction.methodSignature.methodName, transaction.methodSignature.returnType, transaction.methodSignature.formals)
+
+                const request = new InstanceMethodCallTransactionRequestModel(
+                    caller,
+                    nonceOfCaller,
+                    chainId,
+                    transaction.gas,
+                    gasPrice,
+                    transaction.smartContractAddress,
+                    method,
+                    transaction.receiver,
+                    transaction.actuals,
+                    remoteNode.signer
+                )
+                const storageValue = await remoteNode.addInstanceMethodCallTransaction(request);
+
+                return {storageValue, transaction: request.getReference(request.signature)}
+
+            }).then(result => resolve(result))
+              .catch(err => reject(err))
         })
     }
 }
