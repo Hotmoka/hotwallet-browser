@@ -47,12 +47,8 @@
 </template>
 
 <script>
-import {EventBus, showErrorToast, WrapPromiseTask} from "../../internal/utils";
+import {EventBus} from "../../internal/utils";
 import VerifyPasswordModal from "../features/VerifyPasswordModal";
-import {
-  AccountHelper,
-   Bip39Dictionary,
-} from "hotweb3";
 import {Service} from "../../internal/Service";
 import {coinFormatter} from "../../internal/mixins";
 
@@ -104,13 +100,12 @@ export default {
     },
     onPasswordVerified(result) {
        if (result.verified) {
-        WrapPromiseTask(async () => {
-            const keyPair = AccountHelper.generateEd25519KeyPairFrom(result.password, Bip39Dictionary.ENGLISH, this.account.entropy)
-            return keyPair.privateKey
-        }).then(privateKey => {
-          this.privateKey = privateKey
-          this.getTransactionDetails()
-        }).catch(err => showErrorToast(this, 'Account', err.message || 'Cannot verify account'))
+         new Service()
+          .generateEd25519KeyPairFrom(result.password, this.account.entropy)
+          .then(keyPair => {
+            this.privateKey = keyPair.privateKey
+            this.getTransactionDetails()
+          })
       }
     },
     onCancelPasswordCheck() {
@@ -144,18 +139,19 @@ export default {
           })
     },
     getAccount() {
-      WrapPromiseTask(async () => this.$storageApi.getCurrentAccount(this.$network.get()))
-          .then(account => {
-            this.account = {...account}
-            this.$refs.verifyPasswordComponent.showModal({
-              account: this.account,
-              title: 'Account verification',
-              subtitle: 'Please enter password to verify the account of ' + this.account.name,
-              btnActionName: 'Verify',
-              closeOnIncorrectPwd: false
-            })
+      new Service()
+        .getCurrentAccount()
+        .then(account => {
+          this.account = {...account}
+          this.$refs.verifyPasswordComponent.showModal({
+            account: this.account,
+            title: 'Account verification',
+            subtitle: 'Please enter password to verify the account of ' + this.account.name,
+            btnActionName: 'Verify',
+            closeOnIncorrectPwd: false
           })
-          .catch(err => this.handleTransactionError(err.message || 'Cannot retrieve account'))
+        })
+        .catch(err => this.handleTransactionError(err.message || 'Cannot retrieve account'))
     },
     setTransactionTimer() {
       const timer = setInterval(() => {

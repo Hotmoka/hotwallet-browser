@@ -112,7 +112,7 @@ export class Service extends Vue {
                 .then(account => resolve(account))
                 .catch(error => {
                     showErrorToast(this, 'Account', error.message || 'Cannot retrieve account')
-                    reject()
+                    reject(error)
                 })
         })
     }
@@ -638,5 +638,22 @@ export class Service extends Vue {
                 }
             }
         )
+    }
+
+    /**
+     * It returns a Ed25519 key pair from a given password and entropy.
+     * @param password the password
+     * @param entropy the entropy
+     * @return {Promise<KeyPair>} a promise that resolves to a key pair object
+     */
+    generateEd25519KeyPairFrom(password, entropy) {
+        return new Promise((resolve, reject) => {
+            WrapPromiseTask(async () => AccountHelper.generateEd25519KeyPairFrom(password, Bip39Dictionary.ENGLISH, entropy))
+                .then(keyPair => resolve(keyPair))
+                .catch(err => {
+                    showErrorToast(this, 'Account', err.message || 'Cannot verify account')
+                    reject()
+                })
+        })
     }
 }
