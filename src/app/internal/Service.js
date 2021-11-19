@@ -10,10 +10,10 @@ import {
 } from "./utils";
 import {
     AccountHelper,
-    Algorithm,
-    Bip39Dictionary, InstanceMethodCallTransactionRequestModel,
+    Algorithm, Base58,
+    Bip39Dictionary, InstanceMethodCallTransactionRequestModel, KeyPair,
     NonVoidMethodSignatureModel,
-    RemoteNode,
+    RemoteNode, SendCoinsHelper,
     Signer,
     VoidMethodSignatureModel
 } from "hotweb3";
@@ -212,7 +212,7 @@ export class Service extends Vue {
      * @param storageReference the storage reference of the account
      * @return {Promise<string>} a promise that resolves to the balance
      */
-    async getBalanceOfAccount(storageReference) {
+    getBalanceOfAccount(storageReference) {
         return new AccountHelper(new RemoteNode(this.$network.get().url)).getBalance(storageReference)
     }
 
@@ -570,5 +570,73 @@ export class Service extends Vue {
                   reject()
               })
         })
+    }
+
+
+    /**
+     * It sends an amount of coins to an account address.
+     * @param payer the payer
+     * @param keyPairOfPayer the key pair of the payer
+     * @param destination the destination account address
+     * @param amount the amount to send
+     * @param resultTransactionCallback a callback to be invoked after the payment with the transaction of the payment
+     * @return {Promise<void>} a promise that resolves to void
+     */
+    sendCoinsToAccount(payer, keyPairOfPayer, destination, amount, resultTransactionCallback) {
+        return new SendCoinsHelper(new RemoteNode(this.$network.get().url)).fromPayer(
+            storageReferenceFrom(payer.reference),
+            keyPairOfPayer,
+            storageReferenceFrom(destination),
+            amount,
+            '0',
+            transactions => {
+                if (transactions && transactions.length > 0) {
+                    resultTransactionCallback(transactions[0])
+                }
+            }
+        )
+    }
+
+    /**
+     * It sends an amount of coins to an account address. The payer is the faucet.
+     * @param destination the destination account address
+     * @param amount the amount to send
+     * @param resultTransactionCallback a callback to be invoked after the payment with the transaction of the payment
+     * @return {Promise<void>} a promise that resolves to void
+     */
+    sendCoinsToAccountFromFaucet(destination, amount, resultTransactionCallback) {
+        return new SendCoinsHelper(new RemoteNode(this.$network.get().url)).fromFaucet(
+            storageReferenceFrom(destination),
+            amount,
+            '0',
+            transaction => resultTransactionCallback(transaction)
+        )
+    }
+
+    /**
+     * It sends an amount of coins to a public key.
+     * @param payer the payer
+     * @param keyPairOfPayer the key pair of the payer
+     * @param destination the destination public key
+     * @param amount the amount to send
+     * @param anonymous true if anonymous, false otherwise
+     * @param resultTransactionCallback a callback to be invoked after the payment with the transaction of the payment
+     * @return {Promise<Account>} a promise that resolves to a newly created account
+     */
+    sendCoinsToPublicKey(payer, keyPairOfPayer, destination, amount, anonymous, resultTransactionCallback) {
+        return new AccountHelper(new RemoteNode(this.$network.get().url)).createAccountFromPayer(
+            Algorithm.ED25519,
+            storageReferenceFrom(payer.reference),
+            keyPairOfPayer,
+            new KeyPair(null, Base58.decode(destination).toString(), null),
+            amount,
+            "0",
+            anonymous,
+            transactions => {
+                if (transactions && transactions.length > 0) {
+                    resultTransactionCallback(transactions[0])
+                }
+            }
+        )
     }
 }

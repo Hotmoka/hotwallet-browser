@@ -137,7 +137,7 @@ export default {
     },
     onSaveAccountClick() {
       if (this.isAccount) {
-        WrapPromiseTask(() => this.$storageApi.updateAccount(this.account))
+        WrapPromiseTask(async () => this.$storageApi.updateAccount(this.account))
             .then(() => replaceRoute("/home"))
             .catch(err => showErrorToast(this, 'Account', err.message || 'Cannot update account'))
       } else {
@@ -165,14 +165,17 @@ export default {
   },
   created() {
     EventBus.$emit('titleChange', 'Account')
-    new Service().getCurrentAccount().then(account => {
-      this.account = account
-      this.isAccount = account.reference !== null && account.reference !== undefined
 
-      if (this.isAccount) {
-        this.words = AccountHelper.generateMnemonicWordsFrom(account.entropy, getHashOfStorageReference(account.reference), Bip39Dictionary.ENGLISH)
-      }
-    })
+    new Service()
+        .getCurrentAccount()
+        .then(account => {
+          this.account = account
+          this.isAccount = account.reference !== null && account.reference !== undefined
+
+          if (this.isAccount) {
+            this.words = AccountHelper.generateMnemonicWordsFrom(account.entropy, getHashOfStorageReference(account.reference), Bip39Dictionary.ENGLISH)
+          }
+        })
   }
 }
 </script>
