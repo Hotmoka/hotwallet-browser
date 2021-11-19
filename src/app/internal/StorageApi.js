@@ -133,6 +133,17 @@ export class StorageApi {
     }
 
     /**
+     * It removes an account from the list of accounts.
+     * @param account the account
+     * @return {Promise<void>} a promise that resolves to void
+     */
+    async removeAccount(account) {
+        const accounts = await this.getAccounts()
+        const accountsToPersist = accounts.filter(acc => acc.publicKey !== account.publicKey)
+        await this.persistToPrivateStore('accounts', accountsToPersist)
+    }
+
+    /**
      * It updates an account.
      * @param account the account
      * @return {Promise<void>} a promise that resolves to void

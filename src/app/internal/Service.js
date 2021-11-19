@@ -563,13 +563,11 @@ export class Service extends Vue {
     }
 
     /**
-     * It remove the given account or key.
+     * It removes the given account or key.
      * @param account the account or key
      * @return {Promise<void>} a promise that resolves to void
      */
     removeAccount(account) {
-        return WrapPromiseTask(async () => {
-            // TODO
-        })
+        return WrapPromiseTask(async () => this.$storageApi.removeAccount(account))
     }
 }
