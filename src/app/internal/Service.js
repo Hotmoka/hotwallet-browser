@@ -461,6 +461,7 @@ export class Service extends Vue {
      */
     getAccounts() {
         return WrapPromiseTask(async () => this.$storageApi.getAccounts())
+            .then(accounts => accounts.sort((a, b)  => a.selected ? -1 : 1))
     }
 
     /**
@@ -561,4 +562,14 @@ export class Service extends Vue {
         return WrapPromiseTask(async () => new RemoteNode(this.$network.get().url).getState(storageReferenceFrom(accountReference)))
     }
 
+    /**
+     * It remove the given account or key.
+     * @param account the account or key
+     * @return {Promise<void>} a promise that resolves to void
+     */
+    removeAccount(account) {
+        return WrapPromiseTask(async () => {
+            // TODO
+        })
+    }
 }
