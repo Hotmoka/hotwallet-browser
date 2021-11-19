@@ -89,10 +89,9 @@ import {
   getHashOfStorageReference,
   showErrorToast,
   showInfoToast,
-  storageReferenceFrom,
   WrapPromiseTask
 } from "../../internal/utils";
-import {AccountHelper, Bip39Dictionary, RemoteNode} from "hotweb3";
+import {AccountHelper, Bip39Dictionary} from "hotweb3";
 import {replaceRoute} from "../../internal/router";
 import {fieldNotEmptyFeedback, stateFieldNotEmpty} from "../../internal/validators";
 import VerifyPasswordModal from "../features/VerifyPasswordModal";
@@ -158,22 +157,9 @@ export default {
     },
     onPasswordVerified(result) {
       if (result.verified) {
-        WrapPromiseTask(async () => {
-
-          try {
-            const accountHelper = new AccountHelper(new RemoteNode(this.$network.get().url))
-            const isVerified = await accountHelper.verifyAccount(storageReferenceFrom(this.account.reference), this.account.publicKey)
-
-            if (!isVerified) {
-              throw new Error()
-            }
-          } catch (e) {
-            throw new Error('Invalid address of account')
-          }
-
-          await this.$storageApi.updateAccount(this.account)
-        }).then(() => replaceRoute("/home"))
-          .catch(err => showErrorToast(this, 'Account', err.message || 'Cannot update account'))
+        new Service()
+          .verifyAccount(this.account)
+          .then(() => replaceRoute("/home"))
       }
     }
   },

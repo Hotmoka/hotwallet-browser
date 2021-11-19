@@ -55,10 +55,9 @@ import {
   stateFieldNotEmpty,
   statePassword
 } from "../../internal/validators";
-import {EventBus, showErrorToast, WrapPromiseTask} from "../../internal/utils";
-import {AccountHelper, Bip39Dictionary} from "hotweb3";
+import {EventBus} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
-
+import {Service} from "../../internal/Service";
 
 export default {
   name: "CreateKey",
@@ -91,30 +90,9 @@ export default {
   },
   methods: {
     onCreateClick() {
-
-      WrapPromiseTask(async () => {
-
-        // create key
-        const account = AccountHelper.createKey(this.password, Bip39Dictionary.ENGLISH)
-
-        // set password for the private store and add account
-        await this.$storageApi.setPassword(this.password)
-        await this.$storageApi.addAccount(
-            {
-              name: this.name,
-              reference: null,
-              entropy: account.entropy,
-              publicKey: account.publicKey,
-              publicKeyBase58: account.name,
-              balance: account.balance,
-              selected: true,
-              logged: true,
-              network: {value: this.$network.get().value, url: this.$network.get().url},
-              created: new Date().getTime()
-            }
-        )
-      }).then(() => replaceRoute('/home'))
-        .catch(err => showErrorToast(this, 'Create key', err.message || 'Error during key creation'))
+      new Service()
+        .createKey(this.name, this.password)
+        .then(() => replaceRoute('/home'))
     }
   },
   created() {

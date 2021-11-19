@@ -75,12 +75,10 @@
 </template>
 
 <script>
-import {RemoteNode, AccountHelper, Algorithm, Bip39Dictionary} from "hotweb3"
+
 import {
   EventBus,
   showErrorToast,
-  storageReferenceFrom,
-  storageReferenceToString,
   WrapPromiseTask
 } from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
@@ -92,6 +90,7 @@ import {
 } from "../../internal/validators";
 import VerifyPasswordModal from "../features/VerifyPasswordModal";
 import {accountUtils} from "../../internal/mixins";
+import {Service} from "../../internal/Service";
 
 export default {
   name: "CreateAccount",
@@ -136,84 +135,10 @@ export default {
   methods: {
     onPasswordVerified(verificationResult) {
       if (verificationResult.password) {
-        this.createAccountFromCurrentAccount(verificationResult.password)
+        new Service()
+            .createAccountFromPayer(this.newAccount, this.payer, verificationResult.password)
+            .then(() => replaceRoute('/account'))
       }
-    },
-    createAccountFromFaucet(balance) {
-      WrapPromiseTask(async () => {
-
-        const remoteNode = new RemoteNode(this.$network.get().url)
-        const gamete = await remoteNode.getGamete()
-        const balanceOfFaucet = await this.getBalanceOfAccount(gamete)
-
-        if ((balance - Number(balanceOfFaucet)) > 0) {
-          throw new Error('Cannot transfer more than ' + balanceOfFaucet + ' from faucet')
-        }
-
-        // generate key pair
-        const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.newAccount.password, Bip39Dictionary.ENGLISH)
-        const account = await new AccountHelper(remoteNode).createAccountFromFaucet(Algorithm.ED25519, keyPair, balance.toString(), "0")
-
-        // set password for the private store and add account
-        await this.$storageApi.setPassword(this.newAccount.password)
-        await this.$storageApi.addAccount(
-            {
-              name: this.newAccount.name,
-              reference: storageReferenceToString(account.reference),
-              entropy: keyPair.entropy,
-              publicKey: keyPair.publicKey,
-              selected: true,
-              logged: true,
-              network: {value: this.$network.get().value, url: this.$network.get().url},
-              created: new Date().getTime()
-            }
-        )
-      }).then(() => replaceRoute('/account'))
-        .catch(err => showErrorToast(this, 'New account', err.message || 'Error during account creation'))
-    },
-    createAccountFromCurrentAccount(passwordOfPayer) {
-      WrapPromiseTask(async () => {
-        const balance = Math.round(Number(this.newAccount.balance))
-
-        const remoteNode = new RemoteNode(this.$network.get().url)
-        const storageReferenceOfPayer = storageReferenceFrom(this.payer.reference)
-        const balanceOfPayer = await this.getBalanceOfAccount(storageReferenceOfPayer)
-
-        if ((balance - Number(balanceOfPayer)) > 0) {
-          throw new Error('Cannot transfer more than ' + balanceOfPayer + ' from payer ' + this.payer.name)
-        }
-
-        // generate key pair of payer
-        const keyPairOfPayer = AccountHelper.generateEd25519KeyPairFrom(passwordOfPayer, Bip39Dictionary.ENGLISH, this.payer.entropy)
-
-        // generate key pair for the new account
-        const keyPair = AccountHelper.generateEd25519KeyPairFrom(this.newAccount.password, Bip39Dictionary.ENGLISH)
-        const account = await new AccountHelper(remoteNode).createAccountFromPayer(
-            Algorithm.ED25519,
-            storageReferenceOfPayer,
-            keyPairOfPayer,
-            keyPair,
-            balance.toString(),
-            "0",
-            false
-        )
-
-        // set password for the private store and add account
-        await this.$storageApi.setPassword(this.newAccount.password)
-        await this.$storageApi.addAccount(
-            {
-              name: this.newAccount.name,
-              reference: storageReferenceToString(account.reference),
-              entropy: keyPair.entropy,
-              publicKey: keyPair.publicKey,
-              selected: true,
-              logged: true,
-              network: {value: this.$network.get().value, url: this.$network.get().url},
-              created: new Date().getTime()
-            }
-        )
-      }).then(() => replaceRoute('/account'))
-        .catch(err => showErrorToast(this, 'New account', err.message || 'Error during account creation'))
     },
     onCreateAccountClick() {
       WrapPromiseTask(async () => {
@@ -234,14 +159,13 @@ export default {
         return balance
       }).then(balance => {
         if (this.fromFaucet) {
-          this.createAccountFromFaucet(balance)
+          new Service()
+              .createAccountFromFaucet(this.newAccount, balance)
+              .then(() => replaceRoute('/account'))
         } else {
           this.askForPassword()
         }
       }).catch(err => showErrorToast(this, 'New account', err.message || 'An error occurred while creating the account'))
-    },
-    getBalanceOfAccount: async function (storageReference) {
-      return new AccountHelper(new RemoteNode(this.$network.get().url)).getBalance(storageReference)
     },
     askForPassword() {
       this.$refs.verifyPasswordComponent.showModal({
@@ -255,14 +179,12 @@ export default {
   created() {
     EventBus.$emit('titleChange', 'Create account')
 
-    WrapPromiseTask(async () => {
-      const account = await this.$storageApi.getCurrentAccount(this.$network.get())
-      const allowsUnsignedFaucet = await new RemoteNode(this.$network.get().url).allowsUnsignedFaucet()
-      return { account, allowsUnsignedFaucet }
-    }).then(result => {
-      this.allowsUnsignedFaucet = result.allowsUnsignedFaucet
-      this.payer = result.account
-    }).catch(error => showErrorToast(this, 'Account', error.message || 'Cannot retrieve account'))
+    new Service()
+        .getCurrentAccountWithFaucet()
+        .then(result => {
+          this.allowsUnsignedFaucet = result.allowsUnsignedFaucet
+          this.payer = result.account
+        })
   }
 }
 </script>

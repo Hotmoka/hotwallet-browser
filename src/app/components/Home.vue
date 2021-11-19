@@ -154,25 +154,21 @@ export default {
       new Service().logout(this.account).then(() => replaceRoute('/login'))
     },
     displayAccount() {
-      WrapPromiseTask(async () => {
-        const account = await this.$storageApi.getCurrentAccount(this.$network.get())
-        const allowsFaucet = await new RemoteNode(this.$network.get().url).allowsUnsignedFaucet()
+      new Service()
+        .getCurrentAccountWithFaucet()
+        .then(result => {
+          this.allowsFaucet = result.allowsUnsignedFaucet
 
-        return {account, allowsFaucet}
-      }).then(result => {
-        this.allowsFaucet = result.allowsFaucet
+          this.account = {
+            ...this.account,
+            ...result.account
+          }
 
-        this.account = {
-          ...this.account,
-          ...result.account
-        }
-
-        if (this.account.reference) {
-          this.isAccount = true
-          this.getAccountInfo(this.account.reference)
-        }
-
-      }).catch(error => showErrorToast(this, 'Account', error.message || 'Cannot retrieve account'))
+          if (this.account.reference) {
+            this.isAccount = true
+            this.getAccountInfo(this.account.reference)
+          }
+        })
     }
   },
   created() {

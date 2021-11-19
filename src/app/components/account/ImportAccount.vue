@@ -49,8 +49,8 @@
 </template>
 
 <script>
-import {AccountHelper, Bip39Dictionary, RemoteNode} from "hotweb3";
-import {EventBus, showErrorToast, storageReferenceToString, WrapPromiseTask} from "../../internal/utils";
+
+import {EventBus} from "../../internal/utils";
 import {
   fieldNotEmptyFeedback,
   invalidPasswordFeedback,
@@ -58,6 +58,7 @@ import {
   statePassword
 } from "../../internal/validators";
 import {replaceRoute} from "../../internal/router";
+import {Service} from "../../internal/Service";
 
 export default {
   name: "ImportAccount",
@@ -84,37 +85,9 @@ export default {
   },
   methods: {
     onImportAccountClick() {
-      WrapPromiseTask(async () => {
-
-        for (let i = 0; i < 36; i++) {
-          if (!this.words[i]) {
-            throw new Error('Please enter all 36 words')
-          }
-        }
-
-        // generate account from mnemonic
-        const mnemonic = this.words.join(' ')
-        const account = await new AccountHelper(new RemoteNode(this.$network.get().url)).importAccount(this.name, mnemonic, Bip39Dictionary.ENGLISH, this.password)
-
-        // set password and add account
-        await this.$storageApi.setPassword(this.password)
-        await this.$storageApi.addAccount(
-            {
-              name: this.name,
-              reference: storageReferenceToString(account.reference),
-              entropy: account.entropy,
-              publicKey: account.publicKey,
-              balance: account.balance,
-              selected: true,
-              logged: true,
-              network: {value: this.$network.get().value, url: this.$network.get().url},
-              created: new Date().getTime()
-            }
-        )
-
-      }).then(() => replaceRoute('/home'))
-        .catch(error => showErrorToast(this, 'Import account', error.message || 'Cannot import account'))
-
+      new Service()
+        .importAccount(this.name, this.password, this.words)
+        .then(() => replaceRoute('/home'))
     }
   },
   created() {

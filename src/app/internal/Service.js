@@ -5,7 +5,7 @@ import {
     filterNetwork,
     getNetworkByValue,
     showErrorToast,
-    storageReferenceFrom,
+    storageReferenceFrom, storageReferenceToString,
     WrapPromiseTask
 } from "./utils";
 import {
@@ -18,6 +18,7 @@ import {
     VoidMethodSignatureModel
 } from "hotweb3";
 import {ACCOUNT_CHANGED, CONNECTED, DISCONNECTED, NETWORK_CHANGED} from "./EventsApi";
+
 
 /**
  * Service class that wraps common tasks.
@@ -107,7 +108,7 @@ export class Service extends Vue {
      */
     getCurrentAccount() {
         return new Promise((resolve, reject) => {
-            WrapPromiseTask(() => this.$storageApi.getCurrentAccount(this.$network.get()))
+            WrapPromiseTask(async () => this.$storageApi.getCurrentAccount(this.$network.get()))
                 .then(account => resolve(account))
                 .catch(error => {
                     showErrorToast(this, 'Account', error.message || 'Cannot retrieve account')
@@ -204,6 +205,15 @@ export class Service extends Vue {
         } catch (e) {
             return false
         }
+    }
+
+    /**
+     * It returns the balance of an account.
+     * @param storageReference the storage reference of the account
+     * @return {Promise<string>} a promise that resolves to the balance
+     */
+    async getBalanceOfAccount(storageReference) {
+        return new AccountHelper(new RemoteNode(this.$network.get().url)).getBalance(storageReference)
     }
 
     /**
@@ -311,6 +321,254 @@ export class Service extends Vue {
 
             }).then(result => resolve(result))
               .catch(err => reject(err))
+        })
+    }
+
+    /**
+     * It verifies if the given account is actually an account object in the remote node.
+     * @param account the account
+     * @return {Promise<void>} a promise that resolves to void
+     */
+    verifyAccount(account) {
+        return new Promise((resolve, reject) => {
+            WrapPromiseTask(async () => {
+
+                let storageRefOfAccount = null
+                try {
+                    storageRefOfAccount = storageReferenceFrom(account.reference)
+                } catch (e) {
+                    throw new Error('Invalid address of account')
+                }
+
+                const accountHelper = new AccountHelper(new RemoteNode(this.$network.get().url))
+                const isVerified = await accountHelper.verifyAccount(storageRefOfAccount, account.publicKey)
+
+                if (!isVerified) {
+                    throw new Error('Cannot verify account')
+                }
+
+                await this.$storageApi.updateAccount(account)
+            }).then(() => resolve())
+              .catch(err => {
+                  showErrorToast(this, 'Account', err.message || 'Cannot update account')
+                  reject()
+              })
+        })
+    }
+
+    /**
+     * It creates an account from faucet.
+     * @param newAccount the account to create
+     * @param balance the initial balance of the account
+     * @return {Promise<void>} a promise that resolves to void
+     */
+    createAccountFromFaucet(newAccount, balance) {
+        return new Promise((resolve, reject) => {
+            WrapPromiseTask(async () => {
+
+                const remoteNode = new RemoteNode(this.$network.get().url)
+                const gamete = await remoteNode.getGamete()
+                const balanceOfFaucet = await this.getBalanceOfAccount(gamete)
+
+                if ((balance - Number(balanceOfFaucet)) > 0) {
+                    throw new Error('Cannot transfer more than ' + balanceOfFaucet + ' from faucet')
+                }
+
+                // generate key pair
+                const keyPair = AccountHelper.generateEd25519KeyPairFrom(newAccount.password, Bip39Dictionary.ENGLISH)
+                const account = await new AccountHelper(remoteNode).createAccountFromFaucet(Algorithm.ED25519, keyPair, balance.toString(), "0")
+
+                // set password for the private store and add account
+                await this.$storageApi.setPassword(newAccount.password)
+                await this.$storageApi.addAccount(
+                    {
+                        name: newAccount.name,
+                        reference: storageReferenceToString(account.reference),
+                        entropy: keyPair.entropy,
+                        publicKey: keyPair.publicKey,
+                        selected: true,
+                        logged: true,
+                        network: {value: this.$network.get().value, url: this.$network.get().url},
+                        created: new Date().getTime()
+                    }
+                )
+            }).then(() => resolve())
+              .catch(err => {
+                  showErrorToast(this, 'New account', err.message || 'Error during account creation')
+                  reject()
+              })
+        })
+    }
+
+    /**
+     * It creates an account from a payer.
+     * @param newAccount the account to create
+     * @param payer the payer
+     * @param passwordOfPayer the password of the payer
+     * @return {Promise<void>} a promise that resolves to void
+     */
+    createAccountFromPayer(newAccount, payer, passwordOfPayer) {
+        return new Promise((resolve, reject) => {
+            WrapPromiseTask(async () => {
+                const balance = Math.round(Number(newAccount.balance))
+
+                const remoteNode = new RemoteNode(this.$network.get().url)
+                const storageReferenceOfPayer = storageReferenceFrom(payer.reference)
+                const balanceOfPayer = await this.getBalanceOfAccount(storageReferenceOfPayer)
+
+                if ((balance - Number(balanceOfPayer)) > 0) {
+                    throw new Error('Cannot transfer more than ' + balanceOfPayer + ' from payer ' + payer.name)
+                }
+
+                // generate key pair of payer
+                const keyPairOfPayer = AccountHelper.generateEd25519KeyPairFrom(passwordOfPayer, Bip39Dictionary.ENGLISH, payer.entropy)
+
+                // generate key pair for the new account
+                const keyPair = AccountHelper.generateEd25519KeyPairFrom(newAccount.password, Bip39Dictionary.ENGLISH)
+                const account = await new AccountHelper(remoteNode).createAccountFromPayer(
+                    Algorithm.ED25519,
+                    storageReferenceOfPayer,
+                    keyPairOfPayer,
+                    keyPair,
+                    balance.toString(),
+                    "0",
+                    false
+                )
+
+                // set password for the private store and add account
+                await this.$storageApi.setPassword(newAccount.password)
+                await this.$storageApi.addAccount(
+                    {
+                        name: newAccount.name,
+                        reference: storageReferenceToString(account.reference),
+                        entropy: keyPair.entropy,
+                        publicKey: keyPair.publicKey,
+                        selected: true,
+                        logged: true,
+                        network: {value: this.$network.get().value, url: this.$network.get().url},
+                        created: new Date().getTime()
+                    }
+                )
+            }).then(() => resolve())
+              .catch(err => {
+                  showErrorToast(this, 'New account', err.message || 'Error during account creation')
+                  reject()
+              })
+        })
+    }
+
+    /**
+     * It creates a key from a given name and password.
+     * @param name the name of local account
+     * @param password the password
+     * @return {Promise<void>} a promise that resolves to void
+     */
+    createKey(name, password) {
+        return new Promise((resolve, reject) => {
+            WrapPromiseTask(async () => {
+
+                // create key
+                const account = AccountHelper.createKey(password, Bip39Dictionary.ENGLISH)
+
+                // set password for the private store and add account
+                await this.$storageApi.setPassword(password)
+                await this.$storageApi.addAccount(
+                    {
+                        name: name,
+                        reference: null,
+                        entropy: account.entropy,
+                        publicKey: account.publicKey,
+                        publicKeyBase58: account.name,
+                        balance: account.balance,
+                        selected: true,
+                        logged: true,
+                        network: {value: this.$network.get().value, url: this.$network.get().url},
+                        created: new Date().getTime()
+                    }
+                )
+            }).then(() => resolve())
+              .catch(err => {
+                  showErrorToast(this, 'Create key', err.message || 'Error during key creation')
+                  reject()
+              })
+        })
+    }
+
+    /**
+     * It imports an account from the given name, password and words.
+     * @param name the name of the account
+     * @param password the password of the account
+     * @param words the 36 mnemonic words
+     * @return {Promise<unknown>}
+     */
+    importAccount(name, password, words) {
+        return new Promise((resolve, reject) => {
+            WrapPromiseTask(async () => {
+
+                for (let i = 0; i < 36; i++) {
+                    if (!words[i]) {
+                        throw new Error('Please enter all 36 words')
+                    }
+                }
+
+                // generate account from mnemonic
+                const mnemonic = words.join(' ')
+                const account = await new AccountHelper(new RemoteNode(this.$network.get().url)).importAccount(name, mnemonic, Bip39Dictionary.ENGLISH, password)
+
+                // set password and add account
+                await this.$storageApi.setPassword(password)
+                await this.$storageApi.addAccount(
+                    {
+                        name: name,
+                        reference: storageReferenceToString(account.reference),
+                        entropy: account.entropy,
+                        publicKey: account.publicKey,
+                        balance: account.balance,
+                        selected: true,
+                        logged: true,
+                        network: {value: this.$network.get().value, url: this.$network.get().url},
+                        created: new Date().getTime()
+                    }
+                )
+
+            }).then(() => resolve())
+              .catch(error => {
+                  showErrorToast(this, 'Import account', error.message || 'Cannot import account')
+                  reject()
+              })
+        })
+    }
+
+    /**
+     * It returns the accounts of the wallet.
+     * @return {Promise<[Object]>} a promise that resolves to an array of account object
+     */
+    getAccounts() {
+        return new Promise((resolve, reject) => {
+            WrapPromiseTask(async () => this.$storageApi.getAccounts())
+                .then(accounts => resolve(accounts))
+                .catch(() => {
+                    showErrorToast(this, 'Accounts', 'Cannot retrieve the accounts')
+                    reject()
+                })
+        })
+    }
+
+    /**
+     * It returns the current logged account with the faucet property.
+     * @return {Promise<{account: Object, allowsUnsignedFaucet: boolean}>} a promise that resolves to the result account and the faucet property
+     */
+    getCurrentAccountWithFaucet() {
+        return new Promise((resolve, reject) => {
+            WrapPromiseTask(async () => {
+                const account = await this.$storageApi.getCurrentAccount(this.$network.get())
+                const allowsUnsignedFaucet = await new RemoteNode(this.$network.get().url).allowsUnsignedFaucet()
+                return { account, allowsUnsignedFaucet }
+            }).then(result => resolve(result))
+              .catch(error => {
+                  showErrorToast(this, 'Account', error.message || 'Cannot retrieve account')
+                  reject()
+              })
         })
     }
 }

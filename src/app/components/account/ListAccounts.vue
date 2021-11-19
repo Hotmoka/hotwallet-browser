@@ -5,7 +5,7 @@
       Switch to one of your accounts or keys
     </p>
 
-    <b-list-group>
+    <b-list-group v-if="accounts && currentAccount">
       <b-list-group-item button
                          v-for="(account, index) in accounts"
                          :active="account.publicKey === currentAccount.publicKey"
@@ -27,7 +27,7 @@
 </template>
 
 <script>
-import {EventBus, showErrorToast, trimAddress, WrapPromiseTask} from "../../internal/utils";
+import {EventBus, trimAddress} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
 import VerifyPasswordModal from "../features/VerifyPasswordModal";
 import {Service} from "../../internal/Service";
@@ -63,24 +63,14 @@ export default {
         const subtitle = 'Please login with ' + this.selectedAccount.name + ' for the selected ' + (this.selectedAccount.reference ? 'account' : 'key')
         this.$refs.verifyPasswordComponent.showModal({account: this.selectedAccount, title: 'Login', subtitle: subtitle})
       }
-    },
-    getAccounts() {
-      WrapPromiseTask(async () => {
-        const currentAccount = await this.$storageApi.getCurrentAccount(this.$network.get())
-        const accounts = await this.$storageApi.getAccounts()
-
-        return {currentAccount, accounts}
-      })
-      .then(result => {
-        this.currentAccount = result.currentAccount
-        this.accounts = result.accounts
-      })
-      .catch(() => showErrorToast(this, 'Accounts','Cannot retrieve the accounts'))
     }
   },
   created() {
     EventBus.$emit('titleChange', 'Account list')
-    this.getAccounts()
+
+    const service = new Service()
+    service.getAccounts().then(accounts => this.accounts = accounts)
+    service.getCurrentAccount().then(account => this.currentAccount = account)
   }
 }
 </script>
