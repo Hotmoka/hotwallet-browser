@@ -19,7 +19,7 @@
             id="i-address"
         >
           <label>Address</label>
-          <p class="txt-secondary">{{ account.reference }}</p>
+          <p class="txt-secondary address-txt" @click="copyToClipboard(account.reference)">{{ account.reference }}</p>
         </b-form-group>
 
         <b-form-group
@@ -27,7 +27,7 @@
             id="i-address"
         >
           <label>Public key</label>
-          <p class="txt-secondary"> {{account.publicKeyBase58}}</p>
+          <p class="txt-secondary address-txt" @click="copyToClipboard(account.publicKeyBase58)"> {{account.publicKeyBase58}}</p>
         </b-form-group>
 
         <b-form-group
@@ -96,9 +96,11 @@ import {replaceRoute} from "../../internal/router";
 import {fieldNotEmptyFeedback, stateFieldNotEmpty} from "../../internal/validators";
 import VerifyPasswordModal from "../features/VerifyPasswordModal";
 import {Service} from "../../internal/Service";
+import {accountUtils} from "../../internal/mixins";
 
 export default {
   name: "Account",
+  mixins: [accountUtils],
   components: {VerifyPasswordModal},
   props: {
     editAccount: Boolean

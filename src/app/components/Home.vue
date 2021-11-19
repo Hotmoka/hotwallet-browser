@@ -78,21 +78,17 @@
 </template>
 
 <script>
-import {RemoteNode} from "hotweb3";
 import {
-  WrapPromiseTask,
   showErrorToast,
   EventBus,
-  showInfoToast,
-  storageReferenceFrom
 } from "../internal/utils";
 import {pushRoute, replaceRoute} from "../internal/router";
 import {Service} from "../internal/Service";
-import {coinFormatter} from "../internal/mixins";
+import {accountUtils, coinFormatter} from "../internal/mixins";
 
 export default {
   name: "Home",
-  mixins: [coinFormatter],
+  mixins: [coinFormatter, accountUtils],
   data() {
     return {
       showOptionsMenu: false,
@@ -131,8 +127,7 @@ export default {
       pushRoute('/receive-coins')
     },
     onCopyToClipboardClick() {
-      const text = this.isAccount ? this.account.reference : this.account.publicKeyBase58
-      navigator.clipboard.writeText(text).then(() => showInfoToast(this, 'Info', 'Content copied to clipboard', 1600))
+      this.copyToClipboard(this.isAccount ? this.account.reference : this.account.publicKeyBase58)
     },
     getAccountDetails(accountReference) {
       new Service()
@@ -230,9 +225,4 @@ export default {
   opacity: .55;
   cursor: no-drop;
 }
-
-.address-txt {
-  cursor: pointer;
-}
-
 </style>

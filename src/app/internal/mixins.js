@@ -1,4 +1,4 @@
-import {formatCoins, storageReferenceToString, trimAddress} from "./utils";
+import {formatCoins, showInfoToast, storageReferenceToString, trimAddress} from "./utils";
 
 export const coinFormatter = {
     methods: {
@@ -15,6 +15,12 @@ export const accountUtils = {
         },
         trimAccountAddress(addressReference) {
             return trimAddress(addressReference)
+        },
+        copyToClipboard(text) {
+            if (text) {
+                navigator.clipboard.writeText(text)
+                    .then(() => showInfoToast(this, 'Info', 'Content copied to clipboard', 1600))
+            }
         }
     }
 }

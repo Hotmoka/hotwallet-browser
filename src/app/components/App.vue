@@ -94,6 +94,10 @@ export default {
   word-break: break-word;
 }
 
+.address-txt {
+  cursor: pointer;
+}
+
 .b-popover .popover-body {
   padding: 0 !important;
 }

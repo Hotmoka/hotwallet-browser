@@ -8,17 +8,17 @@
         <b-form-group>
           <label>From</label>
           <p class="txt-secondary" v-if="fromFaucet">Faucet - {{ trimAccountAddress(from) }} </p>
-          <p class="txt-secondary" v-if="!fromFaucet">{{ from }} </p>
+          <p class="txt-secondary address-txt" v-if="!fromFaucet" @click="copyToClipboard(from)">{{ from }} </p>
         </b-form-group>
 
         <b-form-group>
           <label>To</label>
-          <p class="txt-secondary">{{ to }} </p>
+          <p class="txt-secondary address-txt" @click="copyToClipboard(to)">{{ to }} </p>
         </b-form-group>
 
         <b-form-group v-if="account && account.reference && account.reference.transaction">
           <label>Storage reference of new account <b-icon id="i-new-account-help" width="18" icon="question-circle-fill" variant="info"></b-icon></label>
-          <p class="txt-secondary">{{ toStringAccount(account) }}</p>
+          <p class="txt-secondary address-txt" @click="copyToClipboard(toStringAccount(account))">{{ toStringAccount(account) }}</p>
 
           <b-tooltip target="i-new-account-help" triggers="hover">
             Who holds the key {{ to }} can now bind it to that storage reference and control the account
@@ -32,7 +32,7 @@
 
         <b-form-group v-if="transaction">
           <label>Transaction</label>
-          <p class="txt-secondary">{{ this.transaction.hash }} </p>
+          <p class="txt-secondary address-txt" @click="copyToClipboard(transaction.hash)">{{ transaction.hash }} </p>
         </b-form-group>
 
         <b-button variant="primary" :href="shareHref" style="width: 100%">Share</b-button>
