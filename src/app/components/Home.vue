@@ -134,8 +134,9 @@ export default {
       const text = this.isAccount ? this.account.reference : this.account.publicKeyBase58
       navigator.clipboard.writeText(text).then(() => showInfoToast(this, 'Info', 'Content copied to clipboard', 1600))
     },
-    getAccountInfo(accountReference) {
-      WrapPromiseTask(async () => new RemoteNode(this.$network.get().url).getState(storageReferenceFrom(accountReference)))
+    getAccountDetails(accountReference) {
+      new Service()
+          .getAccountDetails(accountReference)
           .then(result => {
             const updates = result.updates
             updates.forEach(update => {
@@ -151,24 +152,28 @@ export default {
           .catch(error => showErrorToast(this, 'Account', error.message || 'Cannot retrieve account details'))
     },
     onLogoutClick() {
-      new Service().logout(this.account).then(() => replaceRoute('/login'))
+      new Service()
+          .logout(this.account)
+          .then(() => replaceRoute('/login'))
+          .catch(() => showErrorToast(this, 'Account', 'Unable to logout'))
     },
     displayAccount() {
       new Service()
-        .getCurrentAccountWithFaucet()
-        .then(result => {
-          this.allowsFaucet = result.allowsUnsignedFaucet
+          .getCurrentAccountWithFaucet()
+          .then(result => {
+            this.allowsFaucet = result.allowsUnsignedFaucet
 
-          this.account = {
-            ...this.account,
-            ...result.account
-          }
+            this.account = {
+              ...this.account,
+              ...result.account
+            }
 
-          if (this.account.reference) {
-            this.isAccount = true
-            this.getAccountInfo(this.account.reference)
-          }
-        })
+            if (this.account.reference) {
+              this.isAccount = true
+              this.getAccountDetails(this.account.reference)
+            }
+          })
+          .catch(error => showErrorToast(this, 'Account', error.message || 'Cannot retrieve account'))
     }
   },
   created() {

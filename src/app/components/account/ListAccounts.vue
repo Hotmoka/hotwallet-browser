@@ -27,7 +27,7 @@
 </template>
 
 <script>
-import {EventBus, trimAddress} from "../../internal/utils";
+import {EventBus, showErrorToast, trimAddress} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
 import VerifyPasswordModal from "../features/VerifyPasswordModal";
 import {Service} from "../../internal/Service";
@@ -51,7 +51,10 @@ export default {
         new Service()
           .switchToAccount(this.selectedAccount, result.password)
           .then(() => replaceRoute('/home'))
-          .catch(() => this.resetAccountSelection())
+          .catch(err => {
+            showErrorToast(this, 'Accounts', err.message || 'Cannot switch to the selected account')
+            this.resetAccountSelection()
+          })
       }
     },
     resetAccountSelection() {
@@ -69,8 +72,15 @@ export default {
     EventBus.$emit('titleChange', 'Account list')
 
     const service = new Service()
-    service.getAccounts().then(accounts => this.accounts = accounts)
-    service.getCurrentAccount().then(account => this.currentAccount = account)
+    service
+        .getAccounts()
+        .then(accounts => this.accounts = accounts)
+        .catch(() => showErrorToast(this, 'Accounts', 'Cannot retrieve the accounts'))
+
+    service
+        .getCurrentAccount()
+        .then(account => this.currentAccount = account)
+        .catch(error => showErrorToast(this, 'Account', error.message || 'Cannot retrieve account'))
   }
 }
 </script>

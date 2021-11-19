@@ -48,7 +48,7 @@
 </template>
 
 <script>
-import {EventBus} from "../../internal/utils";
+import {EventBus, showErrorToast} from "../../internal/utils";
 import {AccountHelper} from "hotweb3";
 import QrCodeModal from "../features/QrCodeModal";
 import {Service} from "../../internal/Service";
@@ -86,7 +86,10 @@ export default {
   },
   created() {
     EventBus.$emit('titleChange', 'Receive coins')
-    new Service().getCurrentAccount().then(account => this.account = account)
+    new Service()
+        .getCurrentAccount()
+        .then(account => this.account = account)
+        .catch(error => showErrorToast(this, 'Account', error.message || 'Cannot retrieve account'))
   }
 }
 </script>

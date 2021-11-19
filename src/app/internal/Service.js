@@ -31,37 +31,29 @@ export class Service extends Vue {
      * @return {Promise<void>} a promise that resolves to void
      */
     login(password) {
-        return new Promise((resolve, reject) => {
-            WrapPromiseTask(async () => {
+        return WrapPromiseTask(async () => {
 
-                // set password and init store
-                await this.$storageApi.setPassword(password)
-                await this.$storageApi.initPrivateStore()
-                const account = await this.$storageApi.getCurrentAccount(this.$network.get())
+            // set password and init store
+            await this.$storageApi.setPassword(password)
+            await this.$storageApi.initPrivateStore()
+            const account = await this.$storageApi.getCurrentAccount(this.$network.get())
 
-                // verify public key
-                const publicKeyVerified = AccountHelper.verifyPublicKey(
-                    password,
-                    account.entropy,
-                    Bip39Dictionary.ENGLISH,
-                    account.publicKey
-                )
+            // verify public key
+            const publicKeyVerified = AccountHelper.verifyPublicKey(
+                password,
+                account.entropy,
+                Bip39Dictionary.ENGLISH,
+                account.publicKey
+            )
 
-                if (publicKeyVerified) {
-                    await this.$storageApi.setAccountAuth(account, true)
-                } else {
-                    throw new Error('Wrong password')
-                }
+            if (publicKeyVerified) {
+                await this.$storageApi.setAccountAuth(account, true)
+            } else {
+                throw new Error('Wrong password')
+            }
 
-                return account
-            }).then(account => {
-                resolve()
-                this.$eventsApi.emit(CONNECTED, filterAccount(account))
-            }).catch(error => {
-                showErrorToast(this, 'Login', error.message || 'Error during login')
-                reject()
-            })
-        })
+            return account
+        }).then(account => this.$eventsApi.emit(CONNECTED, filterAccount(account)))
     }
 
     /**
@@ -70,16 +62,8 @@ export class Service extends Vue {
      * @return {Promise<void>} a promise that resolves to void
      */
     logout(account) {
-        return new Promise((resolve, reject) => {
-            WrapPromiseTask(async () => {
-                await this.$storageApi.setAccountAuth(account, false)
-                this.$eventsApi.emit(DISCONNECTED)
-            }).then(() => resolve())
-              .catch(() => {
-                    showErrorToast(this, 'Account', 'Unable to logout')
-                    reject()
-              })
-        })
+        return WrapPromiseTask(async () => this.$storageApi.setAccountAuth(account, false))
+            .then(() => this.$eventsApi.emit(DISCONNECTED))
     }
 
     /**
@@ -87,18 +71,12 @@ export class Service extends Vue {
      * @return {Promise<{name, publicKey}>} a promise that resolves to an account object
      */
     getCurrentPublicAccount() {
-        return new Promise((resolve, reject) => {
-            WrapPromiseTask(async () => {
-                const account = await this.$storageApi.getStore('account')
-                if (!account) {
-                    throw new Error('Cannot retrieve account')
-                }
-                return account
-            }).then(account => resolve(account))
-              .catch(error => {
-                  showErrorToast(this, 'Account', error.message || 'Cannot retrieve account')
-                  reject()
-              })
+        return WrapPromiseTask(async () => {
+            const account = await this.$storageApi.getStore('account')
+            if (!account) {
+                throw new Error('Cannot retrieve account')
+            }
+            return account
         })
     }
 
@@ -107,14 +85,7 @@ export class Service extends Vue {
      * @return {Promise<{Object}>} a promise that resolves to an account object
      */
     getCurrentAccount() {
-        return new Promise((resolve, reject) => {
-            WrapPromiseTask(async () => this.$storageApi.getCurrentAccount(this.$network.get()))
-                .then(account => resolve(account))
-                .catch(error => {
-                    showErrorToast(this, 'Account', error.message || 'Cannot retrieve account')
-                    reject(error)
-                })
-        })
+        return WrapPromiseTask(async () => this.$storageApi.getCurrentAccount(this.$network.get()))
     }
 
     /**
@@ -125,30 +96,25 @@ export class Service extends Vue {
      * @return {Promise<unknown>} a promises that resolves to the new network
      */
     changeNetwork(network, networks) {
-        return new Promise((resolve, reject) => {
-            WrapPromiseTask(async () => {
-                const network = getNetworkByValue(network, networks)
-                if (!network) {
-                    throw new Error('Network not found')
-                }
+        return WrapPromiseTask(async () => {
+            const network = getNetworkByValue(network, networks)
+            if (!network) {
+                throw new Error('Network not found')
+            }
 
-                await this.$storageApi.selectNetwork(network)
-                const accountsForNetwork = await this.$storageApi.getAccountsForNetwork(network)
+            await this.$storageApi.selectNetwork(network)
+            const accountsForNetwork = await this.$storageApi.getAccountsForNetwork(network)
 
-                if (accountsForNetwork.length === 0) {
-                    return {network, newAccount: true}
-                } else {
-                    await this.$storageApi.setAccountAuth(accountsForNetwork[0], true)
-                    return {network, newAccount: false, account: accountsForNetwork[0]}
-                }
-            }).then(result => {
-                resolve(result)
-                this.$eventsApi.emit(NETWORK_CHANGED, filterNetwork(result.network))
-                this.$eventsApi.emit(ACCOUNT_CHANGED, result.newAccount ? null : result.account)
-            }).catch(e => {
-                showErrorToast(this, 'Network', e.message || 'Cannot set network')
-                reject()
-            })
+            if (accountsForNetwork.length === 0) {
+                return {network, newAccount: true}
+            } else {
+                await this.$storageApi.setAccountAuth(accountsForNetwork[0], true)
+                return {network, newAccount: false, account: accountsForNetwork[0]}
+            }
+
+        }).then(result => {
+            this.$eventsApi.emit(NETWORK_CHANGED, filterNetwork(result.network))
+            this.$eventsApi.emit(ACCOUNT_CHANGED, result.newAccount ? null : result.account)
         })
     }
 
@@ -159,37 +125,32 @@ export class Service extends Vue {
      * @return {Promise<unknown>} a promise that resolves to the network object
      */
     connectToNetwork(url, name) {
-        return new Promise((resolve, reject) => {
-            WrapPromiseTask(async () => {
-                const splittedUrl = url.split("://")
-                const networkName = name && name.length > 0 ? name : null
+        return WrapPromiseTask(async () => {
+            const splittedUrl = url.split("://")
+            const networkName = name && name.length > 0 ? name : null
 
-                const network = {
-                    url: url,
-                    protocol: splittedUrl[0],
-                    text: networkName ? networkName : splittedUrl[1],
-                    value: networkName ? networkName + '_' + splittedUrl[1] : splittedUrl[1],
-                    selected: true
-                }
+            const network = {
+                url: url,
+                protocol: splittedUrl[0],
+                text: networkName ? networkName : splittedUrl[1],
+                value: networkName ? networkName + '_' + splittedUrl[1] : splittedUrl[1],
+                selected: true
+            }
 
-                const validNetwork = await this.testNetwork(network)
-                if (!validNetwork) {
-                    throw new Error('Cannot connect to network')
-                }
+            const validNetwork = await this.testNetwork(network)
+            if (!validNetwork) {
+                throw new Error('Cannot connect to network')
+            }
 
-                // add and set network as selected
-                await this.$storageApi.addNetwork(network)
-                await this.$storageApi.selectNetwork(network)
-                await this.$storageApi.logoutAllAccounts()
+            // add and set network as selected
+            await this.$storageApi.addNetwork(network)
+            await this.$storageApi.selectNetwork(network)
+            await this.$storageApi.logoutAllAccounts()
 
-                return network
-            }).then(network => {
-                resolve(network)
-                this.$eventsApi.emit(NETWORK_CHANGED, filterNetwork(network))
-                this.$eventsApi.emit(ACCOUNT_CHANGED, null)
-            }).catch(error => {
-                reject(error)
-            })
+            return network
+        }).then(network => {
+            this.$eventsApi.emit(NETWORK_CHANGED, filterNetwork(network))
+            this.$eventsApi.emit(ACCOUNT_CHANGED, null)
         })
     }
 
@@ -223,27 +184,21 @@ export class Service extends Vue {
      * @return {Promise<void>} a promise that resolves to void
      */
     switchToAccount(account, password) {
-        return new Promise((resolve, reject) => {
-            WrapPromiseTask(async () => {
+        return WrapPromiseTask(async () => {
 
-                // set new password
-                await this.$storageApi.setPassword(password)
-                await this.$storageApi.setAccountAuth(account, true)
-                await this.$storageApi.selectNetwork(account.network)
-                const currentNetwork = await this.$storageApi.getCurrentNetwork()
-                this.$network.set(currentNetwork)
+            // set new password
+            await this.$storageApi.setPassword(password)
+            await this.$storageApi.setAccountAuth(account, true)
+            await this.$storageApi.selectNetwork(account.network)
+            const currentNetwork = await this.$storageApi.getCurrentNetwork()
+            this.$network.set(currentNetwork)
 
-                // notify network change
-                EventBus.$emit('networkChange', currentNetwork)
+            // notify network change
+            EventBus.$emit('networkChange', currentNetwork)
 
-            }).then(() => {
-                resolve()
-                this.$eventsApi.emit(ACCOUNT_CHANGED, filterAccount(account))
-                this.$eventsApi.emit(NETWORK_CHANGED, filterNetwork(account.network))
-            }).catch(err => {
-                showErrorToast(this, 'Accounts', err.message || 'Cannot switch to the selected account')
-                reject()
-            })
+        }).then(() => {
+            this.$eventsApi.emit(ACCOUNT_CHANGED, filterAccount(account))
+            this.$eventsApi.emit(NETWORK_CHANGED, filterNetwork(account.network))
         })
     }
 
@@ -253,21 +208,18 @@ export class Service extends Vue {
      * @return {Promise<unknown>} a promise that resolves to the transaction
      */
     getTransactionDetails(uuid) {
-        return new Promise((resolve, reject) => {
-            WrapPromiseTask(async() => {
+        return WrapPromiseTask(async () => {
 
-                if (!uuid) {
-                    throw new Error('Transaction id non valid')
-                }
+            if (!uuid) {
+                throw new Error('Transaction id non valid')
+            }
 
-                const transactions = await this.$storageApi.getStore('transactions')
-                if (!transactions || !transactions.hasOwnProperty(uuid)) {
-                    throw new Error('Transaction non found')
-                }
+            const transactions = await this.$storageApi.getStore('transactions')
+            if (!transactions || !transactions.hasOwnProperty(uuid)) {
+                throw new Error('Transaction non found')
+            }
 
-                return transactions[uuid]
-            }).then(result => resolve(result))
-              .catch(err => reject(err))
+            return transactions[uuid]
         })
     }
 
@@ -279,48 +231,43 @@ export class Service extends Vue {
      * @return {Promise<{storageValue: StorageValueModel, transaction: TransactionReferenceModel}>} a promise that resolves to a result object
      */
     performTransaction(transaction, account, privateKey) {
-        return new Promise((resolve, reject) => {
+        return WrapPromiseTask(async () => {
+            const remoteNode = new RemoteNode(this.$network.get().url, new Signer(Algorithm.ED25519, privateKey))
 
-            WrapPromiseTask(async () => {
-                const remoteNode = new RemoteNode(this.$network.get().url, new Signer(Algorithm.ED25519, privateKey))
+            const caller = storageReferenceFrom(account.reference)
+            const nonceOfCaller = await remoteNode.getNonceOf(caller)
+            const gasPrice = await remoteNode.getGasPrice()
+            const chainId = await remoteNode.getChainId()
 
-                const caller = storageReferenceFrom(account.reference)
-                const nonceOfCaller = await remoteNode.getNonceOf(caller)
-                const gasPrice = await remoteNode.getGasPrice()
-                const chainId = await remoteNode.getChainId()
+            // we sign the optional base64 data
+            if (transaction.base64DataToSign) {
+                const signedData = remoteNode.signer.sign(Buffer.from(transaction.base64DataToSign))
+                transaction.actuals.push({
+                    type: 'java.lang.String',
+                    value: signedData
+                })
+                transaction.methodSignature.formals.push('java.lang.String')
+            }
 
-                // we sign the optional base64 data
-                if (transaction.base64DataToSign) {
-                    const signedData = remoteNode.signer.sign(Buffer.from(transaction.base64DataToSign))
-                    transaction.actuals.push({
-                        type: 'java.lang.String',
-                        value: signedData
-                    })
-                    transaction.methodSignature.formals.push('java.lang.String')
-                }
+            const method = transaction.methodSignature.voidMethod ?
+                new VoidMethodSignatureModel(transaction.methodSignature.definingClass, transaction.methodSignature.methodName, transaction.methodSignature.formals) :
+                new NonVoidMethodSignatureModel(transaction.methodSignature.definingClass, transaction.methodSignature.methodName, transaction.methodSignature.returnType, transaction.methodSignature.formals)
 
-                const method = transaction.methodSignature.voidMethod ?
-                    new VoidMethodSignatureModel(transaction.methodSignature.definingClass, transaction.methodSignature.methodName, transaction.methodSignature.formals) :
-                    new NonVoidMethodSignatureModel(transaction.methodSignature.definingClass, transaction.methodSignature.methodName, transaction.methodSignature.returnType, transaction.methodSignature.formals)
+            const request = new InstanceMethodCallTransactionRequestModel(
+                caller,
+                nonceOfCaller,
+                chainId,
+                transaction.gas,
+                gasPrice,
+                transaction.smartContractAddress,
+                method,
+                transaction.receiver,
+                transaction.actuals,
+                remoteNode.signer
+            )
+            const storageValue = await remoteNode.addInstanceMethodCallTransaction(request);
 
-                const request = new InstanceMethodCallTransactionRequestModel(
-                    caller,
-                    nonceOfCaller,
-                    chainId,
-                    transaction.gas,
-                    gasPrice,
-                    transaction.smartContractAddress,
-                    method,
-                    transaction.receiver,
-                    transaction.actuals,
-                    remoteNode.signer
-                )
-                const storageValue = await remoteNode.addInstanceMethodCallTransaction(request);
-
-                return {storageValue, transaction: request.getReference(request.signature)}
-
-            }).then(result => resolve(result))
-              .catch(err => reject(err))
+            return {storageValue, transaction: request.getReference(request.signature)}
         })
     }
 
@@ -330,29 +277,23 @@ export class Service extends Vue {
      * @return {Promise<void>} a promise that resolves to void
      */
     verifyAccount(account) {
-        return new Promise((resolve, reject) => {
-            WrapPromiseTask(async () => {
+        return WrapPromiseTask(async () => {
 
-                let storageRefOfAccount = null
-                try {
-                    storageRefOfAccount = storageReferenceFrom(account.reference)
-                } catch (e) {
-                    throw new Error('Invalid address of account')
-                }
+            let storageRefOfAccount = null
+            try {
+                storageRefOfAccount = storageReferenceFrom(account.reference)
+            } catch (e) {
+                throw new Error('Invalid address of account')
+            }
 
-                const accountHelper = new AccountHelper(new RemoteNode(this.$network.get().url))
-                const isVerified = await accountHelper.verifyAccount(storageRefOfAccount, account.publicKey)
+            const accountHelper = new AccountHelper(new RemoteNode(this.$network.get().url))
+            const isVerified = await accountHelper.verifyAccount(storageRefOfAccount, account.publicKey)
 
-                if (!isVerified) {
-                    throw new Error('Cannot verify account')
-                }
+            if (!isVerified) {
+                throw new Error('Cannot verify account')
+            }
 
-                await this.$storageApi.updateAccount(account)
-            }).then(() => resolve())
-              .catch(err => {
-                  showErrorToast(this, 'Account', err.message || 'Cannot update account')
-                  reject()
-              })
+            await this.$storageApi.updateAccount(account)
         })
     }
 
@@ -363,40 +304,34 @@ export class Service extends Vue {
      * @return {Promise<void>} a promise that resolves to void
      */
     createAccountFromFaucet(newAccount, balance) {
-        return new Promise((resolve, reject) => {
-            WrapPromiseTask(async () => {
+        return WrapPromiseTask(async () => {
 
-                const remoteNode = new RemoteNode(this.$network.get().url)
-                const gamete = await remoteNode.getGamete()
-                const balanceOfFaucet = await this.getBalanceOfAccount(gamete)
+            const remoteNode = new RemoteNode(this.$network.get().url)
+            const gamete = await remoteNode.getGamete()
+            const balanceOfFaucet = await this.getBalanceOfAccount(gamete)
 
-                if ((balance - Number(balanceOfFaucet)) > 0) {
-                    throw new Error('Cannot transfer more than ' + balanceOfFaucet + ' from faucet')
+            if ((balance - Number(balanceOfFaucet)) > 0) {
+                throw new Error('Cannot transfer more than ' + balanceOfFaucet + ' from faucet')
+            }
+
+            // generate key pair
+            const keyPair = AccountHelper.generateEd25519KeyPairFrom(newAccount.password, Bip39Dictionary.ENGLISH)
+            const account = await new AccountHelper(remoteNode).createAccountFromFaucet(Algorithm.ED25519, keyPair, balance.toString(), "0")
+
+            // set password for the private store and add account
+            await this.$storageApi.setPassword(newAccount.password)
+            await this.$storageApi.addAccount(
+                {
+                    name: newAccount.name,
+                    reference: storageReferenceToString(account.reference),
+                    entropy: keyPair.entropy,
+                    publicKey: keyPair.publicKey,
+                    selected: true,
+                    logged: true,
+                    network: {value: this.$network.get().value, url: this.$network.get().url},
+                    created: new Date().getTime()
                 }
-
-                // generate key pair
-                const keyPair = AccountHelper.generateEd25519KeyPairFrom(newAccount.password, Bip39Dictionary.ENGLISH)
-                const account = await new AccountHelper(remoteNode).createAccountFromFaucet(Algorithm.ED25519, keyPair, balance.toString(), "0")
-
-                // set password for the private store and add account
-                await this.$storageApi.setPassword(newAccount.password)
-                await this.$storageApi.addAccount(
-                    {
-                        name: newAccount.name,
-                        reference: storageReferenceToString(account.reference),
-                        entropy: keyPair.entropy,
-                        publicKey: keyPair.publicKey,
-                        selected: true,
-                        logged: true,
-                        network: {value: this.$network.get().value, url: this.$network.get().url},
-                        created: new Date().getTime()
-                    }
-                )
-            }).then(() => resolve())
-              .catch(err => {
-                  showErrorToast(this, 'New account', err.message || 'Error during account creation')
-                  reject()
-              })
+            )
         })
     }
 
@@ -408,52 +343,46 @@ export class Service extends Vue {
      * @return {Promise<void>} a promise that resolves to void
      */
     createAccountFromPayer(newAccount, payer, passwordOfPayer) {
-        return new Promise((resolve, reject) => {
-            WrapPromiseTask(async () => {
-                const balance = Math.round(Number(newAccount.balance))
+        return WrapPromiseTask(async () => {
+            const balance = Math.round(Number(newAccount.balance))
 
-                const remoteNode = new RemoteNode(this.$network.get().url)
-                const storageReferenceOfPayer = storageReferenceFrom(payer.reference)
-                const balanceOfPayer = await this.getBalanceOfAccount(storageReferenceOfPayer)
+            const remoteNode = new RemoteNode(this.$network.get().url)
+            const storageReferenceOfPayer = storageReferenceFrom(payer.reference)
+            const balanceOfPayer = await this.getBalanceOfAccount(storageReferenceOfPayer)
 
-                if ((balance - Number(balanceOfPayer)) > 0) {
-                    throw new Error('Cannot transfer more than ' + balanceOfPayer + ' from payer ' + payer.name)
+            if ((balance - Number(balanceOfPayer)) > 0) {
+                throw new Error('Cannot transfer more than ' + balanceOfPayer + ' from payer ' + payer.name)
+            }
+
+            // generate key pair of payer
+            const keyPairOfPayer = AccountHelper.generateEd25519KeyPairFrom(passwordOfPayer, Bip39Dictionary.ENGLISH, payer.entropy)
+
+            // generate key pair for the new account
+            const keyPair = AccountHelper.generateEd25519KeyPairFrom(newAccount.password, Bip39Dictionary.ENGLISH)
+            const account = await new AccountHelper(remoteNode).createAccountFromPayer(
+                Algorithm.ED25519,
+                storageReferenceOfPayer,
+                keyPairOfPayer,
+                keyPair,
+                balance.toString(),
+                "0",
+                false
+            )
+
+            // set password for the private store and add account
+            await this.$storageApi.setPassword(newAccount.password)
+            await this.$storageApi.addAccount(
+                {
+                    name: newAccount.name,
+                    reference: storageReferenceToString(account.reference),
+                    entropy: keyPair.entropy,
+                    publicKey: keyPair.publicKey,
+                    selected: true,
+                    logged: true,
+                    network: {value: this.$network.get().value, url: this.$network.get().url},
+                    created: new Date().getTime()
                 }
-
-                // generate key pair of payer
-                const keyPairOfPayer = AccountHelper.generateEd25519KeyPairFrom(passwordOfPayer, Bip39Dictionary.ENGLISH, payer.entropy)
-
-                // generate key pair for the new account
-                const keyPair = AccountHelper.generateEd25519KeyPairFrom(newAccount.password, Bip39Dictionary.ENGLISH)
-                const account = await new AccountHelper(remoteNode).createAccountFromPayer(
-                    Algorithm.ED25519,
-                    storageReferenceOfPayer,
-                    keyPairOfPayer,
-                    keyPair,
-                    balance.toString(),
-                    "0",
-                    false
-                )
-
-                // set password for the private store and add account
-                await this.$storageApi.setPassword(newAccount.password)
-                await this.$storageApi.addAccount(
-                    {
-                        name: newAccount.name,
-                        reference: storageReferenceToString(account.reference),
-                        entropy: keyPair.entropy,
-                        publicKey: keyPair.publicKey,
-                        selected: true,
-                        logged: true,
-                        network: {value: this.$network.get().value, url: this.$network.get().url},
-                        created: new Date().getTime()
-                    }
-                )
-            }).then(() => resolve())
-              .catch(err => {
-                  showErrorToast(this, 'New account', err.message || 'Error during account creation')
-                  reject()
-              })
+            )
         })
     }
 
@@ -464,33 +393,27 @@ export class Service extends Vue {
      * @return {Promise<void>} a promise that resolves to void
      */
     createKey(name, password) {
-        return new Promise((resolve, reject) => {
-            WrapPromiseTask(async () => {
+        return WrapPromiseTask(async () => {
 
-                // create key
-                const account = AccountHelper.createKey(password, Bip39Dictionary.ENGLISH)
+            // create key
+            const account = AccountHelper.createKey(password, Bip39Dictionary.ENGLISH)
 
-                // set password for the private store and add account
-                await this.$storageApi.setPassword(password)
-                await this.$storageApi.addAccount(
-                    {
-                        name: name,
-                        reference: null,
-                        entropy: account.entropy,
-                        publicKey: account.publicKey,
-                        publicKeyBase58: account.name,
-                        balance: account.balance,
-                        selected: true,
-                        logged: true,
-                        network: {value: this.$network.get().value, url: this.$network.get().url},
-                        created: new Date().getTime()
-                    }
-                )
-            }).then(() => resolve())
-              .catch(err => {
-                  showErrorToast(this, 'Create key', err.message || 'Error during key creation')
-                  reject()
-              })
+            // set password for the private store and add account
+            await this.$storageApi.setPassword(password)
+            await this.$storageApi.addAccount(
+                {
+                    name: name,
+                    reference: null,
+                    entropy: account.entropy,
+                    publicKey: account.publicKey,
+                    publicKeyBase58: account.name,
+                    balance: account.balance,
+                    selected: true,
+                    logged: true,
+                    network: {value: this.$network.get().value, url: this.$network.get().url},
+                    created: new Date().getTime()
+                }
+            )
         })
     }
 
@@ -502,40 +425,33 @@ export class Service extends Vue {
      * @return {Promise<unknown>}
      */
     importAccount(name, password, words) {
-        return new Promise((resolve, reject) => {
-            WrapPromiseTask(async () => {
+        return WrapPromiseTask(async () => {
 
-                for (let i = 0; i < 36; i++) {
-                    if (!words[i]) {
-                        throw new Error('Please enter all 36 words')
-                    }
+            for (let i = 0; i < 36; i++) {
+                if (!words[i]) {
+                    throw new Error('Please enter all 36 words')
                 }
+            }
 
-                // generate account from mnemonic
-                const mnemonic = words.join(' ')
-                const account = await new AccountHelper(new RemoteNode(this.$network.get().url)).importAccount(name, mnemonic, Bip39Dictionary.ENGLISH, password)
+            // generate account from mnemonic
+            const mnemonic = words.join(' ')
+            const account = await new AccountHelper(new RemoteNode(this.$network.get().url)).importAccount(name, mnemonic, Bip39Dictionary.ENGLISH, password)
 
-                // set password and add account
-                await this.$storageApi.setPassword(password)
-                await this.$storageApi.addAccount(
-                    {
-                        name: name,
-                        reference: storageReferenceToString(account.reference),
-                        entropy: account.entropy,
-                        publicKey: account.publicKey,
-                        balance: account.balance,
-                        selected: true,
-                        logged: true,
-                        network: {value: this.$network.get().value, url: this.$network.get().url},
-                        created: new Date().getTime()
-                    }
-                )
-
-            }).then(() => resolve())
-              .catch(error => {
-                  showErrorToast(this, 'Import account', error.message || 'Cannot import account')
-                  reject()
-              })
+            // set password and add account
+            await this.$storageApi.setPassword(password)
+            await this.$storageApi.addAccount(
+                {
+                    name: name,
+                    reference: storageReferenceToString(account.reference),
+                    entropy: account.entropy,
+                    publicKey: account.publicKey,
+                    balance: account.balance,
+                    selected: true,
+                    logged: true,
+                    network: {value: this.$network.get().value, url: this.$network.get().url},
+                    created: new Date().getTime()
+                }
+            )
         })
     }
 
@@ -544,14 +460,7 @@ export class Service extends Vue {
      * @return {Promise<[Object]>} a promise that resolves to an array of account object
      */
     getAccounts() {
-        return new Promise((resolve, reject) => {
-            WrapPromiseTask(async () => this.$storageApi.getAccounts())
-                .then(accounts => resolve(accounts))
-                .catch(() => {
-                    showErrorToast(this, 'Accounts', 'Cannot retrieve the accounts')
-                    reject()
-                })
-        })
+        return WrapPromiseTask(async () => this.$storageApi.getAccounts())
     }
 
     /**
@@ -559,19 +468,12 @@ export class Service extends Vue {
      * @return {Promise<{account: Object, allowsUnsignedFaucet: boolean}>} a promise that resolves to the result account and the faucet property
      */
     getCurrentAccountWithFaucet() {
-        return new Promise((resolve, reject) => {
-            WrapPromiseTask(async () => {
-                const account = await this.$storageApi.getCurrentAccount(this.$network.get())
-                const allowsUnsignedFaucet = await new RemoteNode(this.$network.get().url).allowsUnsignedFaucet()
-                return { account, allowsUnsignedFaucet }
-            }).then(result => resolve(result))
-              .catch(error => {
-                  showErrorToast(this, 'Account', error.message || 'Cannot retrieve account')
-                  reject()
-              })
+        return WrapPromiseTask(async () => {
+            const account = await this.$storageApi.getCurrentAccount(this.$network.get())
+            const allowsUnsignedFaucet = await new RemoteNode(this.$network.get().url).allowsUnsignedFaucet()
+            return { account, allowsUnsignedFaucet }
         })
     }
-
 
     /**
      * It sends an amount of coins to an account address.
@@ -647,13 +549,16 @@ export class Service extends Vue {
      * @return {Promise<KeyPair>} a promise that resolves to a key pair object
      */
     generateEd25519KeyPairFrom(password, entropy) {
-        return new Promise((resolve, reject) => {
-            WrapPromiseTask(async () => AccountHelper.generateEd25519KeyPairFrom(password, Bip39Dictionary.ENGLISH, entropy))
-                .then(keyPair => resolve(keyPair))
-                .catch(err => {
-                    showErrorToast(this, 'Account', err.message || 'Cannot verify account')
-                    reject()
-                })
-        })
+        return WrapPromiseTask(async () => AccountHelper.generateEd25519KeyPairFrom(password, Bip39Dictionary.ENGLISH, entropy))
     }
+
+    /**
+     * It returns the details of an account
+     * @param accountReference the reference of the account
+     * @return {Promise<StateModel>} a promise that resolves to the StateModel object
+     */
+    getAccountDetails(accountReference) {
+        return WrapPromiseTask(async () => new RemoteNode(this.$network.get().url).getState(storageReferenceFrom(accountReference)))
+    }
+
 }

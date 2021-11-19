@@ -50,7 +50,7 @@
 
 <script>
 
-import {EventBus} from "../../internal/utils";
+import {EventBus, showErrorToast} from "../../internal/utils";
 import {
   fieldNotEmptyFeedback,
   invalidPasswordFeedback,
@@ -86,8 +86,9 @@ export default {
   methods: {
     onImportAccountClick() {
       new Service()
-        .importAccount(this.name, this.password, this.words)
-        .then(() => replaceRoute('/home'))
+          .importAccount(this.name, this.password, this.words)
+          .then(() => replaceRoute('/home'))
+          .catch(error => showErrorToast(this, 'Import account', error.message || 'Cannot import account'))
     }
   },
   created() {

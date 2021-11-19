@@ -142,6 +142,7 @@ export default {
                 EventBus.$emit('reloadAccount')
               }
             })
+            .catch(e => showErrorToast(this, 'Network', e.message || 'Cannot set network'))
       }
     },
     onHeaderImageClick() {

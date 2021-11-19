@@ -26,6 +26,7 @@
 import {replaceRoute} from "../../internal/router";
 import {statePassword, invalidPasswordFeedback} from "../../internal/validators";
 import {Service} from "../../internal/Service"
+import {showErrorToast} from "../../internal/utils";
 
 export default {
   name: "Login",
@@ -52,12 +53,14 @@ export default {
       new Service()
           .login(this.password)
           .then(() => replaceRoute('/home'))
+          .catch(error => showErrorToast(this, 'Login', error.message || 'Error during login'))
     }
   },
   created() {
     new Service()
         .getCurrentPublicAccount()
         .then(account => this.account = account)
+        .catch(error => showErrorToast(this, 'Account', error.message || 'Cannot retrieve account'))
   }
 }
 </script>

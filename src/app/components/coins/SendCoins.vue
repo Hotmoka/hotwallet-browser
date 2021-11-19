@@ -230,11 +230,12 @@ export default {
     EventBus.$emit('titleChange', 'Send coins')
 
     new Service()
-      .getCurrentAccountWithFaucet()
-      .then(result => {
-        this.allowsUnsignedFaucet = result.allowsUnsignedFaucet
-        this.payer = result.account
-      })
+        .getCurrentAccountWithFaucet()
+        .then(result => {
+          this.allowsUnsignedFaucet = result.allowsUnsignedFaucet
+          this.payer = result.account
+        })
+        .catch(error => showErrorToast(this, 'Account', error.message || 'Cannot retrieve account'))
   }
 }
 </script>

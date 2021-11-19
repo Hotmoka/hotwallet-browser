@@ -138,6 +138,7 @@ export default {
         new Service()
             .createAccountFromPayer(this.newAccount, this.payer, verificationResult.password)
             .then(() => replaceRoute('/account'))
+            .catch(err => showErrorToast(this, 'New account', err.message || 'Error during account creation'))
       }
     },
     onCreateAccountClick() {
@@ -162,6 +163,7 @@ export default {
           new Service()
               .createAccountFromFaucet(this.newAccount, balance)
               .then(() => replaceRoute('/account'))
+              .catch(err => showErrorToast(this, 'New account', err.message || 'Error during account creation'))
         } else {
           this.askForPassword()
         }
@@ -185,6 +187,7 @@ export default {
           this.allowsUnsignedFaucet = result.allowsUnsignedFaucet
           this.payer = result.account
         })
+        .catch(error => showErrorToast(this, 'Account', error.message || 'Cannot retrieve account'))
   }
 }
 </script>

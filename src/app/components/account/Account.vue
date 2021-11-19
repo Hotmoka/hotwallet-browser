@@ -158,8 +158,9 @@ export default {
     onPasswordVerified(result) {
       if (result.verified) {
         new Service()
-          .verifyAccount(this.account)
-          .then(() => replaceRoute("/home"))
+            .verifyAccount(this.account)
+            .then(() => replaceRoute("/home"))
+            .catch(err => showErrorToast(this, 'Account', err.message || 'Cannot update account'))
       }
     }
   },
@@ -176,6 +177,7 @@ export default {
             this.words = AccountHelper.generateMnemonicWordsFrom(account.entropy, getHashOfStorageReference(account.reference), Bip39Dictionary.ENGLISH)
           }
         })
+        .catch(error => showErrorToast(this, 'Account', error.message || 'Cannot retrieve account'))
   }
 }
 </script>

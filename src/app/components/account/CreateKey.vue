@@ -55,7 +55,7 @@ import {
   stateFieldNotEmpty,
   statePassword
 } from "../../internal/validators";
-import {EventBus} from "../../internal/utils";
+import {EventBus, showErrorToast} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
 import {Service} from "../../internal/Service";
 
@@ -91,8 +91,9 @@ export default {
   methods: {
     onCreateClick() {
       new Service()
-        .createKey(this.name, this.password)
-        .then(() => replaceRoute('/home'))
+          .createKey(this.name, this.password)
+          .then(() => replaceRoute('/home'))
+          .catch(err => showErrorToast(this, 'Create key', err.message || 'Error during key creation'))
     }
   },
   created() {

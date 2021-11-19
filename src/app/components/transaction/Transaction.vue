@@ -47,7 +47,7 @@
 </template>
 
 <script>
-import {EventBus} from "../../internal/utils";
+import {EventBus, showErrorToast} from "../../internal/utils";
 import VerifyPasswordModal from "../features/VerifyPasswordModal";
 import {Service} from "../../internal/Service";
 import {coinFormatter} from "../../internal/mixins";
@@ -101,11 +101,12 @@ export default {
     onPasswordVerified(result) {
        if (result.verified) {
          new Service()
-          .generateEd25519KeyPairFrom(result.password, this.account.entropy)
-          .then(keyPair => {
-            this.privateKey = keyPair.privateKey
-            this.getTransactionDetails()
-          })
+             .generateEd25519KeyPairFrom(result.password, this.account.entropy)
+             .then(keyPair => {
+               this.privateKey = keyPair.privateKey
+               this.getTransactionDetails()
+             })
+             .catch(err => showErrorToast(this, 'Account', err.message || 'Cannot verify account'))
       }
     },
     onCancelPasswordCheck() {
@@ -140,18 +141,18 @@ export default {
     },
     getAccount() {
       new Service()
-        .getCurrentAccount()
-        .then(account => {
-          this.account = {...account}
-          this.$refs.verifyPasswordComponent.showModal({
-            account: this.account,
-            title: 'Account verification',
-            subtitle: 'Please enter password to verify the account of ' + this.account.name,
-            btnActionName: 'Verify',
-            closeOnIncorrectPwd: false
+          .getCurrentAccount()
+          .then(account => {
+            this.account = {...account}
+            this.$refs.verifyPasswordComponent.showModal({
+              account: this.account,
+              title: 'Account verification',
+              subtitle: 'Please enter password to verify the account of ' + this.account.name,
+              btnActionName: 'Verify',
+              closeOnIncorrectPwd: false
+            })
           })
-        })
-        .catch(err => this.handleTransactionError(err.message || 'Cannot retrieve account'))
+          .catch(err => this.handleTransactionError(err.message || 'Cannot retrieve account'))
     },
     setTransactionTimer() {
       const timer = setInterval(() => {
