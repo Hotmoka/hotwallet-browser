@@ -125,3 +125,16 @@ export const formatCoins = coins => {
 		return "0"
 	}
 }
+
+/**
+ * Method to check the current browser.
+ * @return {boolean} returns true of the browser is Firefox or Chrome, false otherwise
+ */
+export const isBrowserAllowed = () => {
+	try {
+		const userAgent = window.navigator.userAgent
+		return userAgent.indexOf('Firefox') !== -1 || userAgent.indexOf('Chrome') !== -1
+	} catch (e) {
+		return false
+	}
+}

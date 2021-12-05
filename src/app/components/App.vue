@@ -12,10 +12,14 @@
     </template>
 
     <div class="container">
-      <div :class="isPopup ? 'popup' : 'card'">
+      <div :class="isPopup ? 'popup' : 'card'" v-if="isBrowserAllowed">
         <Header/>
         <Navigation :isPopup="isPopup"/>
         <router-view v-if="showView"></router-view>
+      </div>
+      <div class="browser-not-supported" v-if="!isBrowserAllowed">
+        Browser not supported <br/>
+        Please use <strong>Chrome</strong> or <strong>Firefox</strong>
       </div>
     </div>
   </b-overlay>
@@ -23,7 +27,7 @@
 
 <script>
 
-import {EventBus, showErrorToast, WrapPromiseTask} from "../internal/utils";
+import {EventBus, isBrowserAllowed, showErrorToast, WrapPromiseTask} from "../internal/utils";
 import Header from "./header/Header"
 import Navigation from "./header/Navigation";
 
@@ -39,7 +43,8 @@ export default {
   data() {
     return {
       showSpinner: false,
-      showView: false
+      showView: false,
+      isBrowserAllowed: false
     }
   },
   computed: {
@@ -48,6 +53,7 @@ export default {
     }
   },
   created() {
+    this.isBrowserAllowed = isBrowserAllowed()
     EventBus.$on('showSpinner', show => this.showSpinner = show)
 
     WrapPromiseTask(() => this.$network.init())
@@ -105,6 +111,11 @@ export default {
 .b-popover {
   width: 200px;
   box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+}
+
+.browser-not-supported {
+  text-align: center;
+  margin-top: 50%;
 }
 
 @media only screen and (max-width: 768px) {
