@@ -1,6 +1,8 @@
 <template>
   <div class="content text-center">
     <div class="center">
+      <img src="../assets/img/logo-web-transparent.png" height="128" width="400" alt="hotmoka" id="logo-hotmoka">
+
       <h6 class="title">Are you new to Hotwallet ?</h6>
 
       <b-button @click="onCreateKeyClick" variant="outline-primary mt-3">Create key</b-button>
@@ -40,6 +42,6 @@ export default {
 
 .title {
   margin-top: 4rem;
-  margin-bottom: 4rem;
+  margin-bottom: 2rem;
 }
 </style>

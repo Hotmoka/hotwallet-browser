@@ -70,15 +70,4 @@ export default {
   margin-top: 4rem;
   margin-bottom: 2rem;
 }
-
-#logo-hotmoka {
-  margin-top: 1.5rem;
-}
-
-@media only screen and (max-width: 768px) {
-  #logo-hotmoka {
-    width: 246px;
-    height: 76px;
-  }
-}
 </style>

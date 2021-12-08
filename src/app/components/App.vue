@@ -118,6 +118,17 @@ export default {
   margin-top: 50%;
 }
 
+#logo-hotmoka {
+  margin-top: 1.5rem;
+}
+
+@media only screen and (max-width: 768px) {
+  #logo-hotmoka {
+    width: 236px;
+    height: 76px;
+  }
+}
+
 @media only screen and (max-width: 768px) {
   .content {
     max-height: 540px;
