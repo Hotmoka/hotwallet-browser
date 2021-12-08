@@ -27,7 +27,8 @@
         <b-form-group>
           <label>Words  <b-icon id="i-words-help" width="18" icon="question-circle-fill" variant="info"></b-icon></label>
           <b-tooltip target="i-words-help" triggers="hover">
-            Insert the 36 words that have been provided at time of creation of the account, in their sequential order
+            Insert the 36 words that have been provided at time of creation of the account, in their sequential order.
+            You can copy and paste the words in any cell.
           </b-tooltip>
 
           <div class="row">
@@ -36,6 +37,7 @@
                   :id="'i-words-' + index"
                   :placeholder="'word ' + index"
                   v-model="words[index - 1]"
+                  @input="onInput"
                   trim
               ></b-form-input>
             </div>
@@ -89,6 +91,14 @@ export default {
           .importAccount(this.name, this.password, this.words)
           .then(() => replaceRoute('/home'))
           .catch(error => showErrorToast(this, 'Import account', error.message || 'Cannot import account'))
+    },
+    onInput(e) {
+      if (e.length > 30) {
+        const words = e.split(" ")
+        if (words.length === 36) {
+          this.words = words
+        }
+      }
     }
   },
   created() {
