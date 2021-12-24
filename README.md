@@ -2,7 +2,13 @@
 
 A wallet for the Hotmoka blochain available as a browser extension for Chrome and Firefox. 
 
+## Prerequisites
+
+- ```node``` (version >= 12)
+- ```npm``` (version >= 6)
+
 ## Project setup
+
 ```
 npm install
 ```
