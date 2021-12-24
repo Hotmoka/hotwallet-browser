@@ -2,6 +2,10 @@
   "name": "hotwallet",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=12",
+    "npm": ">=6"
+  },
   "scripts": {
     "build": "cross-env NODE_ENV=production webpack --hide-modules",
     "build:dev": "cross-env NODE_ENV=development webpack --hide-modules",
