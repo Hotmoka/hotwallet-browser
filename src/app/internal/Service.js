@@ -4,8 +4,8 @@ import {
     filterAccount,
     filterNetwork,
     getNetworkByValue,
-    showErrorToast,
-    storageReferenceFrom, storageReferenceToString,
+    storageReferenceFrom,
+    storageReferenceToString,
     WrapPromiseTask
 } from "./utils";
 import {
@@ -531,7 +531,7 @@ export class Service extends Vue {
             Algorithm.ED25519,
             storageReferenceFrom(payer.reference),
             keyPairOfPayer,
-            new KeyPair(null, Base58.decode(destination).toString(), null),
+            new KeyPair(null, Base58.decode(destination).toString('base64'), null),
             amount,
             "0",
             anonymous,
@@ -569,5 +569,14 @@ export class Service extends Vue {
      */
     removeAccount(account) {
         return WrapPromiseTask(async () => this.$storageApi.removeAccount(account))
+    }
+
+    /**
+     * Returns from the accounts ledger the reference of the public key.
+     * @param publicKeyBase58 the public key encoded in base58
+     * @return {Promise<StorageReferenceModel | null>}  a promise that resolves to the reference or null if no reference was found for the given public key
+     */
+    getReferenceFromAccountsLedger(publicKeyBase58) {
+        return WrapPromiseTask(async () => new AccountHelper(new RemoteNode(this.$network.get().url)).getReferenceFromAccountsLedger(publicKeyBase58))
     }
 }

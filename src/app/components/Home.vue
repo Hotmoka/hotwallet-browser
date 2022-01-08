@@ -10,6 +10,7 @@
           <b-list-group-item button @click="onOptionClick('/create-account')" v-if="isAccount || allowsFaucet">Create account</b-list-group-item>
           <b-list-group-item button @click="onOptionClick('/create-key')">Create key</b-list-group-item>
           <b-list-group-item button @click="onOptionClick('/account-list')">Account list</b-list-group-item>
+          <b-list-group-item button @click="onLogoutClick">Logout</b-list-group-item>
         </b-list-group>
       </b-popover>
 
@@ -63,11 +64,16 @@
 
       <hr/>
 
-      <div v-if="!isAccount">
+      <div v-if="!isAccount && !keyBinding.show">
         <p class="text-dark">Waiting for payment for this key</p>
       </div>
 
-      <div class="btn-logout">
+      <div v-if="keyBinding.show && keyBinding.reference">
+        <p class="text-dark text-start">A reference was found for the current key. Press "Reload" to bind the reference to the key</p>
+        <b-button variant="primary" @click="onReloadClick">Reload</b-button>
+      </div>
+
+      <div class="btn-logout" v-if="!keyBinding.show">
         <div class="d-flex justify-content-center">
           <b-button variant="outline-danger" @click="onLogoutClick">Logout</b-button>
         </div>
@@ -80,7 +86,7 @@
 <script>
 import {
   showErrorToast,
-  EventBus,
+  EventBus, storageReferenceToString,
 } from "../internal/utils";
 import {pushRoute, replaceRoute} from "../internal/router";
 import {Service} from "../internal/Service";
@@ -97,7 +103,11 @@ export default {
         balanceRed: 0
       },
       isAccount: false,
-      allowsFaucet: false
+      allowsFaucet: false,
+      keyBinding: {
+        show: false,
+        reference: null
+      }
     }
   },
   computed: {
@@ -152,20 +162,50 @@ export default {
           .then(() => replaceRoute('/login'))
           .catch(() => showErrorToast(this, 'Account', 'Unable to logout'))
     },
+    onReloadClick() {
+      const account = {...this.account}
+      account.reference = this.keyBinding.reference
+
+      new Service()
+          .verifyAccount(account)
+          .then(() => this.displayAccount())
+          .catch(err => showErrorToast(this, 'Account', err.message || 'Cannot update account'))
+    },
+    checkForBindedKey() {
+      new Service()
+          .getReferenceFromAccountsLedger(this.account.publicKeyBase58)
+          .then(storageReference => {
+              if (storageReference !== null) {
+                this.keyBinding = {
+                  show: true,
+                  reference: storageReferenceToString(storageReference)
+                }
+              }
+          })
+          .catch(_ => {})
+    },
     displayAccount() {
       new Service()
           .getCurrentAccountWithFaucet()
           .then(result => {
             this.allowsFaucet = result.allowsUnsignedFaucet
 
+            this.keyBinding = {
+              show: false,
+              reference: null
+            }
+
             this.account = {
-              ...this.account,
+              balance: 0,
+              balanceRed: 0,
               ...result.account
             }
 
             if (this.account.reference) {
               this.isAccount = true
               this.getAccountDetails(this.account.reference)
+            } else {
+              this.checkForBindedKey()
             }
           })
           .catch(error => showErrorToast(this, 'Account', error.message || 'Cannot retrieve account'))
@@ -183,7 +223,7 @@ export default {
   width: 100%;
   position: absolute;
   bottom: 2rem;
-  right: 1px;
+  right: 8px;
 }
 
 .navigation {
