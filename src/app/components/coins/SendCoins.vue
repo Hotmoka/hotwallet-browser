@@ -8,10 +8,10 @@
             id="i-destination"
             label="Destination"
             label-for="i-destination"
-            :invalid-feedback="invalidFeedbackDestination"
-            :state="stateDestination"
+            :invalid-feedback="fieldNotEmptyFeedback(destination, 'Please enter a destination')"
+            :state="stateFieldNotEmpty(destination)"
         >
-          <b-form-input type="text" id="i-destination" v-model="destination" :state="stateDestination" placeholder="Account or Key" trim></b-form-input>
+          <b-form-input type="text" id="i-destination" v-model="destination" :state="stateFieldNotEmpty(destination)" placeholder="Account or Key" trim></b-form-input>
         </b-form-group>
 
         <b-form-group
@@ -64,7 +64,7 @@
           <p class="txt-secondary" v-if="payer"> {{payer.name}} - {{trimAccountAddress(payer.reference)}}</p>
         </b-form-group>
 
-        <b-button @click="onSendClick" variant="primary" :disabled="!stateDestination || !stateAmount">Send</b-button>
+        <b-button @click="onSendClick" variant="primary" :disabled="stateFormDisabled">Send</b-button>
       </div>
     </div>
 
@@ -73,7 +73,6 @@
 </template>
 
 <script>
-import {fieldNotEmptyFeedback, stateFieldNotEmpty} from "../../internal/validators";
 import {
   showErrorToast,
   WrapPromiseTask,
@@ -87,12 +86,12 @@ import {
 } from "hotweb3";
 import {replaceRoute} from "../../internal/router";
 import VerifyPasswordModal from "../features/VerifyPasswordModal";
-import {accountUtils} from "../../internal/mixins";
+import {accountUtils, validator} from "../../internal/mixins";
 import {Service} from "../../internal/Service";
 
 export default {
   name: "SendCoins",
-  mixins: [accountUtils],
+  mixins: [accountUtils, validator],
   components: {VerifyPasswordModal},
   data() {
     return {
@@ -108,11 +107,8 @@ export default {
     }
   },
   computed: {
-    stateDestination() {
-      return stateFieldNotEmpty(this.destination)
-    },
-    invalidFeedbackDestination() {
-      return fieldNotEmptyFeedback(this.destination, 'Please enter a destination')
+    stateFormDisabled() {
+      return !this.stateFieldNotEmpty(this.destination) || !this.stateAmount
     },
     stateAmount() {
      return this.amount === null ? null : (!this.amount ? false : !isNaN(this.amount))

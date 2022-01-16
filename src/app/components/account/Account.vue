@@ -7,10 +7,10 @@
             id="i-name"
             label="Name"
             label-for="i-name"
-            :invalid-feedback="invalidFeedbackName"
-            :state="stateName"
+            :invalid-feedback="fieldNotEmptyFeedback(account.name, 'Please enter the account\'s name')"
+            :state="stateFieldNotEmpty(account.name)"
         >
-          <b-form-input v-if="editAccount" type="text" id="i-name" v-model="account.name" :state="stateName" :disabled="!editAccount" trim></b-form-input>
+          <b-form-input v-if="editAccount" type="text" id="i-name" v-model="account.name" :state="stateFieldNotEmpty(account.name)" :disabled="!editAccount" trim></b-form-input>
           <p v-if="!editAccount" class="txt-secondary">{{account.name}}</p>
         </b-form-group>
 
@@ -66,7 +66,7 @@
                   @click="onSaveAccountClick"
                   variant="primary"
                   style="margin-top: 1.5rem;"
-                  :disabled="!stateName || (!this.isAccount && !stateReference)">Save edits
+                  :disabled="stateFormDisabled">Save edits
         </b-button>
 
         <b-button v-if="!editAccount"
@@ -93,14 +93,13 @@ import {
 } from "../../internal/utils";
 import {AccountHelper, Bip39Dictionary} from "hotweb3";
 import {replaceRoute} from "../../internal/router";
-import {fieldNotEmptyFeedback, stateFieldNotEmpty} from "../../internal/validators";
 import VerifyPasswordModal from "../features/VerifyPasswordModal";
 import {Service} from "../../internal/Service";
-import {accountUtils} from "../../internal/mixins";
+import {accountUtils, validator} from "../../internal/mixins";
 
 export default {
   name: "Account",
-  mixins: [accountUtils],
+  mixins: [accountUtils, validator],
   components: {VerifyPasswordModal},
   props: {
     editAccount: Boolean
@@ -114,23 +113,20 @@ export default {
     }
   },
   computed: {
-    stateName() {
-      return stateFieldNotEmpty(this.account.name)
-    },
-    invalidFeedbackName() {
-      return fieldNotEmptyFeedback(this.account.name, 'Please enter the account\'s name')
+    stateFormDisabled() {
+      return !this.stateFieldNotEmpty(this.account.name) || (!this.isAccount && !this.stateReference)
     },
     stateReference() {
       if (this.isAccount) {
         return true
       }
-      return stateFieldNotEmpty(this.account.reference)
+      return this.stateFieldNotEmpty(this.account.reference)
     },
     invalidFeedbackReference() {
       if (this.isAccount) {
         return null
       }
-      return fieldNotEmptyFeedback(this.account.name, 'Please enter the account\'s address')
+      return this.fieldNotEmptyFeedback(this.account.reference, 'Please enter the account\'s address')
     }
   },
   methods: {

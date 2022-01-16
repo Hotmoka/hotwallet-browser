@@ -42,12 +42,13 @@
 
 <script>
 import {EventBus, showErrorToast, sortNetworks} from "../../internal/utils";
-import {stateFieldNotEmpty} from "../../internal/validators";
 import {replaceRoute} from "../../internal/router";
 import {Service} from "../../internal/Service";
+import {validator} from "../../internal/mixins";
 
 export default {
   name: "Header",
+  mixins: [validator],
   data() {
     return {
       customNetwork: {
@@ -71,7 +72,7 @@ export default {
   },
   computed: {
     stateUrl() {
-      return stateFieldNotEmpty(this.customNetwork.form.url) && (this.customNetwork.form.url.startsWith('http://') || this.customNetwork.form.url.startsWith('https://'))
+      return this.stateFieldNotEmpty(this.customNetwork.form.url) && (this.customNetwork.form.url.startsWith('http://') || this.customNetwork.form.url.startsWith('https://'))
     },
     invalidFeedbackUrl() {
       if (this.customNetwork.form.url === null) {
