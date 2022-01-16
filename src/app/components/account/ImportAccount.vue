@@ -8,20 +8,20 @@
             id="i-name"
             label="Name"
             label-for="i-name"
-            :invalid-feedback="invalidFeedbackName"
-            :state="stateName"
+            :invalid-feedback="fieldNotEmptyFeedback(name, 'Please enter a name')"
+            :state="stateFieldNotEmpty(name)"
         >
-          <b-form-input type="text" id="i-name" v-model="name" :state="stateName" trim></b-form-input>
+          <b-form-input type="text" id="i-name" v-model="name" :state="stateFieldNotEmpty(name)" trim></b-form-input>
         </b-form-group>
 
         <b-form-group
             id="i-pwd"
             label="Password"
             label-for="i-pwd"
-            :invalid-feedback="invalidFeedbackPassword"
-            :state="statePassword"
+            :invalid-feedback="fieldNotEmptyFeedback(password, 'Please enter a password')"
+            :state="stateFieldNotEmpty(password)"
         >
-          <b-form-input type="password" id="i-pwd" v-model="password" :state="statePassword" trim></b-form-input>
+          <b-form-input type="password" id="i-pwd" v-model="password" :state="stateFieldNotEmpty(password)" trim></b-form-input>
         </b-form-group>
 
         <b-form-group>
@@ -44,7 +44,7 @@
           </div>
         </b-form-group>
 
-        <b-button @click="onImportAccountClick" variant="primary" :disabled="!statePassword || !stateName">Import</b-button>
+        <b-button @click="onImportAccountClick" variant="primary" :disabled="stateFormDisabled">Import</b-button>
       </div>
     </div>
   </div>
@@ -53,17 +53,13 @@
 <script>
 
 import {EventBus, showErrorToast} from "../../internal/utils";
-import {
-  fieldNotEmptyFeedback,
-  invalidPasswordFeedback,
-  stateFieldNotEmpty,
-  statePassword
-} from "../../internal/validators";
 import {replaceRoute} from "../../internal/router";
 import {Service} from "../../internal/Service";
+import {validator} from "../../internal/mixins";
 
 export default {
   name: "ImportAccount",
+  mixins: [validator],
   data() {
     return {
       password: null,
@@ -72,17 +68,9 @@ export default {
     }
   },
   computed: {
-    statePassword() {
-      return statePassword(this.password)
-    },
-    stateName() {
-      return stateFieldNotEmpty(this.name)
-    },
-    invalidFeedbackPassword() {
-      return invalidPasswordFeedback(this.password)
-    },
-    invalidFeedbackName() {
-      return fieldNotEmptyFeedback(this.name, "Please enter the account\'s name")
+    stateFormDisabled() {
+      return !this.stateFieldNotEmpty(this.password) ||
+          !this.stateFieldNotEmpty(this.name)
     }
   },
   methods: {

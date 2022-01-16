@@ -10,13 +10,13 @@
               id="i-pwd"
               label="Password"
               label-for="i-pwd"
-              :invalid-feedback="invalidFeedback"
-              :state="state"
+              :invalid-feedback="fieldNotEmptyFeedback(password, 'Please enter a password')"
+              :state="stateFieldNotEmpty(password)"
           >
-            <b-form-input type="password" id="i-pwd" v-model="password" :state="state" @keydown.enter.native="onLoginClick" trim></b-form-input>
+            <b-form-input type="password" id="i-pwd" v-model="password" :state="stateFieldNotEmpty(password)" @keydown.enter.native="onLoginClick" trim></b-form-input>
           </b-form-group>
 
-          <b-button @click="onLoginClick" variant="primary" :disabled="!state">Login</b-button>
+          <b-button @click="onLoginClick" variant="primary" :disabled="stateFormDisabled">Login</b-button>
         </div>
       </div>
     </div>
@@ -24,12 +24,13 @@
 
 <script>
 import {replaceRoute} from "../../internal/router";
-import {statePassword, invalidPasswordFeedback} from "../../internal/validators";
 import {Service} from "../../internal/Service"
 import {showErrorToast} from "../../internal/utils";
+import {validator} from "../../internal/mixins";
 
 export default {
   name: "Login",
+  mixins: [validator],
   data() {
     return {
       password: null,
@@ -37,16 +38,13 @@ export default {
     }
   },
   computed: {
-    state() {
-      return statePassword(this.password)
-    },
-    invalidFeedback() {
-      return invalidPasswordFeedback(this.password)
+    stateFormDisabled() {
+      return !this.stateFieldNotEmpty(this.password)
     }
   },
   methods: {
     onLoginClick() {
-      if (!this.state) {
+      if (!this.stateFieldNotEmpty(this.password)) {
         return
       }
 

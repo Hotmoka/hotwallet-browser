@@ -9,18 +9,18 @@
             id="i-name"
             label="Name"
             label-for="i-name"
-            :invalid-feedback="invalidFeedbackName"
-            :state="stateName"
+            :invalid-feedback="fieldNotEmptyFeedback(newAccount.name, 'Please enter the account\'s name')"
+            :state="stateFieldNotEmpty(newAccount.name)"
         >
-          <b-form-input type="text" id="i-name" v-model="newAccount.name" :state="stateName" trim></b-form-input>
+          <b-form-input type="text" id="i-name" v-model="newAccount.name" :state="stateFieldNotEmpty(newAccount.name)" trim></b-form-input>
         </b-form-group>
 
         <b-form-group
-            :invalid-feedback="invalidFeedbackPassword"
-            :state="statePassword"
+            :invalid-feedback="fieldNotEmptyFeedback(newAccount.password, 'Please enter a password')"
+            :state="stateFieldNotEmpty(newAccount.password)"
         >
           <label for="i-pwd">Password  <b-icon id="i-pwd-help" width="18" icon="question-circle-fill" variant="info"></b-icon></label>
-          <b-form-input type="password" id="i-pwd" v-model="newAccount.password" :state="statePassword" trim></b-form-input>
+          <b-form-input type="password" id="i-pwd" v-model="newAccount.password" :state="stateFieldNotEmpty(newAccount.password)" trim></b-form-input>
 
           <b-tooltip target="i-pwd-help" triggers="hover">
             Keep note of the password, since there is no way to recover it later
@@ -31,10 +31,10 @@
             id="i-c-pwd"
             label="Confirm password"
             label-for="i-c-pwd"
-            :invalid-feedback="invalidFeedbackConfirmPassword"
-            :state="stateConfirmPassword"
+            :invalid-feedback="fieldNotEmptyFeedback(newAccount.confirmPassword, 'The passwords don\'t match')"
+            :state="stateEqualFields(newAccount.confirmPassword, newAccount.password)"
         >
-          <b-form-input type="password" id="i-c-pwd" v-model="newAccount.confirmPassword" :state="stateConfirmPassword" trim></b-form-input>
+          <b-form-input type="password" id="i-c-pwd" v-model="newAccount.confirmPassword" :state="stateEqualFields(newAccount.confirmPassword, newAccount.password)" trim></b-form-input>
         </b-form-group>
 
         <b-form-group
@@ -82,19 +82,13 @@ import {
   WrapPromiseTask
 } from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
-import {
-  fieldNotEmptyFeedback,
-  invalidPasswordFeedback,
-  stateFieldNotEmpty,
-  statePassword
-} from "../../internal/validators";
 import VerifyPasswordModal from "../features/VerifyPasswordModal";
-import {accountUtils} from "../../internal/mixins";
+import {accountUtils, validator} from "../../internal/mixins";
 import {Service} from "../../internal/Service";
 
 export default {
   name: "CreateAccount",
-  mixins: [accountUtils],
+  mixins: [accountUtils, validator],
   components: { VerifyPasswordModal },
   data() {
     return {
@@ -110,26 +104,10 @@ export default {
     }
   },
   computed: {
-    stateName() {
-      return stateFieldNotEmpty(this.newAccount.name)
-    },
-    statePassword() {
-      return statePassword(this.newAccount.password)
-    },
-    stateConfirmPassword() {
-      return this.newAccount.confirmPassword === null ? null : (this.newAccount.confirmPassword.length >= 8 && this.newAccount.confirmPassword === this.newAccount.password)
-    },
     stateFormDisabled() {
-      return !this.statePassword || !this.stateConfirmPassword || !this.stateName
-    },
-    invalidFeedbackPassword() {
-      return invalidPasswordFeedback(this.newAccount.password)
-    },
-    invalidFeedbackConfirmPassword() {
-      return fieldNotEmptyFeedback(this.newAccount.confirmPassword, 'The passwords don\'t match')
-    },
-    invalidFeedbackName() {
-      return fieldNotEmptyFeedback(this.newAccount.name, 'Please enter the account\'s name')
+      return !this.stateFieldNotEmpty(this.newAccount.password) ||
+          !this.stateEqualFields(this.newAccount.confirmPassword, this.newAccount.password) ||
+          !this.stateFieldNotEmpty(this.newAccount.name)
     }
   },
   methods: {

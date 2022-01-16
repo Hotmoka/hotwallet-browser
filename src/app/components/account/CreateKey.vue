@@ -12,18 +12,18 @@
             id="i-name"
             label="Name"
             label-for="i-name"
-            :invalid-feedback="invalidFeedbackName"
-            :state="stateName"
+            :invalid-feedback="fieldNotEmptyFeedback(name, 'Please enter a name')"
+            :state="stateFieldNotEmpty(name)"
         >
-          <b-form-input type="text" id="i-name" v-model="name" :state="stateName" trim></b-form-input>
+          <b-form-input type="text" id="i-name" v-model="name" :state="stateFieldNotEmpty(name)" trim></b-form-input>
         </b-form-group>
 
         <b-form-group
-            :invalid-feedback="invalidFeedbackPassword"
-            :state="statePassword"
+            :invalid-feedback="fieldNotEmptyFeedback(password, 'Please enter a password')"
+            :state="stateFieldNotEmpty(password)"
         >
           <label for="i-pwd">Password  <b-icon id="i-pwd-help" width="18" icon="question-circle-fill" variant="info"></b-icon></label>
-          <b-form-input type="password" id="i-pwd" v-model="password" :state="statePassword" trim></b-form-input>
+          <b-form-input type="password" id="i-pwd" v-model="password" :state="stateFieldNotEmpty(password)" trim></b-form-input>
 
           <b-tooltip target="i-pwd-help" triggers="hover">
             Keep note of the password, since there is no way to recover it later
@@ -34,14 +34,14 @@
             id="i-c-pwd"
             label="Confirm password"
             label-for="i-c-pwd"
-            :invalid-feedback="invalidFeedbackConfirmPassword"
-            :state="stateConfirmPassword"
+            :invalid-feedback="fieldNotEmptyFeedback(confirmPassword, 'The passwords don\'t match')"
+            :state="stateEqualFields(confirmPassword, password)"
         >
-          <b-form-input type="password" id="i-c-pwd" v-model="confirmPassword" :state="stateConfirmPassword" trim></b-form-input>
+          <b-form-input type="password" id="i-c-pwd" v-model="confirmPassword" :state="stateEqualFields(confirmPassword, password)" trim></b-form-input>
         </b-form-group>
 
 
-        <b-button @click="onCreateClick" variant="primary" :disabled="!statePassword || !stateName || !stateConfirmPassword">Create</b-button>
+        <b-button @click="onCreateClick" variant="primary" :disabled="stateFormDisabled">Create</b-button>
       </div>
     </div>
 
@@ -49,18 +49,14 @@
 </template>
 
 <script>
-import {
-  fieldNotEmptyFeedback,
-  invalidPasswordFeedback,
-  stateFieldNotEmpty,
-  statePassword
-} from "../../internal/validators";
 import {EventBus, showErrorToast} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
 import {Service} from "../../internal/Service";
+import {validator} from "../../internal/mixins";
 
 export default {
   name: "CreateKey",
+  mixins: [validator],
   data() {
     return {
       password: null,
@@ -69,24 +65,11 @@ export default {
     }
   },
   computed: {
-    statePassword() {
-      return statePassword(this.password)
-    },
-    stateName() {
-      return stateFieldNotEmpty(this.name)
-    },
-    stateConfirmPassword() {
-      return this.confirmPassword === null ? null : (this.confirmPassword.length >= 8 && this.confirmPassword === this.password)
-    },
-    invalidFeedbackPassword() {
-      return invalidPasswordFeedback(this.password)
-    },
-    invalidFeedbackName() {
-      return fieldNotEmptyFeedback(this.name, 'Please enter a name')
-    },
-    invalidFeedbackConfirmPassword() {
-      return fieldNotEmptyFeedback(this.confirmPassword, 'The passwords don\'t match')
-    },
+    stateFormDisabled() {
+      return !this.stateFieldNotEmpty(this.password) ||
+          !this.stateEqualFields(this.confirmPassword, this.password) ||
+          !this.stateFieldNotEmpty(this.name)
+    }
   },
   methods: {
     onCreateClick() {

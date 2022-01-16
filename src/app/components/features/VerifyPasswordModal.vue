@@ -6,28 +6,29 @@
           id="i-pwd"
           label="Password"
           label-for="i-pwd"
-          :invalid-feedback="invalidFeedback"
-          :state="state"
+          :invalid-feedback="fieldNotEmptyFeedback(password, 'Please enter a password')"
+          :state="stateFieldNotEmpty(password)"
       >
-        <b-form-input type="password" id="i-pwd" v-model="password" :state="state" @keydown.enter.native="onVerifyPasswordClick" trim></b-form-input>
+        <b-form-input type="password" id="i-pwd" v-model="password" :state="stateFieldNotEmpty(password)" @keydown.enter.native="onVerifyPasswordClick" trim></b-form-input>
       </b-form-group>
     </div>
 
     <template #modal-footer>
       <b-button @click="onCancelClick()" variant="secondary">Cancel</b-button>
-      <b-button @click="onVerifyPasswordClick()" variant="primary" :disabled="!state">{{ modal.btnActionName }}</b-button>
+      <b-button @click="onVerifyPasswordClick()" variant="primary" :disabled="stateFormDisabled">{{ modal.btnActionName }}</b-button>
     </template>
 
   </b-modal>
 </template>
 
 <script>
-import {invalidPasswordFeedback, statePassword} from "../../internal/validators";
 import {showErrorToast, WrapPromiseTask} from "../../internal/utils";
 import {AccountHelper, Bip39Dictionary} from "hotweb3";
+import {validator} from "../../internal/mixins";
 
 export default {
   name: "VerifyPasswordModal",
+  mixins: [validator],
   data() {
     return {
       account: null,
@@ -42,11 +43,8 @@ export default {
     }
   },
   computed: {
-    state() {
-      return statePassword(this.password)
-    },
-    invalidFeedback() {
-      return invalidPasswordFeedback(this.password)
+    stateFormDisabled() {
+      return !this.stateFieldNotEmpty(this.password)
     }
   },
   methods: {
@@ -68,7 +66,7 @@ export default {
       this.closeModal()
     },
     onVerifyPasswordClick() {
-      if (!this.state) {
+      if (!this.stateFieldNotEmpty(this.password)) {
         return
       }
       WrapPromiseTask(async () => {

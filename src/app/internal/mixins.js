@@ -24,3 +24,20 @@ export const accountUtils = {
         }
     }
 }
+
+export const validator = {
+    methods: {
+        stateFieldNotEmpty(field) {
+            return field === null ? null : field.length > 0
+        },
+        stateEqualFields(field1, field2) {
+            return field1 === null || field2 === null ? null : (field1.length > 0 && field1 === field2)
+        },
+        fieldNotEmptyFeedback(field, message) {
+            if (field === null) {
+                return null
+            }
+            return message ? message : 'Please enter value'
+        }
+    }
+}
