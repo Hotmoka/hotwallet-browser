@@ -120,12 +120,24 @@ export default {
 
 #logo-hotmoka {
   margin-top: 1.5rem;
+  p {
+    font-size: 35px;
+    font-weight: bolder;
+    margin: 0 0 0 12px;
+    color: theme-color("primary");
+  }
 }
 
 @media only screen and (max-width: 768px) {
   #logo-hotmoka {
-    width: 236px;
-    height: 76px;
+    img {
+      width: 70px;
+      height: 70px;
+    }
+
+    p {
+      font-size: 26px;
+    }
   }
 }
 

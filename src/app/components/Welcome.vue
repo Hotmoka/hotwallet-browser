@@ -1,7 +1,10 @@
 <template>
   <div class="content text-center">
     <div class="center">
-      <img src="../assets/img/logo-web-transparent.png" height="128" width="400" alt="hotmoka" id="logo-hotmoka">
+      <div class="d-flex align-items-center justify-content-center" id="logo-hotmoka">
+        <img src="../assets/img/logo-print-hd-transparent-only-round.png" height="100" width="100" alt="hotmoka" >
+        <p>Hotwallet</p>
+      </div>
 
       <h6 class="title">Are you new to Hotwallet ?</h6>
 
