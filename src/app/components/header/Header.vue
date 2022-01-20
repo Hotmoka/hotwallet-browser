@@ -2,150 +2,26 @@
   <div class="header">
       <img src="../../assets/img/hotmoka_logo.png" height="32" width="32" alt="hotmoka" @click="onHeaderImageClick">
       <h6 class="hotwallet-title text-secondary">Hotwallet</h6>
-      <b-form-select
-          v-model="selectedNetwork"
-          @change="onNetworkChange"
-          :options="networks"
-          :disabled="networkSelectionDisabled"
-          size="sm"
-          class="ml-auto h-network"></b-form-select>
 
-    <b-modal v-model="customNetwork.showModal" centered :hideHeaderClose="true" title="Custom network">
-      <p>Connect to a custom network</p>
+    <div class="w-100 text-right" v-if="currentNetwork">
+      <div class="network-badge text-secondary"><b-icon icon="globe" variant="info"></b-icon> {{ currentNetwork.text }}</div>
+    </div>
 
-      <b-form-group
-          id="i-name"
-          label="Name"
-          label-for="i-name"
-      >
-        <b-form-input type="text" id="i-name" v-model="customNetwork.form.name" placeholder="Network name" trim></b-form-input>
-      </b-form-group>
-
-      <b-form-group
-          id="i-url"
-          label="Url"
-          label-for="i-url"
-          :invalid-feedback="invalidFeedbackUrl"
-          :state="stateUrl"
-      >
-        <b-form-input type="text" id="i-url" v-model="customNetwork.form.url" :state="stateUrl" placeholder="Url with protocol" trim></b-form-input>
-      </b-form-group>
-
-      <template #modal-footer>
-        <b-button @click="onCancelConnectionClick" variant="secondary">Cancel</b-button>
-        <b-button @click="onConnectToCustomNetworkClick" variant="primary" :disabled="!stateUrl">Connect</b-button>
-      </template>
-
-    </b-modal>
   </div>
 </template>
 
 <script>
-import {EventBus, showErrorToast, sortNetworks} from "../../internal/utils";
+import {EventBus, showErrorToast} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
-import {Service} from "../../internal/Service";
-import {validator} from "../../internal/mixins";
 
 export default {
   name: "Header",
-  mixins: [validator],
   data() {
     return {
-      customNetwork: {
-        showModal: false,
-        form: {
-          url: null,
-          name: null
-        }
-      },
-      networkSelectionDisabled: false,
-      selectedNetwork: null,
-      networks: []
-    }
-  },
-  watch: {
-    $route(to, from) {
-      if (to && to.path) {
-        this.networkSelectionDisabled = to.path !== '/home' && to.path !== '/welcome'
-      }
-    }
-  },
-  computed: {
-    stateUrl() {
-      return this.stateFieldNotEmpty(this.customNetwork.form.url) && (this.customNetwork.form.url.startsWith('http://') || this.customNetwork.form.url.startsWith('https://'))
-    },
-    invalidFeedbackUrl() {
-      if (this.customNetwork.form.url === null) {
-        return null
-      }
-      if (this.customNetwork.form.url.length === 0) {
-        return 'Url cannot be empty'
-      }
-      if (!this.customNetwork.form.url.startsWith('http://') || !this.customNetwork.form.url.startsWith('https://')) {
-        return 'Url must begin with http:// or https://'
-      }
-      return null
+      currentNetwork: null
     }
   },
   methods: {
-    resetForm() {
-      this.customNetwork.showModal = false
-      this.customNetwork.form.url = null
-      this.customNetwork.form.name = null
-    },
-    onCancelConnectionClick() {
-      this.resetForm()
-      // restore old network
-      this.selectedNetwork = this.$network.get().value
-    },
-    onConnectToCustomNetworkClick() {
-      this.customNetwork.showModal = false
-
-      new Service()
-          .connectToNetwork(this.customNetwork.form.url, this.customNetwork.form.name)
-          .then(network => {
-            this.resetForm()
-            this.$network.set(network)
-            this.networks.push(network)
-            this.networks = sortNetworks(this.networks)
-            this.selectedNetwork = network.value
-            replaceRoute('/')
-          })
-          .catch(error => {
-            this.resetForm()
-            showErrorToast(this, 'Custom network connection', error.message || 'Cannot connect to custom network')
-
-            // restore previous network
-            this.selectedNetwork = this.$network.get().value
-            if (this.$route.path === '/home') {
-              EventBus.$emit('reloadAccount')
-            }
-          })
-    },
-    onNetworkChange(selectedNetwork) {
-      if (this.networkSelectionDisabled) {
-        showErrorToast(this, 'Network', 'Option disabled')
-        return
-      }
-
-      if (selectedNetwork === 'customNetwork') {
-        this.customNetwork.showModal = true
-      } else {
-        new Service()
-            .changeNetwork(selectedNetwork, this.networks)
-            .then(result => {
-              this.$network.set(result.network)
-              this.selectedNetwork = result.network.value
-
-              if (result.newAccount) {
-                replaceRoute('/')
-              } else if (this.$route.path === '/home') {
-                EventBus.$emit('reloadAccount')
-              }
-            })
-            .catch(e => showErrorToast(this, 'Network', e.message || 'Cannot set network'))
-      }
-    },
     onHeaderImageClick() {
       if (this.$route.path.indexOf('/transaction') !== -1) {
         return
@@ -157,27 +33,24 @@ export default {
         replaceRoute('/home')
       }
     },
-    setNetworks: async function () {
+    setCurrentNetwork: async function () {
       try {
-        const _networks = await this.$storageApi.getNetworks()
-        this.networks = sortNetworks(_networks)
-        const currentNetwork = await this.$storageApi.getCurrentNetwork()
-        this.$network.set(currentNetwork)
-        this.selectedNetwork = currentNetwork.value
+        this.currentNetwork = await this.$storageApi.getCurrentNetwork()
+        this.$network.set(this.currentNetwork)
       } catch (e) {
         showErrorToast(this, 'Network', 'Network error')
       }
     }
   },
   created() {
-    EventBus.$on('networkChange', network => this.selectedNetwork = network.value)
-    this.networkSelectionDisabled = this.$route.path !== '/home' && this.$route.path !== '/welcome'
-    this.setNetworks()
+    EventBus.$on('networkChange', network => this.currentNetwork = network)
+    this.setCurrentNetwork()
   }
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import '../../assets/scss/variables';
 
 .header {
   height: 62px;
@@ -194,6 +67,17 @@ export default {
 
 .h-network {
   width: auto !important;
+}
+
+.network-badge {
+  display: inline-block;
+  padding: 8px 12px;
+  border: 1px solid theme-color('info');
+  background-color: #fff;
+  color: black;
+  border-radius: 100px;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .hotwallet-title {
