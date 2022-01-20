@@ -12,11 +12,13 @@ import CreateKey from "../components/account/CreateKey";
 import SendCoins from "../components/coins/SendCoins";
 import CoinsReceipt from "../components/coins/CoinsReceipt";
 import ReceiveCoins from "../components/coins/ReceiveCoins";
+import Network from "../components/features/Network";
 
 
 export const router = new VueRouter({
     routes: [
         { path: '/welcome', component: Welcome },
+        { path: '/networks', component: Network },
         { path: '/home', component: Home },
         { path: '/login', component: Login },
         { path: '/create-key', component: CreateKey },
