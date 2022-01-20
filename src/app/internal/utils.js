@@ -1,5 +1,4 @@
 import Vue from 'vue'
-import {networks} from "../../internal/constants";
 import {StorageReferenceModel} from "hotweb3";
 
 
@@ -35,20 +34,15 @@ export const getNetworkByValue = (value, networks) => {
 }
 
 export const sortNetworks = unsortedNetworks => {
-
 	if (!unsortedNetworks) {
 		return []
 	}
-
 	const _networks = unsortedNetworks.filter(network => network.value !== 'customNetwork')
 	_networks.sort((a, b) => {
 		const valueA = a.value.toUpperCase();
 		const valueB = b.value.toUpperCase();
 		return valueA.localeCompare(valueB)
 	})
-
-	// adding the customNetwork as last
-	_networks.push(networks[1])
 	return _networks
 }
 
