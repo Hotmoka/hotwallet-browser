@@ -20,30 +20,16 @@ export const showSuccessToast = (vue, title, message, timeout) => showToast(vue,
 
 export const showErrorToast = (vue, title, message, timeout) => showToast(vue, title, message, 'danger', timeout)
 
-export const getNetworkByValue = (value, networks) => {
+export const sortNetworks = networks => {
 	if (!networks) {
-		return null
-	}
-
-	const _networks = networks.filter(network => network.value === value)
-	if (_networks.length > 0) {
-		return _networks[0]
-	} else {
-		return null
-	}
-}
-
-export const sortNetworks = unsortedNetworks => {
-	if (!unsortedNetworks) {
 		return []
 	}
-	const _networks = unsortedNetworks.filter(network => network.value !== 'customNetwork')
-	_networks.sort((a, b) => {
+	networks.sort((a, b) => {
 		const valueA = a.value.toUpperCase();
 		const valueB = b.value.toUpperCase();
 		return valueA.localeCompare(valueB)
 	})
-	return _networks
+	return networks
 }
 
 export const trimAddress = (address) => {

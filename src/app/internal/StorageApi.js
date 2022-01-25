@@ -1,4 +1,5 @@
 import {privateStoreObjectKeys} from "../../internal/constants";
+import {sortNetworks} from "./utils";
 
 
 /**
@@ -98,15 +99,19 @@ export class StorageApi {
     }
 
     /**
-     * Returns the array of accounts of a network.
-     * @param network the network
-     * @return {Promise<unknown>} a promise that resolves to the array of accounts
+     * Checks if the given account name has been already registered.
+     * @param name the name of the account to be checked
+     * @return {Promise<void>} a promise that resolves to void
+     * @throws {Error} if an account was already registered with the given name
      */
-    async getAccountsForNetwork(network) {
+    async checkIfAccountRegistered(name) {
         const accounts = await this.getAccounts()
-        return accounts.filter(acc => acc.network.value === network.value)
+        for (const acc of accounts) {
+            if (acc.name === name) {
+                throw new Error('Account name already registered')
+            }
+        }
     }
-
 
     /**
      * It adds an account to the list of accounts.
@@ -116,10 +121,6 @@ export class StorageApi {
     async addAccount(account) {
         const accounts = await this.getAccounts()
         for (const acc of accounts) {
-            if (acc.name === account.name) {
-                throw new Error('Account name already registered')
-            }
-
             acc.selected = false
             acc.logged = false
         }
@@ -201,28 +202,6 @@ export class StorageApi {
         })
 
         await this.persistToPrivateStore('accounts', accounts)
-
-        if (logged) {
-            await this.persistToPublicStore('account', {
-                name: account.name,
-                publicKey: account.publicKey
-            })
-        }
-    }
-
-    /**
-     * It performs a logout for all the accounts.
-     * @return {Promise<void>} a promise that resolves to void
-     */
-    async logoutAllAccounts() {
-        const accounts = await this.getAccounts()
-        accounts.forEach(acc => {
-            acc.logged = false
-            acc.selected = false
-        })
-
-        await this.persistToPrivateStore('accounts', accounts)
-        await this.persistToPublicStore('account', null)
     }
 
     /**
@@ -237,7 +216,7 @@ export class StorageApi {
     }
 
     /**
-     * It adds a network the list of networks.
+     * It adds a network to the list of networks if not already added
      * @param network the network object
      * @return {Promise<void>} a promise that resolves to void
      */
@@ -245,22 +224,21 @@ export class StorageApi {
         const networks = await this.getNetworks()
         for (const _network of networks) {
             if (_network.value === network.value) {
-                throw new Error('Network already registered')
+               return
             }
-            _network.selected = false
         }
         networks.push(network)
         await this.persistToPublicStore('networks', networks)
     }
 
     /**
-     * Returns the array of networks.
+     * Returns a sorted array of the networks.
      * @return {Promise<[unknown]>} a promise that resolves to array of networks
      */
     async getNetworks() {
         const storedNetworks = await this.getStore('networks')
         if (storedNetworks && Array.isArray(storedNetworks) && storedNetworks.length > 0) {
-            return storedNetworks
+            return sortNetworks(storedNetworks)
         } else {
             throw new Error('No network available')
         }
@@ -285,31 +263,31 @@ export class StorageApi {
      * Returns the authentication object.
      * @return {Promise<{authenticated: boolean, hasAccount: boolean}>} a promise that resolves to an authentication object
      */
-    getAuthentication() {
-        return new Promise(resolve => {
-            this.getStore().then(store => {
-
-                const result = {
-                    authenticated: false,
-                    hasAccount: false
-                }
-
-                if (store && store.account) {
-                    result.hasAccount = true
-                    if (store.accounts) {
-                        store.accounts.forEach(account => {
-                            if (account.logged) {
-                                result.authenticated = true
-                            }
-                        })
-                    }
-                }
-
-                resolve(result)
-            }).catch(() => resolve({
+    async getAuthentication() {
+        try {
+            const result = {
                 authenticated: false,
                 hasAccount: false
-            }))
-        }).catch(() => {})
+            }
+
+            const store = await this.getStore()
+            if (store && store.account) {
+                result.hasAccount = true
+                if (store.accounts) {
+                    store.accounts.forEach(account => {
+                        if (account.logged) {
+                            result.authenticated = true
+                        }
+                    })
+                }
+            }
+
+            return result
+        } catch (e) {
+            return {
+                authenticated: false,
+                hasAccount: false
+            }
+        }
     }
 }

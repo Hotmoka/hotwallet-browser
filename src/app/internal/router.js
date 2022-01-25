@@ -7,12 +7,12 @@ import CreateAccount from "../components/account/CreateAccount";
 import Account from "../components/account/Account";
 import Transaction from "../components/transaction/Transaction";
 import Vue from "vue";
-import ListAccounts from "../components/account/ListAccounts";
+import ListAccounts from "../components/account/AccountList";
 import CreateKey from "../components/account/CreateKey";
 import SendCoins from "../components/coins/SendCoins";
 import CoinsReceipt from "../components/coins/CoinsReceipt";
 import ReceiveCoins from "../components/coins/ReceiveCoins";
-import Network from "../components/features/Network";
+import Network from "../components/features/NetworkList";
 
 
 export const router = new VueRouter({

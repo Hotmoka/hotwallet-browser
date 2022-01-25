@@ -3,7 +3,6 @@ import {
     EventBus,
     filterAccount,
     filterNetwork,
-    getNetworkByValue,
     storageReferenceFrom,
     storageReferenceToString,
     WrapPromiseTask
@@ -89,40 +88,10 @@ export class Service extends Vue {
     }
 
     /**
-     * It changes the current network with a new network.
-     * If the network holds an account, the current account will be changed with the first account of the network.
-     * @param network the new network
-     * @param networks the networks
-     * @return {Promise<unknown>} a promises that resolves to the new network
-     */
-    changeNetwork(network, networks) {
-        return WrapPromiseTask(async () => {
-            const network = getNetworkByValue(network, networks)
-            if (!network) {
-                throw new Error('Network not found')
-            }
-
-            await this.$storageApi.selectNetwork(network)
-            const accountsForNetwork = await this.$storageApi.getAccountsForNetwork(network)
-
-            if (accountsForNetwork.length === 0) {
-                return {network, newAccount: true}
-            } else {
-                await this.$storageApi.setAccountAuth(accountsForNetwork[0], true)
-                return {network, newAccount: false, account: accountsForNetwork[0]}
-            }
-
-        }).then(result => {
-            this.$eventsApi.emit(NETWORK_CHANGED, filterNetwork(result.network))
-            this.$eventsApi.emit(ACCOUNT_CHANGED, result.newAccount ? null : result.account)
-        })
-    }
-
-    /**
-     * It connects to a new network and logs out from the current account.
+     * It connects to a new network to see if the network responds.
      * @param url the url of the network
      * @param name the name of the network
-     * @return {Promise<unknown>} a promise that resolves to the network object
+     * @return {Promise<Object>} a promise that resolves to the network object
      */
     connectToNetwork(url, name) {
         return WrapPromiseTask(async () => {
@@ -134,23 +103,41 @@ export class Service extends Vue {
                 protocol: splittedUrl[0],
                 text: networkName ? networkName : splittedUrl[1],
                 value: networkName ? networkName + '_' + splittedUrl[1] : splittedUrl[1],
-                selected: true
+                selected: false
             }
 
+            /* TODO
             const validNetwork = await this.testNetwork(network)
             if (!validNetwork) {
-                throw new Error('Cannot connect to network')
+                throw new Error('Cannot connect to network. Please check the network url')
+            }*/
+
+            // check network
+            const networks = await this.$storageApi.getNetworks()
+            for (const _network of networks) {
+                if (_network.value === network.value) {
+                    throw new Error('Network already registered')
+                }
             }
 
-            // add and set network as selected
-            await this.$storageApi.addNetwork(network)
-            await this.$storageApi.selectNetwork(network)
-            await this.$storageApi.logoutAllAccounts()
-
             return network
-        }).then(network => {
-            this.$eventsApi.emit(NETWORK_CHANGED, filterNetwork(network))
-            this.$eventsApi.emit(ACCOUNT_CHANGED, null)
+        })
+    }
+
+
+    /**
+     * It removes a network from this wallet and all the accounts associated with the network.
+     * @param networkToRemove the network to remove
+     * @return {Promise<void>} a promise that resolves to void
+     */
+    removeNetwork(networkToRemove) {
+        return WrapPromiseTask(async () => {
+            const networks = await this.$storageApi.getNetworks()
+            const accounts = await this.getAccounts()
+            const filteredAccounts = accounts.filter(acc => acc.network.value !== networkToRemove.value)
+            const filteredNetworks = networks.filter(n => n.value !== networkToRemove.value)
+            await this.$storageApi.persistToPublicStore('networks', filteredNetworks)
+            await this.$storageApi.persistToPrivateStore('accounts', filteredAccounts)
         })
     }
 
@@ -189,14 +176,18 @@ export class Service extends Vue {
             // set new password
             await this.$storageApi.setPassword(password)
             await this.$storageApi.setAccountAuth(account, true)
+            await this.$storageApi.persistToPublicStore('account', {
+                name: account.name,
+                publicKey: account.publicKey
+            })
             await this.$storageApi.selectNetwork(account.network)
             const currentNetwork = await this.$storageApi.getCurrentNetwork()
             this.$network.set(currentNetwork)
 
+            return currentNetwork
+        }).then(currentNetwork => {
             // notify network change
             EventBus.$emit('networkChange', currentNetwork)
-
-        }).then(() => {
             this.$eventsApi.emit(ACCOUNT_CHANGED, filterAccount(account))
             this.$eventsApi.emit(NETWORK_CHANGED, filterNetwork(account.network))
         })
@@ -298,6 +289,24 @@ export class Service extends Vue {
     }
 
     /**
+     * It registers an account on this wallet.
+     * @param account the account
+     * @param password the password of the account
+     * @param network the network of this account
+     * @return {Promise<void>} a promise that resolves to void
+     */
+    async registerAccount(account, password, network) {
+        await this.$storageApi.setPassword(password)
+        await this.$storageApi.addAccount(account)
+
+        if (network) {
+            await this.$storageApi.addNetwork(network)
+            await this.$storageApi.selectNetwork(network)
+            this.$network.set(network)
+        }
+    }
+
+    /**
      * It creates an account from faucet.
      * @param newAccount the account to create
      * @param balance the initial balance of the account
@@ -314,24 +323,22 @@ export class Service extends Vue {
                 throw new Error('Cannot transfer more than ' + balanceOfFaucet + ' from faucet')
             }
 
+            await this.$storageApi.checkIfAccountRegistered(newAccount.name)
+
             // generate key pair
             const keyPair = AccountHelper.generateEd25519KeyPairFrom(newAccount.password, Bip39Dictionary.ENGLISH)
             const account = await new AccountHelper(remoteNode).createAccountFromFaucet(Algorithm.ED25519, keyPair, balance.toString(), "0")
 
-            // set password for the private store and add account
-            await this.$storageApi.setPassword(newAccount.password)
-            await this.$storageApi.addAccount(
-                {
-                    name: newAccount.name,
-                    reference: storageReferenceToString(account.reference),
-                    entropy: keyPair.entropy,
-                    publicKey: keyPair.publicKey,
-                    selected: true,
-                    logged: true,
-                    network: {value: this.$network.get().value, url: this.$network.get().url},
-                    created: new Date().getTime()
-                }
-            )
+            await this.registerAccount({
+                name: newAccount.name,
+                reference: storageReferenceToString(account.reference),
+                entropy: keyPair.entropy,
+                publicKey: keyPair.publicKey,
+                selected: true,
+                logged: true,
+                network: {value: this.$network.get().value, url: this.$network.get().url},
+                created: new Date().getTime()
+            }, newAccount.password)
         })
     }
 
@@ -354,6 +361,8 @@ export class Service extends Vue {
                 throw new Error('Cannot transfer more than ' + balanceOfPayer + ' from payer ' + payer.name)
             }
 
+            await this.$storageApi.checkIfAccountRegistered(newAccount.name)
+
             // generate key pair of payer
             const keyPairOfPayer = AccountHelper.generateEd25519KeyPairFrom(passwordOfPayer, Bip39Dictionary.ENGLISH, payer.entropy)
 
@@ -369,20 +378,16 @@ export class Service extends Vue {
                 false
             )
 
-            // set password for the private store and add account
-            await this.$storageApi.setPassword(newAccount.password)
-            await this.$storageApi.addAccount(
-                {
-                    name: newAccount.name,
-                    reference: storageReferenceToString(account.reference),
-                    entropy: keyPair.entropy,
-                    publicKey: keyPair.publicKey,
-                    selected: true,
-                    logged: true,
-                    network: {value: this.$network.get().value, url: this.$network.get().url},
-                    created: new Date().getTime()
-                }
-            )
+            await this.registerAccount({
+                name: newAccount.name,
+                reference: storageReferenceToString(account.reference),
+                entropy: keyPair.entropy,
+                publicKey: keyPair.publicKey,
+                selected: true,
+                logged: true,
+                network: {value: this.$network.get().value, url: this.$network.get().url},
+                created: new Date().getTime()
+            }, newAccount.password)
         })
     }
 
@@ -390,31 +395,30 @@ export class Service extends Vue {
      * It creates a key from a given name and password.
      * @param name the name of local account
      * @param password the password
+     * @param network the network
      * @return {Promise<void>} a promise that resolves to void
      */
-    createKey(name, password) {
+    createKey(name, password, network) {
         return WrapPromiseTask(async () => {
 
             // create key
             const account = AccountHelper.createKey(password, Bip39Dictionary.ENGLISH)
 
-            // set password for the private store and add account
-            await this.$storageApi.setPassword(password)
-            await this.$storageApi.addAccount(
-                {
-                    name: name,
-                    reference: null,
-                    entropy: account.entropy,
-                    publicKey: account.publicKey,
-                    publicKeyBase58: account.name,
-                    balance: account.balance,
-                    selected: true,
-                    logged: true,
-                    network: {value: this.$network.get().value, url: this.$network.get().url},
-                    created: new Date().getTime()
-                }
-            )
-        })
+            await this.$storageApi.checkIfAccountRegistered(name)
+            await this.registerAccount({
+                name: name,
+                reference: null,
+                entropy: account.entropy,
+                publicKey: account.publicKey,
+                publicKeyBase58: account.name,
+                balance: account.balance,
+                selected: true,
+                logged: true,
+                network: {value: network.value, url: network.url},
+                created: new Date().getTime()
+            }, password, network)
+
+        }).then(() => EventBus.$emit('networkChange', network))
     }
 
     /**
@@ -422,9 +426,10 @@ export class Service extends Vue {
      * @param name the name of the account
      * @param password the password of the account
      * @param words the 36 mnemonic words
-     * @return {Promise<unknown>}
+     * @param network the network
+     * @return {Promise<unknown>} a promise that resolves to void
      */
-    importAccount(name, password, words) {
+    importAccount(name, password, words, network) {
         return WrapPromiseTask(async () => {
 
             for (let i = 0; i < 36; i++) {
@@ -433,26 +438,25 @@ export class Service extends Vue {
                 }
             }
 
+            await this.$storageApi.checkIfAccountRegistered(name)
+
             // generate account from mnemonic
             const mnemonic = words.join(' ')
             const account = await new AccountHelper(new RemoteNode(this.$network.get().url)).importAccount(name, mnemonic, Bip39Dictionary.ENGLISH, password)
 
-            // set password and add account
-            await this.$storageApi.setPassword(password)
-            await this.$storageApi.addAccount(
-                {
-                    name: name,
-                    reference: storageReferenceToString(account.reference),
-                    entropy: account.entropy,
-                    publicKey: account.publicKey,
-                    balance: account.balance,
-                    selected: true,
-                    logged: true,
-                    network: {value: this.$network.get().value, url: this.$network.get().url},
-                    created: new Date().getTime()
-                }
-            )
-        })
+            await this.registerAccount({
+                name: name,
+                reference: storageReferenceToString(account.reference),
+                entropy: account.entropy,
+                publicKey: account.publicKey,
+                balance: account.balance,
+                selected: true,
+                logged: true,
+                network: {value: network.value, url: network.url},
+                created: new Date().getTime()
+            }, password, network)
+
+        }).then(() => EventBus.$emit('networkChange', network))
     }
 
     /**
@@ -474,6 +478,18 @@ export class Service extends Vue {
             const allowsUnsignedFaucet = await new RemoteNode(this.$network.get().url).allowsUnsignedFaucet()
             return { account, allowsUnsignedFaucet }
         })
+    }
+
+    /**
+     * Checks if the network allowsan unsigned faucet.
+     * @return {Promise<boolean>} a promise that resolves to true if the network allows an unsigned faucet, false otherwise
+     */
+   async allowsUnsignedFaucet() {
+        try {
+            return await new RemoteNode(this.$network.get().url).allowsUnsignedFaucet()
+        } catch (e) {
+            return false
+        }
     }
 
     /**
