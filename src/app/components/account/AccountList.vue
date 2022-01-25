@@ -36,8 +36,8 @@
       </b-list-group-item>
     </b-list-group>
 
-    <VerifyPasswordModal ref="verifyPasswordComponent" @onPasswordVerified="onPasswordVerified" />
-    <AskForConfirmationModal ref="askForConfirmationComponent" @onYes="removeAccount" />
+    <VerifyPasswordModal ref="verifyPasswordComponent" @onPasswordVerified="doLogin" />
+    <VerifyPasswordModal ref="vpcRemoveAccount" @onPasswordVerified="removeAccount" />
   </div>
 </template>
 
@@ -45,13 +45,12 @@
 import {EventBus, showErrorToast, showSuccessToast} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
 import VerifyPasswordModal from "../features/VerifyPasswordModal";
-import AskForConfirmationModal from "../features/AskForConfirmationModal";
 import {Service} from "../../internal/Service";
 import {accountUtils} from "../../internal/mixins";
 
 export default {
   name: "ListAccounts",
-  components: {VerifyPasswordModal, AskForConfirmationModal},
+  components: {VerifyPasswordModal},
   mixins: [accountUtils],
   data() {
     return {
@@ -62,7 +61,7 @@ export default {
     }
   },
   methods: {
-    onPasswordVerified(result) {
+    doLogin(result) {
       if (result.verified) {
         new Service()
           .switchToAccount(this.selectedAccount, result.password)
@@ -70,31 +69,38 @@ export default {
           .catch(err => showErrorToast(this, 'Accounts', err.message || 'Cannot switch to the selected account'))
       }
     },
-    removeAccount() {
-      const accountOrKey = this.selectedAccountToRemove.reference ? 'Account' : 'Key'
-      new Service()
-        .removeAccount(this.selectedAccountToRemove)
-        .then(() => {
-          showSuccessToast(this, 'Remove', accountOrKey + ' removed')
-          this.init()
-        })
-        .catch(() => showErrorToast(this, 'Remove', 'Error while removing the ' + accountOrKey))
+    removeAccount(result) {
+      if (result.verified) {
+        const accountOrKey = this.selectedAccountToRemove.reference ? 'Account' : 'Key'
+        new Service()
+            .removeAccount(this.selectedAccountToRemove)
+            .then(() => {
+              showSuccessToast(this, 'Remove', accountOrKey + ' removed')
+              this.init()
+            })
+            .catch(() => showErrorToast(this, 'Remove', 'Error while removing the ' + accountOrKey))
+      }
     },
     onAccountLoginClick(index) {
       if (this.currentAccount.publicKey !== this.accounts[index].publicKey) {
         this.selectedAccount = this.accounts[index]
-        const subtitle = 'Please login with ' + this.selectedAccount.name + ' for the selected ' + (this.selectedAccount.reference ? 'account' : 'key')
-        this.$refs.verifyPasswordComponent.showModal({account: this.selectedAccount, title: 'Login', subtitle: subtitle})
+        const options = {
+          account: this.selectedAccount,
+          title: 'Login',
+          subtitle: 'Please login with ' + this.selectedAccount.name + ' for the selected ' + (this.selectedAccount.reference ? 'account' : 'key')
+        }
+        this.$refs.verifyPasswordComponent.showModal(options)
       }
     },
     onAccountRemoveClick(index) {
       if (this.currentAccount.publicKey !== this.accounts[index].publicKey) {
         this.selectedAccountToRemove = this.accounts[index]
         const options = {
-          title: 'Remove account',
-          subtitle: 'Are you sure you want to remove the ' + (this.selectedAccountToRemove.reference ? 'account ' : 'key ') + this.selectedAccountToRemove.name + ' ?',
+          account: this.selectedAccountToRemove,
+          title: 'Login',
+          subtitle: 'Please login with ' + this.selectedAccountToRemove.name + ' in order to remove the account'
         }
-        this.$refs.askForConfirmationComponent.showModal(options)
+        this.$refs.vpcRemoveAccount.showModal(options)
       }
     },
     init: async function() {
