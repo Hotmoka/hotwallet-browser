@@ -155,7 +155,7 @@ export default {
 
             this.$storageApi.updateAccount(this.account)
           })
-          .catch(error => showErrorToast(this, 'Account', error.message || 'Cannot retrieve account details'))
+          .catch(() => showErrorToast(this, 'Account', 'Cannot retrieve account details'))
     },
     onLogoutClick() {
       new Service()
@@ -170,7 +170,7 @@ export default {
       new Service()
           .verifyAccount(account)
           .then(() => this.displayAccount())
-          .catch(err => showErrorToast(this, 'Account', err.message || 'Cannot update account'))
+          .catch(() => showErrorToast(this, 'Account', 'Cannot update account'))
     },
     checkForBindedKey() {
       new Service()
@@ -178,7 +178,7 @@ export default {
           .then(storageReference => {
               if (storageReference !== null) {
                 this.keyBinding = {
-                  show: true,
+                  disabled: true,
                   reference: storageReferenceToString(storageReference)
                 }
               }
@@ -187,19 +187,18 @@ export default {
     },
     displayAccount() {
       new Service()
-          .getCurrentAccountWithFaucet()
-          .then(result => {
-            this.allowsFaucet = result.allowsUnsignedFaucet
+          .getCurrentAccount()
+          .then(account => {
 
             this.keyBinding = {
-              show: false,
+              disabled: false,
               reference: null
             }
 
             this.account = {
               balance: 0,
               balanceRed: 0,
-              ...result.account
+              ...account
             }
 
             if (this.account.reference) {
@@ -209,7 +208,11 @@ export default {
               this.checkForBindedKey()
             }
           })
-          .catch(error => showErrorToast(this, 'Account', error.message || 'Cannot retrieve account'))
+          .catch(() => showErrorToast(this, 'Account', 'Cannot retrieve account'))
+
+      new Service()
+          .allowsUnsignedFaucet()
+          .then(allowsFaucet => this.allowsFaucet = allowsFaucet)
     }
   },
   created() {

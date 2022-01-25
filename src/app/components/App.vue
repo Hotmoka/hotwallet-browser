@@ -128,6 +128,11 @@ export default {
   }
 }
 
+.copy-container {
+  margin-left: 8px;
+  cursor: pointer;
+}
+
 @media only screen and (max-width: 768px) {
   #logo-hotmoka {
     img {
