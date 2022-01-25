@@ -320,6 +320,10 @@ export class Service extends Vue {
     createAccountFromFaucet(newAccount, balance) {
         return WrapPromiseTask(async () => {
 
+            if (newAccount.name === 'Faucet') {
+                throw new Error('Illegal name. Please choose another name')
+            }
+
             const remoteNode = new RemoteNode(this.$network.get().url)
             const gamete = await remoteNode.getGamete()
             const balanceOfFaucet = await this.getBalanceOfAccount(gamete)
@@ -356,8 +360,12 @@ export class Service extends Vue {
      */
     createAccountFromPayer(newAccount, payer, passwordOfPayer) {
         return WrapPromiseTask(async () => {
-            const balance = Math.round(Number(newAccount.balance))
 
+            if (newAccount.name === 'Faucet') {
+                throw new Error('Illegal name. Please choose another name')
+            }
+
+            const balance = Math.round(Number(newAccount.balance))
             const remoteNode = new RemoteNode(this.$network.get().url)
             const storageReferenceOfPayer = storageReferenceFrom(payer.reference)
             const balanceOfPayer = await this.getBalanceOfAccount(storageReferenceOfPayer)
@@ -406,6 +414,10 @@ export class Service extends Vue {
     createKey(name, password, network) {
         return WrapPromiseTask(async () => {
 
+            if (name === 'Faucet') {
+                throw new Error('Illegal name. Please choose another name')
+            }
+
             // create key
             const account = AccountHelper.createKey(password, Bip39Dictionary.ENGLISH)
 
@@ -436,6 +448,10 @@ export class Service extends Vue {
      */
     importAccount(name, password, words, network) {
         return WrapPromiseTask(async () => {
+
+            if (name === 'Faucet') {
+                throw new Error('Illegal name. Please choose another name')
+            }
 
             for (let i = 0; i < 36; i++) {
                 if (!words[i]) {

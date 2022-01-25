@@ -16,7 +16,14 @@
               :invalid-feedback="fieldNotEmptyFeedback(password, 'Please enter a password')"
               :state="stateFieldNotEmpty(password)"
           >
-            <b-form-input type="password" id="i-pwd" v-model="password" :state="stateFieldNotEmpty(password)" @keydown.enter.native="onLoginClick" trim></b-form-input>
+            <b-form-input
+                type="password"
+                id="i-pwd"
+                v-model="password"
+                :state="stateFieldNotEmpty(password)"
+                :placeholder="account.name === 'Faucet' ? 'faucet' : ''"
+                @keydown.enter.native="onLoginClick" trim />
+            <span v-if="account.name === 'Faucet'" style="font-size: 12px">use faucet as password for this account</span>
           </b-form-group>
 
           <b-button @click="onLoginClick" variant="primary" :disabled="stateFormDisabled">Login</b-button>
