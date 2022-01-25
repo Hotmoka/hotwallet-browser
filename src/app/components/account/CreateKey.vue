@@ -8,6 +8,8 @@
     <div class="d-flex justify-content-center">
       <div class="text-left form-container">
 
+        <NetworkSelect ref="networkSelectComponent" />
+
         <b-form-group
             id="i-name"
             label="Name"
@@ -53,10 +55,12 @@ import {EventBus, showErrorToast} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
 import {Service} from "../../internal/Service";
 import {validator} from "../../internal/mixins";
+import NetworkSelect from "../features/NetworkSelect";
 
 export default {
   name: "CreateKey",
   mixins: [validator],
+  components: {NetworkSelect},
   data() {
     return {
       password: null,
@@ -74,7 +78,7 @@ export default {
   methods: {
     onCreateClick() {
       new Service()
-          .createKey(this.name, this.password)
+          .createKey(this.name, this.password, this.$refs.networkSelectComponent.getSelectedNetwork())
           .then(() => replaceRoute('/home'))
           .catch(err => showErrorToast(this, 'Create key', err.message || 'Error during key creation'))
     }

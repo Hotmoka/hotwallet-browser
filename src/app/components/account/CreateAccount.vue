@@ -171,8 +171,4 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.copy-container {
-  margin-left: 8px;
-  cursor: pointer;
-}
 </style>

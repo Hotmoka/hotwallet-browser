@@ -4,6 +4,8 @@
     <div class="d-flex justify-content-center">
       <div class="text-left form-container">
 
+        <NetworkSelect ref="networkSelectComponent" />
+
         <b-form-group
             id="i-name"
             label="Name"
@@ -56,10 +58,12 @@ import {EventBus, showErrorToast} from "../../internal/utils";
 import {replaceRoute} from "../../internal/router";
 import {Service} from "../../internal/Service";
 import {validator} from "../../internal/mixins";
+import NetworkSelect from "../features/NetworkSelect";
 
 export default {
   name: "ImportAccount",
   mixins: [validator],
+  components: {NetworkSelect},
   data() {
     return {
       password: null,
@@ -76,7 +80,7 @@ export default {
   methods: {
     onImportAccountClick() {
       new Service()
-          .importAccount(this.name, this.password, this.words)
+          .importAccount(this.name, this.password, this.words, this.$refs.networkSelectComponent.getSelectedNetwork())
           .then(() => replaceRoute('/home'))
           .catch(error => showErrorToast(this, 'Import account', error.message || 'Cannot import account'))
     },
