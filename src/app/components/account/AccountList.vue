@@ -30,8 +30,8 @@
         <div v-if="!account.reference" class="text-secondary font-small mt-1">Waiting for payment to this key</div>
 
         <div class="d-flex mt-3 justify-content-end" v-if="account.publicKey !== currentAccount.publicKey">
-          <b-button variant="primary" size="sm" style="margin-right: 16px; padding: 6px 12px" @click="onAccountLoginClick(index)">Login</b-button>
-          <b-button variant="danger" size="sm" style="padding: 6px 12px" @click="onAccountRemoveClick(index)"><b-icon width="18" icon="trash"></b-icon></b-button>
+          <b-button variant="primary" size="sm" style="padding: 6px 12px" @click="onAccountLoginClick(index)">Login</b-button>
+          <b-button v-if="!account.isFaucet" variant="danger" size="sm" style="margin-left: 16px; padding: 6px 12px" @click="onAccountRemoveClick(index)"><b-icon width="18" icon="trash"></b-icon></b-button>
         </div>
       </b-list-group-item>
     </b-list-group>
@@ -84,12 +84,20 @@ export default {
     onAccountLoginClick(index) {
       if (this.currentAccount.publicKey !== this.accounts[index].publicKey) {
         this.selectedAccount = this.accounts[index]
-        const options = {
-          account: this.selectedAccount,
-          title: 'Login',
-          subtitle: 'Please login with ' + this.selectedAccount.name + ' for the selected ' + (this.selectedAccount.reference ? 'account' : 'key')
+
+        if (this.selectedAccount.isFaucet) {
+          this.doLogin({
+            verified: true,
+            password: 'faucet'
+          })
+        } else {
+          const options = {
+            account: this.selectedAccount,
+            title: 'Login',
+            subtitle: 'Please login with ' + this.selectedAccount.name + ' for the selected ' + (this.selectedAccount.reference ? 'account' : 'key')
+          }
+          this.$refs.verifyPasswordComponent.showModal(options)
         }
-        this.$refs.verifyPasswordComponent.showModal(options)
       }
     },
     onAccountRemoveClick(index) {
@@ -103,14 +111,14 @@ export default {
         this.$refs.vpcRemoveAccount.showModal(options)
       }
     },
-    init: async function() {
-      try {
-        const service = new Service()
-        this.currentAccount = await service.getCurrentAccount()
-        this.accounts = await service.getAccounts()
-      } catch (e) {
-        showErrorToast(this, 'Account','Cannot retrieve account')
-      }
+    init() {
+      new Service()
+          .getAccountList()
+          .then(result => {
+            this.currentAccount = result.currentAccount
+            this.accounts = result.accounts
+          })
+          .catch(() => showErrorToast(this, 'Account', 'Cannot retrieve accounts'))
     }
   },
   created() {

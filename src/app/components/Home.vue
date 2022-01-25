@@ -44,8 +44,8 @@
 
       <hr/>
 
-      <div>
-        <h6 class="text-dark" style="margin-bottom: 2rem">Balance</h6>
+      <div class="coin-container">
+        <h6 class="text-dark mb-4">Balance</h6>
         <h4 class="text-success">{{ formatCoins(this.account.balance) }} Panarea </h4>
         <h4 class="text-danger">{{ formatCoins(this.account.balanceRed) }} Panarea </h4>
 
@@ -152,8 +152,6 @@ export default {
                 }
               }
             })
-
-            this.$storageApi.updateAccount(this.account)
           })
           .catch(() => showErrorToast(this, 'Account', 'Cannot retrieve account details'))
     },
@@ -268,5 +266,9 @@ export default {
 .disabled {
   opacity: .55;
   cursor: no-drop;
+}
+
+.coin-container {
+  word-break: break-all;
 }
 </style>

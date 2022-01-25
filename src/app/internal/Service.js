@@ -37,13 +37,18 @@ export class Service extends Vue {
             await this.$storageApi.initPrivateStore()
             const account = await this.$storageApi.getCurrentAccount(this.$network.get())
 
-            // verify public key
-            const publicKeyVerified = AccountHelper.verifyPublicKey(
-                password,
-                account.entropy,
-                Bip39Dictionary.ENGLISH,
-                account.publicKey
-            )
+            let publicKeyVerified
+            if (account.isFaucet && password === 'faucet') {
+                const publicKeyOfFaucet = await new AccountHelper(new RemoteNode(this.$network.get().url)).getPublicKey(storageReferenceFrom(account.reference))
+                publicKeyVerified = publicKeyOfFaucet === account.publicKey
+            } else {
+                publicKeyVerified = AccountHelper.verifyPublicKey(
+                    password,
+                    account.entropy,
+                    Bip39Dictionary.ENGLISH,
+                    account.publicKey
+                )
+            }
 
             if (publicKeyVerified) {
                 await this.$storageApi.setAccountAuth(account, true)
@@ -106,13 +111,13 @@ export class Service extends Vue {
                 selected: false
             }
 
-            /* TODO
+            // validate network
             const validNetwork = await this.testNetwork(network)
             if (!validNetwork) {
-                throw new Error('Cannot connect to network. Please check the network url')
-            }*/
+                throw new Error('Cannot connect to network. Please check the network url.')
+            }
 
-            // check network
+            // check if the network is registered
             const networks = await this.$storageApi.getNetworks()
             for (const _network of networks) {
                 if (_network.value === network.value) {
@@ -124,7 +129,6 @@ export class Service extends Vue {
         })
     }
 
-
     /**
      * It removes a network from this wallet and all the accounts associated with the network.
      * @param networkToRemove the network to remove
@@ -133,7 +137,7 @@ export class Service extends Vue {
     removeNetwork(networkToRemove) {
         return WrapPromiseTask(async () => {
             const networks = await this.$storageApi.getNetworks()
-            const accounts = await this.getAccounts()
+            const accounts = await this.$storageApi.getAccounts()
             const filteredAccounts = accounts.filter(acc => acc.network.value !== networkToRemove.value)
             const filteredNetworks = networks.filter(n => n.value !== networkToRemove.value)
             await this.$storageApi.persistToPublicStore('networks', filteredNetworks)
@@ -264,6 +268,7 @@ export class Service extends Vue {
 
     /**
      * It verifies if the given account is actually an account object in the remote node.
+     * It updates the local account if the reference of the account is valid.
      * @param account the account
      * @return {Promise<void>} a promise that resolves to void
      */
@@ -460,28 +465,84 @@ export class Service extends Vue {
     }
 
     /**
-     * It returns the accounts of the wallet.
-     * @return {Promise<[Object]>} a promise that resolves to an array of account object
-     */
-    getAccounts() {
-        return WrapPromiseTask(async () => this.$storageApi.getAccounts())
-            .then(accounts => accounts.sort((a, b)  => a.selected ? -1 : 1))
-    }
-
-    /**
      * It returns the current logged account with the faucet property.
      * @return {Promise<{account: Object, allowsUnsignedFaucet: boolean}>} a promise that resolves to the result account and the faucet property
      */
     getCurrentAccountWithFaucet() {
         return WrapPromiseTask(async () => {
             const account = await this.$storageApi.getCurrentAccount(this.$network.get())
-            const allowsUnsignedFaucet = await new RemoteNode(this.$network.get().url).allowsUnsignedFaucet()
+            const allowsUnsignedFaucet = await this.allowsUnsignedFaucet()
             return { account, allowsUnsignedFaucet }
         })
     }
 
     /**
-     * Checks if the network allowsan unsigned faucet.
+     * Returns the list of the accounts of this wallet. The faucet is included if allowed by the network.
+     * @return {Promise<{currentAccount: Object, accounts: Array<Object>}>} a promise that resolves to the list of accounts
+     */
+    getAccountList() {
+        return WrapPromiseTask(async () => {
+
+            const currentAccount = await this.$storageApi.getCurrentAccount(this.$network.get())
+            const accounts = await this.$storageApi.getAccounts()
+            await this.registerFaucetOrSkip(accounts)
+            accounts.sort((a, b) => a.selected ? -1 : 1)
+
+            return {
+                currentAccount,
+                accounts
+            }
+        })
+    }
+
+    /**
+     * It registers the faucet as a local account if the faucet is not registered.
+     * @param accounts the local accounts
+     * @return {Promise<void>} a promise that resolves to void
+     */
+    async registerFaucetOrSkip(accounts) {
+        try {
+            // faucet exists
+            if (accounts.filter(acc => acc.isFaucet).length > 0) {
+              return
+            }
+
+            const allowsUnsignedFaucet = await this.allowsUnsignedFaucet()
+            if (allowsUnsignedFaucet) {
+                const faucet = await this.getFaucet()
+                const publicKeyOfFaucet= await new AccountHelper(new RemoteNode(this.$network.get().url)).getPublicKey(faucet)
+                const localFaucet = {
+                    name: 'Faucet',
+                    publicKey: publicKeyOfFaucet,
+                    reference: storageReferenceToString(faucet),
+                    network: {value: this.$network.get().value, url: this.$network.get().url},
+                    balance: 0,
+                    selected: false,
+                    logged: false,
+                    created: new Date().getTime(),
+                    isFaucet: true
+                }
+
+                accounts.push(localFaucet)
+                await this.$storageApi.persistToPrivateStore('accounts', accounts)
+            }
+        } catch (e) {}
+    }
+
+    /**
+     * It returns the faucet of the current network, if any.
+     * @return {Promise<null|StorageReferenceModel>} a promise that resolves to faucet or to null
+     */
+    async getFaucet() {
+        try {
+            return await new RemoteNode(this.$network.get().url).getGamete()
+        } catch (e) {
+            return null
+        }
+    }
+
+    /**
+     * Checks if the network allows an unsigned faucet.
      * @return {Promise<boolean>} a promise that resolves to true if the network allows an unsigned faucet, false otherwise
      */
    async allowsUnsignedFaucet() {

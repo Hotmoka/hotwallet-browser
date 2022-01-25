@@ -158,7 +158,6 @@ export class StorageApi {
             }
         }
         tempAccounts.push(account)
-
         await this.persistToPrivateStore('accounts', tempAccounts)
         await this.persistToPublicStore('account', {
             name: account.name,
