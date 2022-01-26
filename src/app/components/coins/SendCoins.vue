@@ -54,6 +54,7 @@
               name="checkbox-1"
               :value="true"
               :unchecked-value="false"
+              :disabled="payer.isFaucet"
           >
             Use faucet as payer
           </b-form-checkbox>
@@ -230,6 +231,9 @@ export default {
         .then(result => {
           this.allowsUnsignedFaucet = result.allowsUnsignedFaucet
           this.payer = result.account
+          if (this.payer.isFaucet) {
+            this.fromFaucet = true
+          }
         })
         .catch(error => showErrorToast(this, 'Account', error.message || 'Cannot retrieve account'))
   }
