@@ -226,7 +226,7 @@ export default {
     EventBus.$emit('titleChange', 'Send coins')
 
     new Service()
-        .getCurrentAccountWithFaucet()
+        .getCurrentAccountWithFaucetOption()
         .then(result => {
           this.allowsUnsignedFaucet = result.allowsUnsignedFaucet
           this.payer = result.account

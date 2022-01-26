@@ -484,7 +484,7 @@ export class Service extends Vue {
      * It returns the current logged account with the faucet property.
      * @return {Promise<{account: Object, allowsUnsignedFaucet: boolean}>} a promise that resolves to the result account and the faucet property
      */
-    getCurrentAccountWithFaucet() {
+    getCurrentAccountWithFaucetOption() {
         return WrapPromiseTask(async () => {
             const account = await this.$storageApi.getCurrentAccount(this.$network.get())
             const allowsUnsignedFaucet = await this.allowsUnsignedFaucet()
