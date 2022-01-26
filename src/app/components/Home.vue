@@ -6,7 +6,7 @@
         <b-list-group>
           <b-list-group-item button @click="onOptionClick('/expand-view')" v-if="isPopup">Expand view</b-list-group-item>
           <b-list-group-item button @click="onOptionClick('/networks')">Networks</b-list-group-item>
-          <b-list-group-item button @click="onOptionClick('/edit-account')">Edit account</b-list-group-item>
+          <b-list-group-item button @click="onOptionClick('/edit-account')" v-if="!account.isFaucet">Edit account</b-list-group-item>
           <b-list-group-item button @click="onOptionClick('/import-account')">Import account</b-list-group-item>
           <b-list-group-item button @click="onOptionClick('/create-account')" v-if="isAccount || allowsFaucet">Create account</b-list-group-item>
           <b-list-group-item button @click="onOptionClick('/create-key')">Create key</b-list-group-item>
