@@ -7,7 +7,7 @@
 
       <h5 class="title" v-if="account && account.name">Welcome back <br/><span class="text-secondary">{{account.name}}</span></h5>
 
-      <div class="d-flex justify-content-center">
+      <div class="d-flex justify-content-center" v-if="account">
         <div class="text-left form-container">
           <b-form-group
               id="i-pwd"
