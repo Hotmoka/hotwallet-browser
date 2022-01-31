@@ -9,8 +9,7 @@
   },
   "browser_action": {
     "default_icon": {
-      "48": "icons/wallet_48x48.png",
-      "128": "icons/wallet_128x128.png"
+      "48": "icons/hotmoka_logo.png"
     },
     "default_title": "Hotwallet",
     "default_popup": "app/popup.html"
