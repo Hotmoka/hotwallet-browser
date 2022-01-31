@@ -176,7 +176,7 @@ export default {
           .then(storageReference => {
               if (storageReference !== null) {
                 this.keyBinding = {
-                  disabled: true,
+                  show: true,
                   reference: storageReferenceToString(storageReference)
                 }
               }
@@ -189,7 +189,7 @@ export default {
           .then(account => {
 
             this.keyBinding = {
-              disabled: false,
+              show: false,
               reference: null
             }
 
