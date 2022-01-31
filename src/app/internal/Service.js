@@ -414,6 +414,10 @@ export class Service extends Vue {
     createKey(name, password, network) {
         return WrapPromiseTask(async () => {
 
+            if (!network) {
+                throw new Error('Please select a valid network')
+            }
+
             if (name === 'Faucet') {
                 throw new Error('Illegal name. Please choose another name')
             }
@@ -448,6 +452,10 @@ export class Service extends Vue {
      */
     importAccount(name, password, words, network) {
         return WrapPromiseTask(async () => {
+
+            if (!network) {
+                throw new Error('Please select a valid network')
+            }
 
             if (name === 'Faucet') {
                 throw new Error('Illegal name. Please choose another name')

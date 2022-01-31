@@ -14,7 +14,8 @@
         <br/>
 
         <div class="d-flex mt-3 justify-content-end" v-if="!network.selected">
-          <b-button variant="danger" size="sm" style="padding: 6px 12px" @click="onRemoveNetworkClick(index)"><b-icon width="18" icon="trash"></b-icon></b-button>
+          <b-button variant="primary" size="sm" style="padding: 6px 12px" @click="onNetworkSelected(network)">Select</b-button>
+          <b-button variant="danger" size="sm" style="padding: 6px 12px;margin-left: 16px;" @click="onRemoveNetworkClick(index)"><b-icon width="18" icon="trash"></b-icon></b-button>
         </div>
 
       </b-list-group-item>
@@ -22,6 +23,8 @@
 
     <CustomNetworkModal ref="customNetworkModal" />
     <AskForConfirmationModal ref="askForConfirmationComponent" @onYes="removeNetwork" />
+    <ChooseAccountModal ref="chooseAccountModal" @onAccountSelected="onAccountSelected"/>
+    <VerifyPasswordModal ref="verifyPasswordComponent" @onPasswordVerified="doLogin" />
   </div>
 </template>
 
@@ -30,19 +33,50 @@ import {EventBus, showErrorToast, showSuccessToast} from "../../internal/utils";
 import {validator} from "../../internal/mixins";
 import CustomNetworkModal from "./CustomNetworkModal";
 import AskForConfirmationModal from "./AskForConfirmationModal";
+import ChooseAccountModal from "./ChooseAccountModal";
 import {Service} from "../../internal/Service";
+import VerifyPasswordModal from "./VerifyPasswordModal";
+import {replaceRoute} from "../../internal/router";
 
 export default {
   name: "Network",
-  components: {CustomNetworkModal, AskForConfirmationModal},
+  components: {CustomNetworkModal, AskForConfirmationModal, ChooseAccountModal, VerifyPasswordModal},
   mixins: [validator],
   data() {
     return {
       networkToRemove: null,
-      networks: []
+      networks: [],
+      selectedAccount: null
     }
   },
   methods: {
+    doLogin(result) {
+      if (result.verified) {
+        new Service()
+            .switchToAccount(this.selectedAccount, result.password)
+            .then(() => replaceRoute('/home'))
+            .catch(err => showErrorToast(this, 'Accounts', err.message || 'Cannot switch to the selected account'))
+      }
+    },
+    onAccountSelected(account) {
+      this.selectedAccount = account
+      if (account.isFaucet) {
+        this.doLogin({
+          verified: true,
+          password: 'faucet'
+        })
+      } else {
+        const options = {
+          account: account,
+          title: 'Login',
+          subtitle: 'Please login with ' + account.name + ' for the selected ' + (account.reference ? 'account' : 'key')
+        }
+        this.$refs.verifyPasswordComponent.showModal(options)
+      }
+    },
+    onNetworkSelected(network) {
+      this.$refs.chooseAccountModal.showModal(network)
+    },
     onRemoveNetworkClick(index) {
       this.networkToRemove = this.networks[index]
       this.$refs.askForConfirmationComponent.showModal({
