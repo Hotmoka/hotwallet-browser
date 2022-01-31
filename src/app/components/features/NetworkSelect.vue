@@ -43,8 +43,7 @@ export default {
       this.onNetworkChange()
     },
     onCancelConnectionToCustomNetwork() {
-      this.selectedNetwork = this.networks[0].value
-      this.onNetworkChange()
+      this.selectedNetwork = null
     },
     onNetworkChange() {
       if (this.selectedNetwork === this.defaultAddCustomNetwork.value) {

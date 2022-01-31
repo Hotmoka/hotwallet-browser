@@ -82,7 +82,7 @@ export default {
             this.$emit('onConnected', network)
           })
           .catch(() => {
-            this.resetForm()
+            this.onCancelConnectionClick()
             showErrorToast(this, 'Custom network connection', 'Cannot connect to custom network')
           })
     },
