@@ -21,9 +21,9 @@
                 id="i-pwd"
                 v-model="password"
                 :state="stateFieldNotEmpty(password)"
-                :placeholder="account.name === 'Faucet' ? 'faucet' : ''"
+                :placeholder="isFaucet ? 'faucet' : ''"
                 @keydown.enter.native="onLoginClick" trim />
-            <span v-if="account.name === 'Faucet'" style="font-size: 12px">use faucet as password for this account</span>
+            <span v-if="isFaucet" style="font-size: 12px">use faucet as password for this account</span>
           </b-form-group>
 
           <b-button @click="onLoginClick" variant="primary" :disabled="stateFormDisabled">Login</b-button>
@@ -50,7 +50,10 @@ export default {
   computed: {
     stateFormDisabled() {
       return !this.stateFieldNotEmpty(this.password)
-    }
+    },
+    isFaucet() {
+      return this.account && this.account.name.startsWith('Faucet ')
+    },
   },
   methods: {
     onLoginClick() {
