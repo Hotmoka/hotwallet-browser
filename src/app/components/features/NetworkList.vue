@@ -11,12 +11,14 @@
           :active="network.selected"
       >
 
-        <span style="color: #000; word-break: break-word">
-            <b-icon width="18" icon="globe"></b-icon>
-            {{ network.url }}
-        </span>
+        <div class="network-container">
+          <p>{{ network.text }}</p>
+        </div>
 
-        <br/>
+        <div class="network-container">
+          <b-icon width="18" icon="globe"></b-icon>
+          {{ network.url }}
+        </div>
 
         <div class="d-flex mt-3 justify-content-end" v-if="!network.selected">
           <b-button variant="primary" size="sm" style="padding: 6px 12px" @click="onNetworkSelected(network)">Select</b-button>
@@ -146,9 +148,18 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .list-group-item.active {
   background-color: #eee;
   border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.network-container {
+  color: #000;
+  word-break: break-word;
+
+  p {
+    margin: 0 0 6px 0;
+  }
 }
 </style>
