@@ -5,6 +5,7 @@ import {
     filterNetwork,
     storageReferenceFrom,
     storageReferenceToString,
+    trimAddress,
     WrapPromiseTask
 } from "./utils";
 import {
@@ -124,6 +125,9 @@ export class Service extends Vue {
                     throw new Error('Network already registered')
                 }
             }
+
+            // save network
+            await this.$storageApi.addNetwork(network)
 
             return network
         })
@@ -305,7 +309,6 @@ export class Service extends Vue {
         await this.$storageApi.addAccount(account)
 
         if (network) {
-            await this.$storageApi.addNetwork(network)
             await this.$storageApi.selectNetwork(network)
             this.$network.set(network)
         }
@@ -520,58 +523,88 @@ export class Service extends Vue {
     }
 
     /**
+     * It registers the faucet as a local account for a given network
+     * @param network the network
+     * @param accounts the accounts
+     * @return {Promise<unknown>} a promise that resolves to the created account of faucet
+     */
+    async registerFaucet(network, accounts) {
+        try {
+            const faucet = await this.getFaucet(network)
+            const publicKeyOfFaucet = await new AccountHelper(new RemoteNode(network.url)).getPublicKey(faucet)
+            const storageRef = storageReferenceToString(faucet)
+            const localFaucet = {
+                name: 'Faucet ' + trimAddress(storageRef),
+                publicKey: publicKeyOfFaucet,
+                reference: storageRef,
+                network: {value: network.value, url: network.url},
+                balance: 0,
+                selected: false,
+                logged: false,
+                created: new Date().getTime(),
+                isFaucet: true
+            }
+
+            accounts.push(localFaucet)
+            await this.$storageApi.persistToPrivateStore('accounts', accounts)
+
+            return localFaucet
+        } catch (e) {}
+    }
+
+    /**
      * It registers the faucet as a local account if the faucet is not registered.
      * @param accounts the local accounts
      * @return {Promise<void>} a promise that resolves to void
      */
     async registerFaucetOrSkip(accounts) {
         try {
-            // faucet exists
-            if (accounts.filter(acc => acc.isFaucet).length > 0) {
+            // check if faucet exists for the current network
+            const network = this.$network.get()
+            if (accounts.filter(acc => acc.isFaucet && acc.network.value === network.value).length > 0) {
               return
             }
 
             const allowsUnsignedFaucet = await this.allowsUnsignedFaucet()
             if (allowsUnsignedFaucet) {
-                const faucet = await this.getFaucet()
-                const publicKeyOfFaucet= await new AccountHelper(new RemoteNode(this.$network.get().url)).getPublicKey(faucet)
-                const localFaucet = {
-                    name: 'Faucet',
-                    publicKey: publicKeyOfFaucet,
-                    reference: storageReferenceToString(faucet),
-                    network: {value: this.$network.get().value, url: this.$network.get().url},
-                    balance: 0,
-                    selected: false,
-                    logged: false,
-                    created: new Date().getTime(),
-                    isFaucet: true
-                }
-
-                accounts.push(localFaucet)
-                await this.$storageApi.persistToPrivateStore('accounts', accounts)
+                await this.registerFaucet(network, accounts)
             }
         } catch (e) {}
     }
 
     /**
-     * It returns the faucet of the current network, if any.
+     * It returns the faucet of a network, if any.
+     * @param network the network
      * @return {Promise<null|StorageReferenceModel>} a promise that resolves to faucet or to null
      */
-    async getFaucet() {
+    async getFaucet(network) {
         try {
-            return await new RemoteNode(this.$network.get().url).getGamete()
+            return await new RemoteNode(network.url).getGamete()
         } catch (e) {
             return null
         }
     }
 
     /**
-     * Checks if the network allows an unsigned faucet.
+     * Checks if the current network allows an unsigned faucet.
      * @return {Promise<boolean>} a promise that resolves to true if the network allows an unsigned faucet, false otherwise
      */
    async allowsUnsignedFaucet() {
         try {
             return await new RemoteNode(this.$network.get().url).allowsUnsignedFaucet()
+        } catch (e) {
+            return false
+        }
+    }
+
+    /**
+     * Checks if the given network allows an unsigned faucet.
+     * @param network the network
+     * @return {Promise<boolean>} a promise that resolves to true if the network allows an unsigned faucet, false otherwise
+     */
+    async allowsUnsignedFaucetFor(network) {
+        try {
+            return await new RemoteNode(network.url).allowsUnsignedFaucet()
         } catch (e) {
             return false
         }

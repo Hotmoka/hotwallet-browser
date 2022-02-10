@@ -1,5 +1,10 @@
 <template>
   <div class="content">
+
+    <div class="d-flex justify-content-end">
+      <b-button variant="primary" size="sm" @click="onAddNetworkClick">Add network</b-button>
+    </div>
+
     <b-list-group v-if="networks" class="mt-4">
       <b-list-group-item
           v-for="(network, index) in networks"
@@ -21,7 +26,7 @@
       </b-list-group-item>
     </b-list-group>
 
-    <CustomNetworkModal ref="customNetworkModal" />
+    <CustomNetworkModal ref="customNetworkModal" @onConnected="onCustomNetworkConnected" />
     <AskForConfirmationModal ref="askForConfirmationComponent" @onYes="removeNetwork" />
     <ChooseAccountModal ref="chooseAccountModal" @onAccountSelected="onAccountSelected"/>
     <VerifyPasswordModal ref="verifyPasswordComponent" @onPasswordVerified="doLogin" />
@@ -29,7 +34,7 @@
 </template>
 
 <script>
-import {EventBus, showErrorToast, showSuccessToast} from "../../internal/utils";
+import {EventBus, showErrorToast, showSuccessToast, WrapPromiseTask} from "../../internal/utils";
 import {validator} from "../../internal/mixins";
 import CustomNetworkModal from "./CustomNetworkModal";
 import AskForConfirmationModal from "./AskForConfirmationModal";
@@ -50,6 +55,36 @@ export default {
     }
   },
   methods: {
+    onAddNetworkClick() {
+      this.$refs.customNetworkModal.showModal()
+    },
+    onCustomNetworkConnected(network) {
+      WrapPromiseTask(async () => {
+        const service = new Service()
+
+        // check if network has faucet
+        const allowsUnsignedFaucet = await service.allowsUnsignedFaucetFor(network)
+        if (allowsUnsignedFaucet) {
+          const accounts = await this.$storageApi.getAccounts()
+          this.selectedAccount = await service.registerFaucet(network, accounts)
+          return {
+            createKey: false
+          }
+        } else {
+          return {
+            createKey: true
+          }
+        }
+      })
+      .then(result => {
+        if (result.createKey) {
+          replaceRoute('/create-key')
+        } else {
+          this.doLogin({verified: true, password: 'faucet'})
+        }
+      })
+      .catch(() => showErrorToast(this, 'Accounts', 'Error while connecting to network'))
+    },
     doLogin(result) {
       if (result.verified) {
         new Service()
@@ -60,10 +95,11 @@ export default {
     },
     onAccountSelected(account) {
       this.selectedAccount = account
+
       if (account.isFaucet) {
         this.doLogin({
           verified: true,
-          password: 'faucet'
+          password: 'faucet',
         })
       } else {
         const options = {
