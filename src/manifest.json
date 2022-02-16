@@ -1,7 +1,7 @@
 {
   "name": "Hotwallet",
   "description": "Wallet for the Hotmoka blockchain",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "manifest_version": 2,
   "icons": {
     "48": "icons/hotmoka_logo.png"
